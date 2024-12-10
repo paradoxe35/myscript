@@ -11,15 +11,21 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+const (
+	title  = "myscript"
+	width  = 1024
+	height = 768
+)
+
 func main() {
 	// Create an instance of the app structure
 	app := NewApp()
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:  "myscript",
-		Width:  1024,
-		Height: 768,
+		Title:     title,
+		MinWidth:  width,
+		MinHeight: height,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
