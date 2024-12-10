@@ -1,8 +1,11 @@
-import { useState } from "react";
-import logo from "./assets/images/logo-universal.png";
+import { ThemeProvider } from "./components/theme-provider";
 
 function App() {
-  return <div>Ca va ?</div>;
+  return (
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      Ca va ?
+    </ThemeProvider>
+  );
 }
 
 export default App;
