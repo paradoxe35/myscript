@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 // App struct
 type App struct {
 	ctx context.Context
+	db  *gorm.DB
 }
 
 // NewApp creates a new App application struct
-func NewApp() *App {
-	return &App{}
+func NewApp(db *gorm.DB) *App {
+	return &App{db: db}
 }
 
 // startup is called when the app starts. The context is saved
