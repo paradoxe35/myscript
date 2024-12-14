@@ -5,6 +5,7 @@ import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { Button } from "./ui/button";
+import { SettingsModal } from "./settings-modal";
 
 export function SettingsButton() {
   return (
@@ -24,13 +25,15 @@ export function SettingsButton() {
             <span className="font-semibold">{APP_NAME}</span>
           </div>
 
-          <Button
-            size="sm"
-            variant="ghost"
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground ml-auto"
-          >
-            <Settings />
-          </Button>
+          <SettingsModal>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground ml-auto"
+            >
+              <Settings />
+            </Button>
+          </SettingsModal>
         </div>
       </SidebarMenuItem>
     </SidebarMenu>
