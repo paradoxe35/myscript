@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"myscript/internal/repository"
 
 	"gorm.io/gorm"
 )
@@ -27,4 +28,9 @@ func (a *App) startup(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+
+// Get Config
+func (a *App) GetConfig() *repository.Config {
+	return repository.GetConfig(a.db)
 }
