@@ -11,6 +11,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { Content } from "@/components/content";
 
 export default function App() {
   return (
@@ -30,12 +31,7 @@ export default function App() {
           </Breadcrumb>
         </header>
 
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta
-          perferendis asperiores, sed soluta nam, ad molestias, dignissimos
-          possimus sunt cumque illum qui harum laborum sequi quos autem
-          laudantium maxime. Natus.
-        </div>
+        <Content />
       </SidebarInset>
     </SidebarProvider>
   );
