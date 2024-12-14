@@ -8,7 +8,7 @@ export namespace repository {
 	    UpdatedAt: any;
 	    // Go type: gorm
 	    DeletedAt: any;
-	    NotionApiKey: string;
+	    NotionApiKey?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
