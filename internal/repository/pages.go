@@ -26,6 +26,7 @@ func GetPage(db *gorm.DB, id uint) *Page {
 	return &page
 }
 
-func SavePage(db *gorm.DB, page *Page) {
+func SavePage(db *gorm.DB, page *Page) *Page {
 	db.Save(page)
+	return page
 }

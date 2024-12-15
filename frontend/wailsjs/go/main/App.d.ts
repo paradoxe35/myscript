@@ -15,4 +15,4 @@ export function GetNotionPages():Promise<Array<notionapi.Object>>;
 
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
 
-export function SaveLocalPage(arg1:repository.Page):Promise<void>;
+export function SaveLocalPage(arg1:repository.Page):Promise<repository.Page>;

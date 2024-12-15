@@ -19,13 +19,24 @@ import {
 import { useNotionPagesStore } from "@/store/notion-pages";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
+import { useLocalPagesStore } from "@/store/local-pages";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const localPagesStore = useLocalPagesStore();
   const notionPagesStore = useNotionPagesStore();
+
+  React.useEffect(() => {
+    localPagesStore.getPages();
+  }, []);
 
   const notionPages = React.useMemo(() => {
     return notionPagesStore.getSimplifiedPages();
   }, [notionPagesStore.pages]);
+
+  const createNewPage = async () => {
+    const newPage = await localPagesStore.newPage();
+    console.log(newPage);
+  };
 
   return (
     <Sidebar {...props}>
@@ -43,6 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupAction
               asChild
               className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sidebar/60"
+              onClick={createNewPage}
             >
               <a href="#">
                 <Plus />
@@ -50,17 +62,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarGroupAction>
           </SidebarMenuButton>
 
-          {/* <SidebarGroupContent>
+          <SidebarGroupContent>
             <SidebarMenu>
-              {item.items.map((item) => (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={item.isActive}>
-                    <a href={item.url}>{item.title}</a>
+              {localPagesStore.pages.map((item) => (
+                <SidebarMenuItem key={item.ID} className="w-full">
+                  <SidebarMenuButton
+                    className={cn(
+                      "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
+                      "whitespace-nowrap text-ellipsis"
+                    )}
+                  >
+                    {item.title}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-          </SidebarGroupContent> */}
+          </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Notion pages */}
