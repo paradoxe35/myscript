@@ -6,6 +6,14 @@ export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
 }
 
+export function GetNotionPageBlocks(arg1) {
+  return window['go']['main']['App']['GetNotionPageBlocks'](arg1);
+}
+
+export function GetNotionPages() {
+  return window['go']['main']['App']['GetNotionPages']();
+}
+
 export function SaveConfig(arg1) {
   return window['go']['main']['App']['SaveConfig'](arg1);
 }

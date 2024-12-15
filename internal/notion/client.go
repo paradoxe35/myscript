@@ -2,6 +2,7 @@ package notion
 
 import (
 	"context"
+	"log"
 
 	"github.com/jomei/notionapi"
 )
@@ -23,8 +24,12 @@ func NewClient(token string) *NotionClient {
 }
 
 func (nc *NotionClient) GetPages() []notionapi.Object {
-	result, err := nc.Client.Search.Do(nc.ctx, &notionapi.SearchRequest{PageSize: 200})
+	result, err := nc.Client.Search.Do(nc.ctx, &notionapi.SearchRequest{
+		PageSize: 200,
+		Filter:   notionapi.SearchFilter{Property: "object", Value: "page"},
+	})
 	if err != nil {
+		log.Printf("Error getting Notion pages: %s", err)
 		return []notionapi.Object{}
 	}
 
@@ -39,6 +44,7 @@ func (nc *NotionClient) GetPageBlocks(pageID string) []notionapi.Block {
 	)
 
 	if err != nil {
+		log.Printf("Error getting Notion page blocks: %s", err)
 		return []notionapi.Block{}
 	}
 

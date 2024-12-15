@@ -1,14 +1,13 @@
 import { EditorJS } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
-import { useNotionStore } from "@/store/notion";
+import { useNotionPagesStore } from "@/store/notion-pages";
 import { useEffect } from "react";
+import { GetNotionPages } from "~wails/main/App";
 
 export function Content() {
-  const notionStore = useNotionStore();
-
   useEffect(() => {
-    notionStore.getPages();
-  }, [notionStore.apiKey]);
+    GetNotionPages().then((pages) => console.log(pages));
+  }, []);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
