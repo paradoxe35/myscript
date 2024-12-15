@@ -5,8 +5,14 @@ import {notionapi} from '../models';
 
 export function GetConfig():Promise<repository.Config>;
 
+export function GetLocalPage(arg1:number):Promise<repository.Page>;
+
+export function GetLocalPages():Promise<Array<repository.Page>>;
+
 export function GetNotionPageBlocks(arg1:string):Promise<Array<notionapi.Block>>;
 
 export function GetNotionPages():Promise<Array<notionapi.Object>>;
 
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
+
+export function SaveLocalPage(arg1:repository.Page):Promise<void>;

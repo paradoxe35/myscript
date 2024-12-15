@@ -65,3 +65,15 @@ func (a *App) GetNotionPageBlocks(pageID string) []notionapi.Block {
 
 	return client.GetPageBlocks(pageID)
 }
+
+func (a *App) GetLocalPages() []repository.Page {
+	return repository.GetPages(a.db)
+}
+
+func (a *App) GetLocalPage(id uint) *repository.Page {
+	return repository.GetPage(a.db, id)
+}
+
+func (a *App) SaveLocalPage(page *repository.Page) {
+	repository.SavePage(a.db, page)
+}

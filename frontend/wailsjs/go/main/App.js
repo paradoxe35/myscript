@@ -6,6 +6,14 @@ export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
 }
 
+export function GetLocalPage(arg1) {
+  return window['go']['main']['App']['GetLocalPage'](arg1);
+}
+
+export function GetLocalPages() {
+  return window['go']['main']['App']['GetLocalPages']();
+}
+
 export function GetNotionPageBlocks(arg1) {
   return window['go']['main']['App']['GetNotionPageBlocks'](arg1);
 }
@@ -16,4 +24,8 @@ export function GetNotionPages() {
 
 export function SaveConfig(arg1) {
   return window['go']['main']['App']['SaveConfig'](arg1);
+}
+
+export function SaveLocalPage(arg1) {
+  return window['go']['main']['App']['SaveLocalPage'](arg1);
 }

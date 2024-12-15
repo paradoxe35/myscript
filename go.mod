@@ -7,6 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/jomei/notionapi v1.13.2
 	github.com/wailsapp/wails/v2 v2.9.2
+	gorm.io/datatypes v1.2.5
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
 )
@@ -44,7 +45,6 @@ require (
 	golang.org/x/net v0.25.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	gorm.io/datatypes v1.2.5 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 )
 

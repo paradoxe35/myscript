@@ -13,6 +13,7 @@ type Page struct {
 
 func GetPages(db *gorm.DB) []Page {
 	var pages []Page
+
 	db.Select([]string{"id", "title"}).Find(&pages)
 
 	return pages
