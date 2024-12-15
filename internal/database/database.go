@@ -17,6 +17,7 @@ func CreateDatabase(homeDir string) *gorm.DB {
 
 	// Migrate schemas
 	db.AutoMigrate(&repository.Config{})
+	db.AutoMigrate(&repository.Page{})
 
 	return db
 }
