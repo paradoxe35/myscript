@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -12,36 +11,37 @@ import { Label } from "@/components/ui/label";
 import { PropsWithChildren, useEffect, useState } from "react";
 import { Separator } from "./ui/separator";
 import { ApiKeyInput } from "./ui/api-key-input";
-import { useAtom } from "jotai";
-import { configAtom } from "@/store/config";
-import { repository } from "~wails/models";
 import { toast } from "sonner";
+import { useConfigStore } from "@/store/config";
 
 export function SettingsModal(props: PropsWithChildren) {
   const [notionApiKey, setNotionApiKey] = useState("");
   const [openAiApiKey, setOpenAiApiKey] = useState("");
 
-  const [config, writeConfig] = useAtom(configAtom);
+  const configStore = useConfigStore();
 
   useEffect(() => {
-    console.log(config);
+    configStore.fetchConfig();
+  }, []);
+
+  useEffect(() => {
+    const config = configStore.config;
 
     if (config) {
       setNotionApiKey(config.NotionApiKey || "");
       setOpenAiApiKey(config.OpenAIApiKey || "");
     }
-  }, [config]);
+  }, [configStore.config]);
 
   const handleSave = () => {
-    writeConfig(
-      repository.Config.createFrom({
-        ...config,
+    configStore
+      .writeConfig({
         NotionApiKey: notionApiKey,
         OpenAIApiKey: openAiApiKey,
       })
-    ).then(() => {
-      toast.success("Settings saved successfully!");
-    });
+      .then(() => {
+        toast.success("Settings saved successfully!");
+      });
   };
 
   return (
@@ -57,6 +57,7 @@ export function SettingsModal(props: PropsWithChildren) {
             <Label htmlFor="name">Notion API Key</Label>
             <ApiKeyInput
               className="col-span-3"
+              tabIndex={-1}
               value={notionApiKey}
               onChange={(e) => setNotionApiKey(e.target.value)}
             />
@@ -68,6 +69,7 @@ export function SettingsModal(props: PropsWithChildren) {
             <Label htmlFor="name">OpenAI API Key</Label>
             <ApiKeyInput
               className="col-span-3"
+              tabIndex={-1}
               value={openAiApiKey}
               onChange={(e) => setOpenAiApiKey(e.target.value)}
             />

@@ -1,10 +1,31 @@
-import { atom } from "jotai";
+import { create } from "zustand";
 import { GetConfig, SaveConfig } from "~wails/main/App";
 import { repository } from "~wails/models";
 
-export const configAtom = atom(
-  async () => GetConfig(),
-  async (_get, _set, payload: repository.Config) => {
-    return SaveConfig(payload);
-  }
-);
+type ConfigStore = {
+  config: repository.Config | null;
+  fetchConfig: () => Promise<void>;
+  writeConfig: (
+    config: Pick<repository.Config, "NotionApiKey" | "OpenAIApiKey">
+  ) => Promise<void>;
+};
+
+export const useConfigStore = create<ConfigStore>((set, get) => ({
+  config: null,
+
+  fetchConfig: async () => {
+    const config = await GetConfig();
+    set({ config });
+  },
+
+  writeConfig: async (config) => {
+    const newConfig = await SaveConfig(
+      repository.Config.createFrom({
+        ...get().config,
+        ...config,
+      })
+    );
+
+    set({ config: newConfig });
+  },
+}));

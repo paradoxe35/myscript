@@ -30,6 +30,7 @@ func (a *App) GetConfig() *repository.Config {
 }
 
 // Save Config
-func (a *App) SaveConfig(config *repository.Config) {
+func (a *App) SaveConfig(config *repository.Config) *repository.Config {
 	repository.SaveConfig(a.db, config)
+	return a.GetConfig()
 }
