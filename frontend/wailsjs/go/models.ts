@@ -9,6 +9,7 @@ export namespace repository {
 	    // Go type: gorm
 	    DeletedAt: any;
 	    NotionApiKey?: string;
+	    OpenAIApiKey?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -21,6 +22,7 @@ export namespace repository {
 	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
 	        this.NotionApiKey = source["NotionApiKey"];
+	        this.OpenAIApiKey = source["OpenAIApiKey"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -4,4 +4,4 @@ import {repository} from '../models';
 
 export function GetConfig():Promise<repository.Config>;
 
-export function Greet(arg1:string):Promise<string>;
+export function SaveConfig(arg1:repository.Config):Promise<void>;

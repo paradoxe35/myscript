@@ -23,11 +23,15 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "~wails/*": [
+        "./wailsjs/go/*"
       ]
     }
   },
   "include": [
-    "src"
+    "src",
+    "wailsjs/go",
   ],
   "references": [
     {
