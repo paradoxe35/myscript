@@ -5,6 +5,7 @@ go 1.21
 toolchain go1.23.4
 
 require (
+	github.com/jomei/notionapi v1.13.2
 	github.com/wailsapp/wails/v2 v2.9.2
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12

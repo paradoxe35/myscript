@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"myscript/internal/notion"
 	"myscript/internal/repository"
 
+	"github.com/jomei/notionapi"
 	"gorm.io/gorm"
 )
 
@@ -29,8 +31,37 @@ func (a *App) GetConfig() *repository.Config {
 	return repository.GetConfig(a.db)
 }
 
+func (a *App) getNotionClient() *notion.NotionClient {
+	config := a.GetConfig()
+	if config == nil || config.NotionApiKey == nil {
+		return nil
+	}
+
+	return notion.NewClient(*config.NotionApiKey)
+}
+
 // Save Config
 func (a *App) SaveConfig(config *repository.Config) *repository.Config {
 	repository.SaveConfig(a.db, config)
 	return a.GetConfig()
+}
+
+// Get Notion Pages
+func (a *App) GetNotionPages() []notionapi.Object {
+	client := a.getNotionClient()
+	if client == nil {
+		return []notionapi.Object{}
+	}
+
+	return client.GetPages()
+}
+
+// Get Notion Page Blocks
+func (a *App) GetNotionPageBlocks(pageID string) []notionapi.Block {
+	client := a.getNotionClient()
+	if client == nil {
+		return []notionapi.Block{}
+	}
+
+	return client.GetPageBlocks(pageID)
 }
