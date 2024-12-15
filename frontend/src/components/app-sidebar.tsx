@@ -20,10 +20,16 @@ import { useNotionPagesStore } from "@/store/notion-pages";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
 import { useLocalPagesStore } from "@/store/local-pages";
+import { useActivePageStore } from "@/store/active-page";
+import { repository } from "~wails/models";
+import { NotionSimplePage } from "@/types";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
   const notionPagesStore = useNotionPagesStore();
+
+  const activePage = activePageStore.page;
 
   React.useEffect(() => {
     localPagesStore.getPages();
@@ -35,7 +41,28 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const createNewPage = async () => {
     const newPage = await localPagesStore.newPage();
-    console.log(newPage);
+
+    activePageStore.setActivePage({
+      __typename: "local_page",
+      page: newPage,
+      readMode: false,
+    });
+  };
+
+  const onLocalPageClick = (page: repository.Page) => {
+    activePageStore.setActivePage({
+      __typename: "local_page",
+      readMode: false,
+      page,
+    });
+  };
+
+  const onNotionPageClick = (page: NotionSimplePage) => {
+    activePageStore.setActivePage({
+      __typename: "notion_page",
+      readMode: true,
+      page,
+    });
   };
 
   return (
@@ -64,18 +91,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {localPagesStore.pages.map((item) => (
-                <SidebarMenuItem key={item.ID} className="w-full">
-                  <SidebarMenuButton
-                    className={cn(
-                      "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
-                      "whitespace-nowrap text-ellipsis"
-                    )}
-                  >
-                    {item.title}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {localPagesStore.pages.map((item) => {
+                const active =
+                  activePage?.__typename === "local_page" &&
+                  activePage.page.ID === item.ID;
+
+                return (
+                  <SidebarMenuItem key={item.ID} className="w-full">
+                    <SidebarMenuButton
+                      isActive={active}
+                      onClick={() => onLocalPageClick(item)}
+                      className={cn(
+                        "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
+                        "whitespace-nowrap text-ellipsis"
+                      )}
+                    >
+                      {item.title}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -90,18 +125,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {notionPages.map((item) => (
-                    <SidebarMenuItem key={item.id} className="w-full">
-                      <SidebarMenuButton
-                        className={cn(
-                          "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
-                          "whitespace-nowrap text-ellipsis"
-                        )}
-                      >
-                        {item.title}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                  {notionPages.map((item) => {
+                    const active =
+                      activePage?.__typename === "notion_page" &&
+                      activePage.page.id === item.id;
+
+                    return (
+                      <SidebarMenuItem key={item.id} className="w-full">
+                        <SidebarMenuButton
+                          isActive={active}
+                          onClick={() => onNotionPageClick(item)}
+                          className={cn(
+                            "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
+                            "whitespace-nowrap text-ellipsis"
+                          )}
+                        >
+                          {item.title}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
