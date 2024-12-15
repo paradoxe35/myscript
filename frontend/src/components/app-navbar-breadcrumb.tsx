@@ -7,8 +7,7 @@ import {
 import { useActivePageStore } from "@/store/active-page";
 
 export function AppNavbarBreadcrumb() {
-  const activePageStore = useActivePageStore();
-  const activePage = activePageStore.page;
+  const activePage = useActivePageStore((state) => state.page);
 
   return (
     <Breadcrumb>
