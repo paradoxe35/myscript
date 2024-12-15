@@ -1,14 +1,7 @@
 import { EditorJS } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
-import { useNotionPagesStore } from "@/store/notion-pages";
-import { useEffect } from "react";
-import { GetNotionPages } from "~wails/main/App";
 
 export function Content() {
-  useEffect(() => {
-    GetNotionPages().then((pages) => console.log(pages));
-  }, []);
-
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
       <div className="flex justify-center">
