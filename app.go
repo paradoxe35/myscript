@@ -77,3 +77,7 @@ func (a *App) GetLocalPage(id uint) *repository.Page {
 func (a *App) SaveLocalPage(page *repository.Page) *repository.Page {
 	return repository.SavePage(a.db, page)
 }
+
+func (a *App) DeleteLocalPage(id uint) {
+	repository.DeletePage(a.db, id)
+}

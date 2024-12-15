@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { GetLocalPages, SaveLocalPage } from "~wails/main/App";
+import { DeleteLocalPage, GetLocalPages, SaveLocalPage } from "~wails/main/App";
 import { repository } from "~wails/models";
 
 type LocalPagesStore = {
@@ -10,6 +10,7 @@ type LocalPagesStore = {
     title: string,
     page: repository.Page
   ) => Promise<repository.Page>;
+  deletePage: (id: number) => Promise<void>;
 };
 
 export const DEFAULT_PAGE_TITLE = "New Page";
@@ -48,5 +49,12 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
     set({ pages });
 
     return newPage;
+  },
+
+  deletePage: async (id) => {
+    await DeleteLocalPage(id);
+
+    const pages = await GetLocalPages();
+    set({ pages });
   },
 }));

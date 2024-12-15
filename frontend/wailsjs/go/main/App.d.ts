@@ -3,6 +3,8 @@
 import {repository} from '../models';
 import {notionapi} from '../models';
 
+export function DeleteLocalPage(arg1:number):Promise<void>;
+
 export function GetConfig():Promise<repository.Config>;
 
 export function GetLocalPage(arg1:number):Promise<repository.Page>;

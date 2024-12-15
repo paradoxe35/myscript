@@ -30,3 +30,10 @@ func SavePage(db *gorm.DB, page *Page) *Page {
 	db.Save(page)
 	return page
 }
+
+func DeletePage(db *gorm.DB, id uint) {
+	var page Page
+
+	db.First(&page, id)
+	db.Delete(&page)
+}

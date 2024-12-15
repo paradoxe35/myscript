@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Trash, Plus, RotateCw } from "lucide-react";
 
 import { SearchForm } from "@/components/search-form";
 import { SettingsButton } from "@/components/settings-button";
@@ -65,6 +65,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
   };
 
+  const refreshNotionPages = () => {
+    notionPagesStore.getPages();
+  };
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -75,11 +79,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {/* Local pages */}
         <SidebarGroup>
-          <div className="px-0 justify-between group transition cursor-default">
+          <div className="group/local-add px-0 justify-between transition cursor-default">
             <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
 
             <SidebarGroupAction
-              className="opacity-0 group-hover:opacity-100 transition hover:bg-white/10"
+              className="opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
               onClick={createNewPage}
             >
               <Plus />
@@ -95,16 +99,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                 return (
                   <SidebarMenuItem key={item.ID} className="w-full">
-                    <SidebarMenuButton
-                      isActive={active}
-                      onClick={() => onLocalPageClick(item)}
-                      className={cn(
-                        "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
-                        "whitespace-nowrap text-ellipsis"
-                      )}
-                    >
-                      {item.title}
-                    </SidebarMenuButton>
+                    <div className="group/local">
+                      <SidebarMenuButton
+                        isActive={active}
+                        onClick={() => onLocalPageClick(item)}
+                        className={cn(
+                          "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
+                          "whitespace-nowrap text-ellipsis group-hover/local:pr-10"
+                        )}
+                      >
+                        {item.title}
+
+                        <SidebarGroupAction
+                          asChild
+                          className={cn(
+                            "opacity-0 group-hover/local:opacity-100 transition hover:bg-red-500/10",
+                            "my-auto"
+                          )}
+                        >
+                          <a href="#">
+                            <Trash />
+                          </a>
+                        </SidebarGroupAction>
+                      </SidebarMenuButton>
+                    </div>
                   </SidebarMenuItem>
                 );
               })}
@@ -118,7 +136,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Separator />
 
             <SidebarGroup>
-              <SidebarGroupLabel>{"Notion pages"}</SidebarGroupLabel>
+              <div className="group/notion-refresh px-0 justify-between transition cursor-default">
+                <SidebarGroupLabel>{"Notion pages"}</SidebarGroupLabel>
+
+                <SidebarGroupAction
+                  className="opacity-0 group-hover/notion-refresh:opacity-100 transition hover:bg-white/10"
+                  onClick={refreshNotionPages}
+                >
+                  <RotateCw />
+                </SidebarGroupAction>
+              </div>
 
               <SidebarGroupContent>
                 <SidebarMenu>
