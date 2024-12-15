@@ -5,7 +5,7 @@ import { GetNotionPages } from "~wails/main/App";
 
 type NotionPagesStore = {
   pages: Array<NotionPage>;
-  getSimplifiedPages: () => Array<NotionSimplePage>;
+  getSimplifiedPages(): Array<NotionSimplePage>;
   getPages: () => Promise<void>;
 };
 
@@ -15,7 +15,7 @@ export const useNotionPagesStore = create<NotionPagesStore>((set, get) => ({
     const pages = await GetNotionPages();
     set({ pages });
   },
-  getSimplifiedPages: () => {
+  getSimplifiedPages() {
     return get().pages.map((page) => {
       return {
         id: page.id,

@@ -14,45 +14,16 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-// This is sample data.
-const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-  navMain: [
-    {
-      title: "Local pages",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-
-    {
-      title: "Notion pages",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-  ],
-};
+import { useNotionPagesStore } from "@/store/notion-pages";
+import { cn } from "@/lib/utils";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const notionPagesStore = useNotionPagesStore();
+
+  const notionPages = React.useMemo(() => {
+    return notionPagesStore.getSimplifiedPages();
+  }, [notionPagesStore.pages]);
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -61,23 +32,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
+        {/* Local pages */}
+        <SidebarGroup>
+          <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
+          {/* <SidebarGroupContent>
+            <SidebarMenu>
+              {item.items.map((item) => (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={item.isActive}>
+                    <a href={item.url}>{item.title}</a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent> */}
+        </SidebarGroup>
+
+        {/* Notion pages */}
+        {notionPages.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{"Notion pages"}</SidebarGroupLabel>
+
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
+                {notionPages.map((item) => (
+                  <SidebarMenuItem key={item.id} className="w-full">
+                    <SidebarMenuButton
+                      className={cn(
+                        "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
+                        "whitespace-nowrap text-ellipsis"
+                      )}
+                    >
+                      {item.title}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ))}
+        )}
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
