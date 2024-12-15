@@ -75,19 +75,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {/* Local pages */}
         <SidebarGroup>
-          <SidebarMenuButton className="px-0 justify-between group transition">
+          <div className="px-0 justify-between group transition cursor-default">
             <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
 
             <SidebarGroupAction
-              asChild
-              className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-sidebar/60"
+              className="opacity-0 group-hover:opacity-100 transition hover:bg-white/10"
               onClick={createNewPage}
             >
-              <a href="#">
-                <Plus />
-              </a>
+              <Plus />
             </SidebarGroupAction>
-          </SidebarMenuButton>
+          </div>
 
           <SidebarGroupContent>
             <SidebarMenu>
