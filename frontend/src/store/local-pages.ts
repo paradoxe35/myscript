@@ -10,6 +10,10 @@ type LocalPagesStore = {
     title: string,
     page: repository.Page
   ) => Promise<repository.Page>;
+  savePageBlocks: (
+    blocks: Array<any>,
+    page: repository.Page
+  ) => Promise<repository.Page>;
   deletePage: (id: number) => Promise<void>;
 };
 
@@ -42,6 +46,20 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       repository.Page.createFrom({
         ...page,
         title,
+      })
+    );
+
+    const pages = await GetLocalPages();
+    set({ pages });
+
+    return newPage;
+  },
+
+  savePageBlocks: async (blocks, page) => {
+    const newPage = await SaveLocalPage(
+      repository.Page.createFrom({
+        ...page,
+        blocks,
       })
     );
 

@@ -1,22 +1,29 @@
-//@ts-nocheck
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef } from "react";
 import CodeTool from "@editorjs/code";
 import Delimiter from "@editorjs/delimiter";
-import Ejs from "@editorjs/editorjs";
+import Ejs, { EditorConfig, API } from "@editorjs/editorjs";
 import Embed from "@editorjs/embed";
 import Header from "@editorjs/header";
 import InlineCode from "@editorjs/inline-code";
+// @ts-ignore
 import LinkTool from "@editorjs/link";
 import List from "@editorjs/list";
+// @ts-ignore
 import Marker from "@editorjs/marker";
+// @ts-ignore
 import ImageTool from "@editorjs/simple-image";
 import Underline from "@editorjs/underline";
+// @ts-ignore
 import DragDrop from "editorjs-drag-drop";
 import Table from "@editorjs/table";
 
 import "./style.css";
+import { useSyncRef } from "@/hooks/use-sync-ref";
 
-const createEditorJs = (holder: string | HTMLElement = "editorjs") => {
+const createEditorJs = (
+  holder: string | HTMLElement = "editorjs",
+  configuration?: EditorConfig
+) => {
   const editor = new Ejs({
     holder,
     placeholder: "Write something...",
@@ -26,19 +33,16 @@ const createEditorJs = (holder: string | HTMLElement = "editorjs") => {
     },
     tools: {
       header: {
-        // @ts-expect-error
         class: Header,
         inlineToolbar: true,
       },
       table: Table,
       delimiter: Delimiter,
       list: {
-        // @ts-expect-error
         class: List,
         inlineToolbar: true,
       },
       embed: {
-        // @ts-expect-error
         class: Embed,
         config: {
           services: {
@@ -62,36 +66,55 @@ const createEditorJs = (holder: string | HTMLElement = "editorjs") => {
         shortcut: "CMD+SHIFT+M",
       },
     },
+
+    ...(configuration as any),
   });
 
   return editor;
 };
 
-type EditorJSProps = {
+export type EditorJSProps = {
   onReady?: () => void;
-  data?: any;
+  onChange?: (ejs: API, event: any) => void;
+  defaultBlocks?: any[];
 };
 
-// @ts-check
-export function EditorJS(props: EditorJSProps) {
-  const editorEl = useRef<HTMLDivElement>(null);
-  const [editor, setEditor] = useState<Ejs | null>(null);
-  const initialized = useRef(false);
+export { Ejs, type API };
 
-  useEffect(() => {
-    if (!editorEl.current || initialized.current) return;
+export const EditorJS = forwardRef<Ejs, EditorJSProps>(
+  (props: EditorJSProps, ref) => {
+    const editorEl = useRef<HTMLDivElement>(null);
+    const [editor, setEditor] = useState<Ejs | null>(null);
+    const initialized = useRef(false);
 
-    initialized.current = true;
+    const $onChange = useSyncRef(props.onChange);
 
-    const ejs = createEditorJs(editorEl.current);
-    ejs.isReady.then(() => {
-      setEditor(ejs);
-    });
-  }, []);
+    useEffect(() => {
+      if (!editorEl.current || initialized.current) return;
 
-  useEffect(() => {
-    return;
-  }, []);
+      initialized.current = true;
 
-  return <div ref={editorEl} />;
-}
+      const ejs = createEditorJs(editorEl.current, {
+        onChange: $onChange.current,
+      });
+
+      if (ref && typeof ref === "function") {
+        ref(ejs);
+      } else if (ref && typeof ref === "object") {
+        ref.current = ejs;
+      }
+
+      if (ejs.render) {
+        ejs.render({ blocks: props.defaultBlocks || [] });
+      }
+
+      return () => {
+        typeof ejs.destroy === "function" && ejs.destroy();
+      };
+    }, []);
+
+    return <div ref={editorEl} />;
+  }
+);
+
+EditorJS.displayName = "EditorJS";

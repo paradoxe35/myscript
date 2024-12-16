@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { EditorJS } from "@/components/editorjs";
+import { EditorJS, type API } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -13,8 +13,39 @@ export function Content() {
     <div className="flex flex-1 flex-col gap-4 p-4">
       <ContentTitle />
 
-      <EditorJS />
+      {activePage?.__typename === "local_page" && <ContentEditor />}
     </div>
+  );
+}
+
+function ContentEditor() {
+  const activePageStore = useActivePageStore();
+  const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
+
+  const activePage = activePageStore.page;
+  const pageId = activePageStore.getPageId();
+
+  const setBlocksCallback = useMemo(() => {
+    if (activePage?.__typename !== "local_page" || activePage?.readMode) return;
+
+    return debounce(async (editorAPI: API) => {
+      const output = await editorAPI.saver.save().catch(() => ({ blocks: [] }));
+
+      savePageBlocks(output.blocks, activePage.page).then((newPage) => {
+        activePageStore.setActivePage({
+          ...activePage,
+          blocks: output.blocks,
+        });
+      });
+    }, 500);
+  }, [activePage]);
+
+  return (
+    <EditorJS
+      key={pageId}
+      defaultBlocks={activePage?.blocks || []}
+      onChange={setBlocksCallback}
+    />
   );
 }
 
@@ -27,11 +58,7 @@ function ContentTitle() {
   const [title, setTitle] = useState("");
 
   const activePage = activePageStore.page;
-
-  const pageId =
-    activePage?.__typename === "local_page"
-      ? activePage.page.ID
-      : activePage?.page.id;
+  const pageId = activePageStore.getPageId();
 
   // When active page changed, reset the title
   useEffect(() => {

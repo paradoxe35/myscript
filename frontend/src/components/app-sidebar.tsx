@@ -61,6 +61,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       readMode: false,
       page,
     });
+
+    activePageStore.fetchPageBlocks();
   };
 
   const onNotionPageClick = (page: NotionSimplePage) => {
@@ -69,6 +71,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       readMode: true,
       page,
     });
+
+    activePageStore.fetchPageBlocks();
   };
 
   const refreshNotionPages = () => {
@@ -157,7 +161,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           onClick={() => onNotionPageClick(item)}
                           className={cn(
                             "block max-w-full overflow-hidden text-sidebar-foreground/70 font-medium",
-                            "whitespace-nowrap text-ellipsis"
+                            "whitespace-nowrap text-ellipsis leading-3"
                           )}
                         >
                           {item.title}
