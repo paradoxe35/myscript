@@ -45,6 +45,8 @@ function ContentTitle() {
       }
 
       setTitle(activePage?.page.title || "");
+    } else {
+      setTitle("");
     }
   }, [pageId]);
 
@@ -98,8 +100,8 @@ function ContentTitle() {
     <div className="flex justify-center">
       <textarea
         ref={textareaRef}
-        placeholder="New Page"
-        readOnly={activePage?.readMode}
+        placeholder={pageId ? "New Page" : "Select a page or create a new one"}
+        readOnly={activePage?.readMode || !pageId}
         value={title}
         onChange={handleChange}
         rows={1}

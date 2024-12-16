@@ -22,6 +22,7 @@ type ActivePage = NotionActivePage | LocalActivePage;
 type ActivePageStore = {
   page: ActivePage | null;
   setActivePage: (page: ActivePage) => void;
+  unsetActivePage: () => void;
 };
 
 export const useActivePageStore = create(
@@ -31,6 +32,10 @@ export const useActivePageStore = create(
 
       setActivePage: (page: ActivePage) => {
         set({ page });
+      },
+
+      unsetActivePage() {
+        set({ page: null });
       },
     }),
 

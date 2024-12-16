@@ -16,6 +16,12 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useNotionPagesStore } from "@/store/notion-pages";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
@@ -110,15 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       >
                         <span className="align-middle">{item.title}</span>
 
-                        <a
-                          className={cn(
-                            "absolute right-1 top-1 w-5 opacity-0 group-hover/local:opacity-100 cursor-pointer",
-                            "flex aspect-square items-center justify-center rounded-md text-sidebar-foreground",
-                            "ring-sidebar-ring hover:text-sidebar-accent-foreground focus-visible:ring-2 transition hover:bg-red-500/20"
-                          )}
-                        >
-                          <Trash className="text-red-500/80 w-4" />
-                        </a>
+                        <DeletePageButton page={item} />
                       </SidebarMenuButton>
                     </div>
                   </SidebarMenuItem>
@@ -175,5 +173,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
+  );
+}
+
+function DeletePageButton({ page }: { page: repository.Page }) {
+  const activePageStore = useActivePageStore();
+  const deletePage = useLocalPagesStore((state) => state.deletePage);
+
+  const handleDeletePage = async () => {
+    const activePage = activePageStore.page;
+
+    deletePage(page.ID).then(() => {
+      if (
+        activePage?.__typename === "local_page" &&
+        activePage.page.ID === page.ID
+      ) {
+        activePageStore.unsetActivePage();
+      }
+    });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <a
+          className={cn(
+            "absolute right-1 top-1 w-5 opacity-0 group-hover/local:opacity-100 cursor-pointer",
+            "flex aspect-square items-center justify-center rounded-md text-sidebar-foreground",
+            "ring-sidebar-ring hover:text-sidebar-accent-foreground focus-visible:ring-2 transition hover:bg-red-500/20"
+          )}
+        >
+          <Trash className="text-red-500/80 w-4" />
+        </a>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent>
+        <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
+          Delete
+        </DropdownMenuItem>
+        <DropdownMenuItem>Cancel</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
