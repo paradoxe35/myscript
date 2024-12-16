@@ -1,15 +1,18 @@
 import { Button } from "../ui/button";
-import { ZoomIn } from "lucide-react";
+import { Minus, Plus, ZoomIn, ZoomOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { useZoomStore } from "@/store/zoom";
 
 export function ZoomController() {
+  const zoomStore = useZoomStore();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -22,9 +25,36 @@ export function ZoomController() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>Zoom in or out</DropdownMenuLabel>
+        <DropdownMenuLabel
+          onClick={(e) => e.preventDefault()}
+          className="flex items-center gap-2"
+        >
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!zoomStore.canZoomOut()}
+            onClick={zoomStore.zoomOut}
+          >
+            <Minus />
+          </Button>
+
+          <span>{zoomStore.zoom}</span>
+
+          <Button
+            disabled={!zoomStore.canZoomIn()}
+            onClick={zoomStore.zoomIn}
+            variant="outline"
+            size="sm"
+          >
+            <Plus />
+          </Button>
+        </DropdownMenuLabel>
+
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Profile</DropdownMenuItem>
+
+        <DropdownMenuItem onClick={zoomStore.reset} className="justify-center">
+          <span>Reset</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -11,25 +11,40 @@ import { AppHeaderBreadcrumb } from "@/components/app-header/app-header-breadcru
 import { ScriptReaderControllers } from "@/components/app-header/script-reader-controllers";
 import { ZoomController } from "@/components/app-header/zoom-controller";
 import { useActivePageStore } from "@/store/active-page";
+import { useZoomStore } from "@/store/zoom";
+import { useEffect, useLayoutEffect } from "react";
 
 export default function App() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
+    <>
+      <SetZoom />
+      <SidebarProvider>
+        <AppSidebar />
 
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <AppHeaderBreadcrumb />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <AppHeaderBreadcrumb />
 
-          <RightButtonsHeader />
-        </header>
+            <RightButtonsHeader />
+          </header>
 
-        <Content />
-      </SidebarInset>
-    </SidebarProvider>
+          <Content />
+        </SidebarInset>
+      </SidebarProvider>
+    </>
   );
+}
+
+function SetZoom() {
+  const zoomStore = useZoomStore();
+
+  useLayoutEffect(() => {
+    document.body.style.zoom = `${zoomStore.zoom / 100}`;
+  }, [zoomStore.zoom]);
+
+  return null;
 }
 
 function RightButtonsHeader() {
