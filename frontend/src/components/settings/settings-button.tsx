@@ -1,10 +1,9 @@
-import * as React from "react";
 import { Settings, FileMinus2 } from "lucide-react";
 
 import { SidebarMenu, SidebarMenuItem } from "@/components/ui/sidebar";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { SettingsModal } from "./settings-modal";
 
 export function SettingsButton() {

@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Trash, Plus, RotateCw } from "lucide-react";
 
-import { SearchForm } from "@/components/search-form";
-import { SettingsButton } from "@/components/settings-button";
+import { SearchForm } from "@/components/app-sidebar/search-form";
+import { SettingsButton } from "@/components/settings/settings-button";
 import {
   Sidebar,
   SidebarContent,
@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNotionPagesStore } from "@/store/notion-pages";
 import { cn } from "@/lib/utils";
-import { Separator } from "./ui/separator";
+import { Separator } from "../ui/separator";
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useActivePageStore } from "@/store/active-page";
 import { repository } from "~wails/models";

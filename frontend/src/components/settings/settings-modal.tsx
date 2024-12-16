@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { PropsWithChildren, useEffect, useState } from "react";
-import { Separator } from "./ui/separator";
-import { ApiKeyInput } from "./ui/api-key-input";
+import { Separator } from "../ui/separator";
+import { ApiKeyInput } from "../ui/api-key-input";
 import { toast } from "sonner";
 import { useConfigStore } from "@/store/config";
 

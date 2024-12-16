@@ -84,7 +84,6 @@ export { Ejs, type API };
 export const EditorJS = forwardRef<Ejs, EditorJSProps>(
   (props: EditorJSProps, ref) => {
     const editorEl = useRef<HTMLDivElement>(null);
-    const [editor, setEditor] = useState<Ejs | null>(null);
     const initialized = useRef(false);
 
     const $onChange = useSyncRef(props.onChange);
