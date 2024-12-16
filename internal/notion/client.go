@@ -13,12 +13,10 @@ type NotionClient struct {
 }
 
 func NewClient(token string) *NotionClient {
-	cxt := context.Background()
-
 	client := notionapi.NewClient(notionapi.Token(token))
 
 	return &NotionClient{
-		ctx:    cxt,
+		ctx:    context.Background(),
 		Client: client,
 	}
 }

@@ -105,22 +105,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         onClick={() => onLocalPageClick(item)}
                         className={cn(
                           "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
-                          "whitespace-nowrap text-ellipsis group-hover/local:pr-10"
+                          "whitespace-nowrap text-ellipsis group-hover/local:pr-10 leading-3"
                         )}
                       >
-                        {item.title}
+                        <span className="align-middle">{item.title}</span>
 
-                        <SidebarGroupAction
-                          asChild
+                        <a
                           className={cn(
-                            "opacity-0 group-hover/local:opacity-100 transition hover:bg-red-500/10",
-                            "my-auto"
+                            "absolute right-1 top-1 w-5 opacity-0 group-hover/local:opacity-100 cursor-pointer",
+                            "flex aspect-square items-center justify-center rounded-md text-sidebar-foreground",
+                            "ring-sidebar-ring hover:text-sidebar-accent-foreground focus-visible:ring-2 transition hover:bg-red-500/20"
                           )}
                         >
-                          <a href="#">
-                            <Trash />
-                          </a>
-                        </SidebarGroupAction>
+                          <Trash className="text-red-500/80 w-4" />
+                        </a>
                       </SidebarMenuButton>
                     </div>
                   </SidebarMenuItem>
