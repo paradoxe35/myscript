@@ -98,19 +98,17 @@ export const EditorJS = forwardRef<Ejs, EditorJSProps>(
         onChange: $onChange.current,
       });
 
-      if (ref && typeof ref === "function") {
-        ref(ejs);
-      } else if (ref && typeof ref === "object") {
-        ref.current = ejs;
-      }
+      ejs.isReady.then(() => {
+        if (ref && typeof ref === "function") {
+          ref(ejs);
+        } else if (ref && typeof ref === "object") {
+          ref.current = ejs;
+        }
 
-      if (ejs.render) {
-        ejs.render({ blocks: props.defaultBlocks || [] });
-      }
-
-      return () => {
-        typeof ejs.destroy === "function" && ejs.destroy();
-      };
+        if (ejs.render) {
+          ejs.render({ blocks: props.defaultBlocks || [] });
+        }
+      });
     }, []);
 
     return <div ref={editorEl} />;

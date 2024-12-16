@@ -23,7 +23,6 @@ function ContentEditor() {
   const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
 
   const activePage = activePageStore.page;
-  const pageId = activePageStore.getPageId();
 
   const setBlocksCallback = useMemo(() => {
     if (activePage?.__typename !== "local_page" || activePage?.readMode) return;
@@ -42,7 +41,7 @@ function ContentEditor() {
 
   return (
     <EditorJS
-      key={pageId}
+      key={activePageStore.version}
       defaultBlocks={activePage?.blocks || []}
       onChange={setBlocksCallback}
     />

@@ -22,6 +22,7 @@ type ActivePage = NotionActivePage | LocalActivePage;
 
 type ActivePageStore = {
   page: ActivePage | null;
+  version: number;
   getPageId(): number | string | undefined;
   setActivePage: (page: ActivePage) => void;
   unsetActivePage: () => void;
@@ -33,6 +34,8 @@ export const useActivePageStore = create(
     (set, get) => ({
       page: null,
 
+      version: Date.now(),
+
       getPageId() {
         const activePage = get().page;
 
@@ -42,7 +45,16 @@ export const useActivePageStore = create(
       },
 
       setActivePage: (page: ActivePage) => {
-        set({ page });
+        const currentPageId = get().getPageId();
+        const newPageId =
+          page?.__typename === "local_page" ? page.page.ID : page?.page.id;
+
+        let version = get().version;
+        if (newPageId !== currentPageId) {
+          version = Date.now();
+        }
+
+        set({ page, version });
       },
 
       fetchPageBlocks() {
@@ -51,6 +63,7 @@ export const useActivePageStore = create(
         if (activePage?.__typename === "local_page") {
           GetLocalPage(activePage.page.ID).then((localPage) => {
             set({
+              version: Date.now(),
               page: {
                 ...activePage,
                 blocks: localPage.blocks,
@@ -60,6 +73,7 @@ export const useActivePageStore = create(
         } else if (activePage?.__typename === "notion_page") {
           GetNotionPageBlocks(activePage.page.id).then((blocks) => {
             set({
+              version: Math.random(),
               page: {
                 ...activePage,
                 blocks,
