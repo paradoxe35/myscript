@@ -18,7 +18,7 @@ type Cache struct {
 func GetCache(db *gorm.DB, key string) *CacheValue {
 	var cache Cache
 
-	db.First(&cache, key)
+	db.Where("key = ?", key).First(&cache)
 
 	return cache.Value.Data()
 }

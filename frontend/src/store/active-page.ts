@@ -66,18 +66,6 @@ export const useActivePageStore = create(
         const activePage = get().page;
 
         if (activePage?.__typename === "local_page") {
-          const cacheKey = `${activePage?.__typename}:${activePage?.page.ID}`;
-          GetCache(cacheKey).then((cache) => {
-            cache &&
-              set({
-                version: Date.now(),
-                page: {
-                  ...activePage,
-                  blocks: cache.value,
-                },
-              });
-          });
-
           GetLocalPage(activePage.page.ID).then((localPage) => {
             set({
               version: Date.now(),
@@ -86,10 +74,9 @@ export const useActivePageStore = create(
                 blocks: localPage.blocks,
               },
             });
-
-            SaveCache(cacheKey, localPage.blocks);
           });
         } else if (activePage?.__typename === "notion_page") {
+          // use Cache for notion page blocks
           const cacheKey = `${activePage?.__typename}:${activePage?.page.id}`;
 
           GetCache(cacheKey).then((cache) => {
@@ -104,13 +91,15 @@ export const useActivePageStore = create(
           });
 
           GetNotionPageBlocks(activePage.page.id).then((blocks) => {
-            set({
-              version: Date.now(),
-              page: {
-                ...activePage,
-                blocks,
-              },
-            });
+            if (get().getPageId() === activePage?.page.id) {
+              set({
+                version: Date.now(),
+                page: {
+                  ...activePage,
+                  blocks,
+                },
+              });
+            }
 
             SaveCache(cacheKey, blocks);
           });
