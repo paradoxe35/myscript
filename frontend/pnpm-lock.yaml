@@ -74,6 +74,9 @@ importers:
       editorjs-drag-drop:
         specifier: ^1.1.16
         version: 1.1.16
+      editorjs-html:
+        specifier: ^3.4.3
+        version: 3.4.3
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -864,6 +867,9 @@ packages:
 
   editorjs-drag-drop@1.1.16:
     resolution: {integrity: sha512-yOyKZqqZepkdbDQbAw1bZr3mQewkT4a9QgufWW3Aoy1qcTka8uHR01T/dGHqrpyYrF56ykyidPyp0LX79LEHHQ==}
+
+  editorjs-html@3.4.3:
+    resolution: {integrity: sha512-HMqQ3BCE98uhSpJsbfH0c3CoMctUMCHlap2Eq/7/VjaHas+g3IJqyf+ERtMByoQCzvcW22ISYaZEeE7rGkd8Xg==}
 
   electron-to-chromium@1.5.72:
     resolution: {integrity: sha512-ZpSAUOZ2Izby7qnZluSrAlGgGQzucmFbN0n64dYzocYxnxV5ufurpj3VgEe4cUp7ir9LmeLxNYo8bVnlM8bQHw==}
@@ -2304,6 +2310,8 @@ snapshots:
   eastasianwidth@0.2.0: {}
 
   editorjs-drag-drop@1.1.16: {}
+
+  editorjs-html@3.4.3: {}
 
   electron-to-chromium@1.5.72: {}
 

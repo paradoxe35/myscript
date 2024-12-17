@@ -12,14 +12,14 @@ import {
 type NotionActivePage = {
   __typename: "notion_page";
   page: NotionSimplePage;
-  readMode: true;
+  viewOnly: true;
   blocks?: Array<any>;
 };
 
 type LocalActivePage = {
   __typename: "local_page";
   page: repository.Page;
-  readMode: boolean;
+  viewOnly: false;
   blocks?: Array<any>;
 };
 
@@ -27,11 +27,13 @@ type ActivePage = NotionActivePage | LocalActivePage;
 
 type ActivePageStore = {
   page: ActivePage | null;
+  readMode: boolean;
   version: number;
   getPageId(): number | string | undefined;
   setActivePage: (page: ActivePage) => void;
   unsetActivePage: () => void;
   fetchPageBlocks(): void;
+  toggleReadMode: () => void;
 };
 
 export const useActivePageStore = create(
@@ -40,6 +42,8 @@ export const useActivePageStore = create(
       page: null,
 
       version: Date.now(),
+
+      readMode: false,
 
       getPageId() {
         const activePage = get().page;
@@ -60,6 +64,13 @@ export const useActivePageStore = create(
         }
 
         set({ page, version });
+      },
+
+      toggleReadMode() {
+        const readMode = get().readMode;
+        set({ readMode: !readMode });
+
+        return !readMode;
       },
 
       fetchPageBlocks() {

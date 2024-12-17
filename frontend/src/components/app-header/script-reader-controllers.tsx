@@ -10,10 +10,14 @@ import {
 } from "../ui/tooltip";
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
-  const activePage = useActivePageStore((state) => state.page);
+  const activePageStore = useActivePageStore();
+  const activePage = activePageStore.page;
+
+  const startReadMode = () => {
+    activePageStore.toggleReadMode();
+  };
 
   if (!activePage) return null;
-
   return (
     <div {...props} className={cn("flex gap-2 items-center", props.className)}>
       <TooltipProvider>

@@ -22,7 +22,7 @@ export function Content() {
   }, [zoomStore.zoom]);
 
   const canEdit =
-    activePage?.__typename === "local_page" && !activePage?.readMode;
+    activePage?.__typename === "local_page" && !activePage?.viewOnly;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
@@ -41,7 +41,7 @@ function ContentEditor() {
   const activePage = activePageStore.page;
 
   const setBlocksCallback = useMemo(() => {
-    if (activePage?.__typename !== "local_page" || activePage?.readMode) return;
+    if (activePage?.__typename !== "local_page" || activePage?.viewOnly) return;
 
     return debounce(async (editorAPI: API) => {
       const output = await editorAPI.saver.save().catch(() => ({ blocks: [] }));
@@ -115,7 +115,7 @@ function ContentTitle() {
 
   // Save page title when input change
   const setTitleCallback = useMemo(() => {
-    if (activePage?.__typename !== "local_page" || activePage?.readMode) return;
+    if (activePage?.__typename !== "local_page" || activePage?.viewOnly) return;
 
     return debounce((title: string) => {
       title = title.trim() === "" ? DEFAULT_PAGE_TITLE : title;
@@ -131,7 +131,7 @@ function ContentTitle() {
   }, [activePage]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (activePage?.readMode) return;
+    if (activePage?.viewOnly) return;
 
     const newTitle = e.target.value;
     setTitle(newTitle);
@@ -143,7 +143,7 @@ function ContentTitle() {
       <textarea
         ref={textareaRef}
         placeholder={pageId ? "New Page" : "Select a page or create a new one"}
-        readOnly={activePage?.readMode || !pageId}
+        readOnly={activePage?.viewOnly || !pageId}
         value={title}
         onChange={handleChange}
         rows={1}

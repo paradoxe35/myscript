@@ -1,7 +1,10 @@
+import edjsHTML from "editorjs-html";
 import { convertNotionToHtml, wrapLists } from "@/lib/notion-to-html";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useMemo } from "react";
+
+const edjsParser = edjsHTML();
 
 export function ContentRead() {
   const activePage = useActivePageStore((state) => state.page);
@@ -14,7 +17,7 @@ export function ContentRead() {
         return wrapLists(convertNotionToHtml(blocks));
 
       case "local_page":
-        return "";
+        return edjsParser.parse({ blocks });
     }
 
     return "";

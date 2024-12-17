@@ -51,14 +51,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     activePageStore.setActivePage({
       __typename: "local_page",
       page: newPage,
-      readMode: false,
+      viewOnly: false,
     });
   };
 
   const onLocalPageClick = (page: repository.Page) => {
     activePageStore.setActivePage({
       __typename: "local_page",
-      readMode: false,
+      viewOnly: false,
       page,
     });
 
@@ -68,7 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const onNotionPageClick = (page: NotionSimplePage) => {
     activePageStore.setActivePage({
       __typename: "notion_page",
-      readMode: true,
+      viewOnly: true,
       page,
     });
 
