@@ -34,6 +34,10 @@ const createEditorJs = (
     tools: {
       header: {
         class: Header,
+        config: {
+          placeholder: "Enter a header",
+          defaultLevel: 3,
+        },
         inlineToolbar: true,
       },
       table: Table,

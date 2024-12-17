@@ -17,7 +17,8 @@ export function ContentRead() {
         return wrapLists(convertNotionToHtml(blocks));
 
       case "local_page":
-        return edjsParser.parse({ blocks });
+        const result = edjsParser.parseStrict({ blocks });
+        return Array.isArray(result) ? result.join("\n") : result.message;
     }
 
     return "";
