@@ -16,7 +16,7 @@ type ZoomStore = {
   canZoomOut: () => boolean;
 };
 
-export const useZoomStore = create(
+export const useContentZoomStore = create(
   persist<ZoomStore>(
     (set, get) => ({
       zoom: DEFAULT_ZOOM,
@@ -49,7 +49,7 @@ export const useZoomStore = create(
     }),
 
     {
-      name: "zoom",
+      name: "content-zoom",
       storage: createJSONStorage(() => localStorage),
     }
   )

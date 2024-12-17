@@ -2,15 +2,26 @@ import debounce from "lodash/debounce";
 import { EditorJS, type API } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
+import { useContentZoomStore } from "@/store/content-zoom";
 
 export function Content() {
+  const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
   const activePage = activePageStore.page;
 
+  const zoomStore = useContentZoomStore();
+
+  useLayoutEffect(() => {
+    if ($content.current) {
+      // @ts-ignore
+      $content.current.style.zoom = `${zoomStore.zoom / 100}`;
+    }
+  }, [zoomStore.zoom]);
+
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
       <ContentTitle />
 
       {activePage?.__typename === "local_page" && <ContentEditor />}

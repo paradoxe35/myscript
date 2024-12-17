@@ -1,5 +1,5 @@
 import { Button } from "../ui/button";
-import { Minus, Plus, ZoomIn, ZoomOut } from "lucide-react";
+import { Minus, Plus, ZoomIn } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,10 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { useZoomStore } from "@/store/zoom";
+import { useContentZoomStore } from "@/store/content-zoom";
 
 export function ZoomController() {
-  const zoomStore = useZoomStore();
+  const zoomStore = useContentZoomStore();
 
   return (
     <DropdownMenu>
@@ -24,6 +24,7 @@ export function ZoomController() {
           <ZoomIn />
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent>
         <DropdownMenuLabel
           onClick={(e) => e.preventDefault()}
