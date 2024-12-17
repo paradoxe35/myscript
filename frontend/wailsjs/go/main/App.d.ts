@@ -3,7 +3,11 @@
 import {repository} from '../models';
 import {notionapi} from '../models';
 
+export function DeleteCache(arg1:string):Promise<void>;
+
 export function DeleteLocalPage(arg1:number):Promise<void>;
+
+export function GetCache(arg1:string):Promise<repository.CacheValue>;
 
 export function GetConfig():Promise<repository.Config>;
 
@@ -14,6 +18,8 @@ export function GetLocalPages():Promise<Array<repository.Page>>;
 export function GetNotionPageBlocks(arg1:string):Promise<Array<notionapi.Block>>;
 
 export function GetNotionPages():Promise<Array<notionapi.Object>>;
+
+export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
 
