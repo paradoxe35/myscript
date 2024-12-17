@@ -187,7 +187,10 @@ function DeletePageButton({ page }: { page: repository.Page }) {
   const activePageStore = useActivePageStore();
   const deletePage = useLocalPagesStore((state) => state.deletePage);
 
-  const handleDeletePage = async () => {
+  const handleDeletePage = async (
+    e: React.MouseEvent<HTMLDivElement, MouseEvent>
+  ) => {
+    e.stopPropagation();
     const activePage = activePageStore.page;
 
     deletePage(page.ID).then(() => {

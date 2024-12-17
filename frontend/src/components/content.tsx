@@ -29,11 +29,22 @@ export function Content() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
       <ContentTitle />
+      <ResetScroll />
 
       {canEdit && <ContentEditor />}
       {!canEdit && <ContentRead />}
     </div>
   );
+}
+
+function ResetScroll() {
+  const activePageStore = useActivePageStore();
+
+  useEffect(() => {
+    document.body.scrollTo({ top: 0, behavior: "instant" });
+  }, [activePageStore.getPageId()]);
+
+  return null;
 }
 
 function ContentEditor() {
