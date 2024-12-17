@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { Button } from "../ui/button";
-import { CircleStop, Play } from "lucide-react";
+import { BookOpenText, Play } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -30,10 +30,10 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
               onClick={startReadMode}
               className={cn(
                 "bg-sidebar-accent hover:bg-sidebar-accent/40",
-                readMode && "bg-sidebar-accent/40 hover:bg-sidebar-accent/60"
+                readMode && "bg-red-300/40 hover:bg-red-300/60"
               )}
             >
-              {readMode ? <CircleStop /> : <Play />}
+              {readMode ? <BookOpenText /> : <Play />}
             </Button>
           </TooltipTrigger>
 
