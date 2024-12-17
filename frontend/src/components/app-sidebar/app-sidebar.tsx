@@ -77,6 +77,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const refreshNotionPages = () => {
     notionPagesStore.getPages();
+    if (activePage?.__typename === "notion_page") {
+      activePageStore.fetchPageBlocks();
+    }
   };
 
   return (

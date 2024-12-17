@@ -12,6 +12,11 @@ type NotionClient struct {
 	Client *notionapi.Client
 }
 
+type NotionBlock struct {
+	Block    notionapi.Block
+	Children []NotionBlock
+}
+
 func NewClient(token string) *NotionClient {
 	client := notionapi.NewClient(notionapi.Token(token))
 
@@ -34,7 +39,8 @@ func (nc *NotionClient) GetPages() []notionapi.Object {
 	return result.Results
 }
 
-func (nc *NotionClient) GetPageBlocks(pageID string) []notionapi.Block {
+func (nc *NotionClient) fetchBlocks(pageID string) []NotionBlock {
+	blocks := []NotionBlock{}
 	result, err := nc.Client.Block.GetChildren(
 		nc.ctx,
 		notionapi.BlockID(pageID),
@@ -43,8 +49,23 @@ func (nc *NotionClient) GetPageBlocks(pageID string) []notionapi.Block {
 
 	if err != nil {
 		log.Printf("Error getting Notion page blocks: %s", err)
-		return []notionapi.Block{}
+		return blocks
 	}
 
-	return result.Results
+	for _, block := range result.Results {
+		newBlock := &NotionBlock{Block: block, Children: []NotionBlock{}}
+
+		if block.GetHasChildren() {
+			log.Println("has children", string(block.GetID().String()))
+			newBlock.Children = nc.fetchBlocks(string(block.GetID().String()))
+		}
+
+		blocks = append(blocks, *newBlock)
+	}
+
+	return blocks
+}
+
+func (nc *NotionClient) GetPageBlocks(pageID string) []NotionBlock {
+	return nc.fetchBlocks(pageID)
 }

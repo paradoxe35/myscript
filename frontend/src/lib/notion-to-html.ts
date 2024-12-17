@@ -1,4 +1,8 @@
-interface NotionBlock {
+import { notion } from "~wails/models";
+
+type NotionBlock = Omit<notion.NotionBlock, "Block"> & { Block: Block };
+
+interface Block {
   object: string;
   id: string;
   type: string;
@@ -44,57 +48,66 @@ export function wrapLists(html: string): string {
   return html;
 }
 
-function convertBlockToHtml(block: NotionBlock): string {
-  const blockType = block.type;
-  const content = block[blockType];
+function convertBlockToHtml(notionBlock: NotionBlock): string {
+  const blockType = notionBlock.Block.type;
+  const content = notionBlock.Block[blockType];
+
+  const rich_text = recursiveBlockToHtml(content.rich_text, notionBlock);
 
   switch (blockType) {
     case "heading_1":
-      return `<h1>${convertRichTextToHtml(content.rich_text)}</h1>`;
+      return `<h1>${rich_text}</h1>`;
     case "heading_2":
-      return `<h2>${convertRichTextToHtml(content.rich_text)}</h2>`;
+      return `<h2>${rich_text}</h2>`;
     case "heading_3":
-      return `<h3>${convertRichTextToHtml(content.rich_text)}</h3>`;
+      return `<h3>${rich_text}</h3>`;
     case "paragraph":
-      return `<p>${convertRichTextToHtml(content.rich_text)}</p>`;
+      return `<p>${rich_text}</p>`;
     case "bulleted_list_item":
-      return `<li>${convertRichTextToHtml(content.rich_text)}</li>`;
+      return `<li>${rich_text}</li>`;
     case "numbered_list_item":
-      return `<li>${convertRichTextToHtml(content.rich_text)}</li>`;
+      return `<li>${rich_text}</li>`;
     case "to_do":
       const checked = content.checked ? " checked" : "";
       return `<div class="todo-item">
           <input type="checkbox"${checked} disabled>
-          <span>${convertRichTextToHtml(content.rich_text)}</span>
+          <span>${rich_text}</span>
         </div>`;
     case "code":
-      return `<pre><code class="language-${
-        content.language
-      }">${convertRichTextToHtml(content.rich_text)}</code></pre>`;
+      return `<pre><code class="language-${content.language}">${rich_text}</code></pre>`;
     case "quote":
-      return `<blockquote>${convertRichTextToHtml(
-        content.rich_text
-      )}</blockquote>`;
+      return `<blockquote>${rich_text}</blockquote>`;
     case "equation":
-      return `<div class="equation">${content.expression}</div>`;
+      return `<div class="equation">${content.expression || rich_text}</div>`;
     case "callout":
-      return `<div class="callout">${convertRichTextToHtml(
-        content.rich_text
-      )}</div>`;
+      return `<div class="callout p-4 bg-sidebar-accent rounded-md">${rich_text}</div>`;
     case "divider":
       return "<hr>";
     case "toggle":
       return `<details>
-          <summary>${convertRichTextToHtml(content.rich_text)}</summary>
-          ${
-            block.has_children
-              ? "<!-- Child blocks should be processed here -->"
-              : ""
-          }
+          <summary>${rich_text}</summary>
         </details>`;
     default:
       return `<!-- Unsupported block type: ${blockType} -->`;
   }
+}
+
+function recursiveBlockToHtml(
+  richText: RichText[] | string | undefined,
+  notionBlock: NotionBlock
+): string {
+  let text =
+    typeof richText === "string"
+      ? richText
+      : convertRichTextToHtml(richText || []);
+
+  if (notionBlock.Children.length > 0) {
+    text += `<div class="child-blocks">`;
+    text += convertNotionToHtml(notionBlock.Children);
+    text += "</div>";
+  }
+
+  return text;
 }
 
 function convertRichTextToHtml(richText: RichText[]): string {
