@@ -10,8 +10,6 @@ import { ContentRead } from "./content-read";
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
-  const activePage = activePageStore.page;
-
   const zoomStore = useContentZoomStore();
 
   useLayoutEffect(() => {
@@ -21,10 +19,7 @@ export function Content() {
     }
   }, [zoomStore.zoom]);
 
-  const canEdit =
-    activePage?.__typename === "local_page" &&
-    !activePage?.viewOnly &&
-    !activePageStore.readMode;
+  const canEdit = activePageStore.canEdit();
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
@@ -41,7 +36,9 @@ function ResetScroll() {
   const activePageStore = useActivePageStore();
 
   useEffect(() => {
-    document.body.scrollTo({ top: 0, behavior: "instant" });
+    requestAnimationFrame(() => {
+      document.body.scrollTo({ top: 0, behavior: "instant" });
+    });
   }, [activePageStore.getPageId()]);
 
   return null;
