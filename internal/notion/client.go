@@ -56,7 +56,6 @@ func (nc *NotionClient) fetchBlocks(pageID string) []NotionBlock {
 		newBlock := &NotionBlock{Block: block, Children: []NotionBlock{}}
 
 		if block.GetHasChildren() {
-			log.Println("has children", string(block.GetID().String()))
 			newBlock.Children = nc.fetchBlocks(string(block.GetID().String()))
 		}
 
