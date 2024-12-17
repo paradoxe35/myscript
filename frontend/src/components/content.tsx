@@ -5,6 +5,7 @@ import { useActivePageStore } from "@/store/active-page";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
 import { useContentZoomStore } from "@/store/content-zoom";
+import { ContentRead } from "./content-read";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
@@ -20,11 +21,15 @@ export function Content() {
     }
   }, [zoomStore.zoom]);
 
+  const canEdit =
+    activePage?.__typename === "local_page" && !activePage?.readMode;
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
       <ContentTitle />
 
-      {activePage?.__typename === "local_page" && <ContentEditor />}
+      {canEdit && <ContentEditor />}
+      {!canEdit && <ContentRead />}
     </div>
   );
 }
