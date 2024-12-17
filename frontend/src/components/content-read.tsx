@@ -24,11 +24,12 @@ export function ContentRead() {
   }, [activePage]);
 
   return (
-    <div className="flex justify-center">
-      <div
-        className={cn("prose max-w-[650px] dark:prose-invert")}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </div>
+    <div
+      className={cn(
+        "w-full block mx-auto",
+        "prose max-w-[650px] dark:prose-invert"
+      )}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }

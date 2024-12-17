@@ -22,7 +22,9 @@ export function Content() {
   }, [zoomStore.zoom]);
 
   const canEdit =
-    activePage?.__typename === "local_page" && !activePage?.viewOnly;
+    activePage?.__typename === "local_page" &&
+    !activePage?.viewOnly &&
+    !activePageStore.readMode;
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
@@ -143,7 +145,7 @@ function ContentTitle() {
       <textarea
         ref={textareaRef}
         placeholder={pageId ? "New Page" : "Select a page or create a new one"}
-        readOnly={activePage?.viewOnly || !pageId}
+        readOnly={activePage?.viewOnly || activePageStore.readMode || !pageId}
         value={title}
         onChange={handleChange}
         rows={1}

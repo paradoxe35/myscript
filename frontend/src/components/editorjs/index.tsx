@@ -110,7 +110,12 @@ export const EditorJS = forwardRef<Ejs, EditorJSProps>(
       });
     }, []);
 
-    return <div ref={editorEl} />;
+    return (
+      <div
+        className="prose max-w-[650px] dark:prose-invert w-full block mx-auto"
+        ref={editorEl}
+      />
+    );
   }
 );
 

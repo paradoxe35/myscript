@@ -55,15 +55,17 @@ export const useActivePageStore = create(
 
       setActivePage: (page: ActivePage) => {
         const currentPageId = get().getPageId();
+        let readMode = get().readMode;
         const newPageId =
           page?.__typename === "local_page" ? page.page.ID : page?.page.id;
 
         let version = get().version;
         if (newPageId !== currentPageId) {
           version = Date.now();
+          readMode = false;
         }
 
-        set({ page, version });
+        set({ page, version, readMode });
       },
 
       toggleReadMode() {
