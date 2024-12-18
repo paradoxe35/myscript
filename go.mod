@@ -5,8 +5,6 @@ go 1.23
 toolchain go1.23.4
 
 require (
-	github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20241217171547-f897eb767041
-	github.com/go-audio/wav v1.1.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/wailsapp/wails/v2 v2.9.2
 	gorm.io/datatypes v1.2.5
@@ -17,8 +15,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
-	github.com/go-audio/audio v1.0.0 // indirect
-	github.com/go-audio/riff v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
