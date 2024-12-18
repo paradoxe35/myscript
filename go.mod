@@ -1,10 +1,12 @@
 module myscript
 
-go 1.21
+go 1.23
 
 toolchain go1.23.4
 
 require (
+	github.com/ggerganov/whisper.cpp/bindings/go v0.0.0-20241217171547-f897eb767041
+	github.com/go-audio/wav v1.1.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/wailsapp/wails/v2 v2.9.2
 	gorm.io/datatypes v1.2.5
@@ -15,6 +17,8 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
+	github.com/go-audio/audio v1.0.0 // indirect
+	github.com/go-audio/riff v1.0.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -33,17 +37,18 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.38.1 // indirect
+	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tkrajina/go-reflector v0.5.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wailsapp/go-webview2 v1.0.16 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
-	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/net v0.25.0 // indirect
-	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 )
