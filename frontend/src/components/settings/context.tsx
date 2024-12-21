@@ -65,6 +65,11 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, [state.WhisperSource]);
 
   const handleSave = useCallback(() => {
+    if (state.WhisperSource === "openai" && !state.OpenAIApiKey) {
+      toast.error("OpenAI API key is required");
+      return;
+    }
+
     configStore.writeConfig(state).then(() => {
       toast.success("Settings saved successfully!");
     });
