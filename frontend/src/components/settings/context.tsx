@@ -6,8 +6,10 @@ import {
   useContext,
   useEffect,
   useReducer,
+  useState,
 } from "react";
 import { toast } from "sonner";
+import { GetBestWhisperModel } from "~wails/main/App";
 import { repository } from "~wails/models";
 
 export type WhisperSource = "local" | "openai";
@@ -18,6 +20,7 @@ type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
 
 export type SettingsContextValue = {
   state: SettingsState;
+  bestWhisperModel: string | undefined;
   dispatch: React.Dispatch<Partial<SettingsState>>;
   handleSave: () => void;
 };
@@ -33,6 +36,7 @@ function reducer(state: SettingsState, action: Partial<SettingsState>) {
 
 export function SettingsProvider({ children }: React.PropsWithChildren) {
   const [state, dispatch] = useReducer(reducer, { WhisperSource: "local" });
+  const [bestWhisperModel, setBestWhisperModel] = useState<string>();
 
   const configStore = useConfigStore();
 
@@ -41,15 +45,20 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    const config = configStore.config;
+    const config = configStore.config as SettingsState;
 
     if (config) {
-      dispatch({
-        ...(config as any),
-        WhisperSource: config.WhisperSource || "local",
-      });
+      dispatch(config);
     }
   }, [configStore.config]);
+
+  useEffect(() => {
+    if (state.WhisperSource === "local") {
+      GetBestWhisperModel().then((bestWhisperModel) => {
+        setBestWhisperModel(bestWhisperModel);
+      });
+    }
+  }, [state.WhisperSource]);
 
   const handleSave = useCallback(() => {
     configStore.writeConfig(state).then(() => {
@@ -58,7 +67,9 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, [state]);
 
   return (
-    <SettingsContext.Provider value={{ state, dispatch, handleSave }}>
+    <SettingsContext.Provider
+      value={{ state, dispatch, handleSave, bestWhisperModel }}
+    >
       {children}
     </SettingsContext.Provider>
   );

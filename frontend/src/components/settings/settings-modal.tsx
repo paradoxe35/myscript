@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useState } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
 import { useSettings, WhisperSource } from "./context";
@@ -22,6 +22,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { LOCAL_WHISPER_MODELS } from "@/lib/whisper";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
+import { Eye, EyeOff } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
 
 export function SettingsModal(props: PropsWithChildren) {
   const { state, dispatch, handleSave } = useSettings();
@@ -70,7 +91,108 @@ export function SettingsModal(props: PropsWithChildren) {
 }
 
 function LocalWhisperInputs() {
-  return <></>;
+  const { state, dispatch, bestWhisperModel } = useSettings();
+
+  return (
+    <>
+      <div className="flex flex-col gap-3 relative">
+        <Label className="text-xs text-white/70">{"Local Whisper Model"}</Label>
+
+        <Select
+          value={state.LocalWhisperModel || bestWhisperModel}
+          onValueChange={(value: string) => {
+            dispatch({ LocalWhisperModel: value });
+          }}
+        >
+          <SelectTrigger className="w-[190px]">
+            <SelectValue placeholder="Select a model" />
+          </SelectTrigger>
+
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Models</SelectLabel>
+              {LOCAL_WHISPER_MODELS.map((item) => {
+                return (
+                  <SelectItem key={item.name} value={item.name}>
+                    {item.name}
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-xs text-white/50">
+        Best model based on available resources: <b>{bestWhisperModel}</b>
+      </p>
+
+      <Separator />
+
+      <ModelsRamRequirements />
+
+      <Separator />
+
+      <p className="text-xs text-white/50">
+        <b>GPU acceleration:</b> This feature is currently not supported.
+      </p>
+    </>
+  );
+}
+
+function ModelsRamRequirements() {
+  return (
+    <>
+      <p className="text-xs text-white/50 flex items-center gap-1">
+        Here are the available models and their RAM requirements{" "}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              {/* <EyeOff className="h-4 w-4" /> */}
+              <Eye className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            <Table>
+              <TableHeader>
+                <TableRow className="text-xs text-white/50">
+                  <TableHead>Model</TableHead>
+                  <TableHead>RAM (GB)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {LOCAL_WHISPER_MODELS.map((item) => {
+                  return (
+                    <TableRow key={item.name}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.requiredRAM} GB</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </p>
+
+      {/* <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+        <p className="text-xs text-white/50 flex items-center">
+          Here are the available models and their RAM requirements{" "}
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm">
+              {isOpen ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+        </p>
+
+        <CollapsibleContent className="space-y-2"></CollapsibleContent>
+      </Collapsible> */}
+    </>
+  );
 }
 
 function OpenAIApiKeyInput() {

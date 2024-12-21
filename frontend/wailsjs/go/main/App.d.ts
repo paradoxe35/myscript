@@ -8,6 +8,8 @@ export function DeleteCache(arg1:string):Promise<void>;
 
 export function DeleteLocalPage(arg1:number):Promise<void>;
 
+export function GetBestWhisperModel():Promise<string>;
+
 export function GetCache(arg1:string):Promise<repository.CacheValue>;
 
 export function GetConfig():Promise<repository.Config>;

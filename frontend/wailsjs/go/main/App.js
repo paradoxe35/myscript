@@ -10,6 +10,10 @@ export function DeleteLocalPage(arg1) {
   return window['go']['main']['App']['DeleteLocalPage'](arg1);
 }
 
+export function GetBestWhisperModel() {
+  return window['go']['main']['App']['GetBestWhisperModel']();
+}
+
 export function GetCache(arg1) {
   return window['go']['main']['App']['GetCache'](arg1);
 }
