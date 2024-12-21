@@ -1,3 +1,4 @@
+import { WithoutRepositoryBaseFields } from "@/types";
 import { create } from "zustand";
 import { GetConfig, SaveConfig } from "~wails/main/App";
 import { repository } from "~wails/models";
@@ -6,7 +7,7 @@ type ConfigStore = {
   config: repository.Config | null;
   fetchConfig: () => Promise<void>;
   writeConfig: (
-    config: Pick<repository.Config, "NotionApiKey" | "OpenAIApiKey">
+    config: WithoutRepositoryBaseFields<repository.Config>
   ) => Promise<void>;
 };
 

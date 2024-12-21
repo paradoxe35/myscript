@@ -103,6 +103,9 @@ export namespace repository {
 	    DeletedAt: any;
 	    NotionApiKey?: string;
 	    OpenAIApiKey?: string;
+	    WhisperSource: string;
+	    LocalWhisperModel?: string;
+	    LocalWhisperGPU?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -116,6 +119,9 @@ export namespace repository {
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
 	        this.NotionApiKey = source["NotionApiKey"];
 	        this.OpenAIApiKey = source["OpenAIApiKey"];
+	        this.WhisperSource = source["WhisperSource"];
+	        this.LocalWhisperModel = source["LocalWhisperModel"];
+	        this.LocalWhisperGPU = source["LocalWhisperGPU"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -3,6 +3,7 @@
         "assetserver",
         "Colour",
         "datatypes",
+        "gorm",
         "myscript",
         "notionapi"
     ]

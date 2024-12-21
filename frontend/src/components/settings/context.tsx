@@ -10,14 +10,11 @@ import {
 import { toast } from "sonner";
 import { repository } from "~wails/models";
 
-type SettingsState = WithoutRepositoryBaseFields<repository.Config>;
+export type WhisperSource = "local" | "openai";
 
-function reducer(state: SettingsState, action: Partial<SettingsState>) {
-  return {
-    ...state,
-    ...action,
-  };
-}
+type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
+  WhisperSource: WhisperSource;
+};
 
 export type SettingsContextValue = {
   state: SettingsState;
@@ -27,8 +24,15 @@ export type SettingsContextValue = {
 
 const SettingsContext = createContext<SettingsContextValue>({} as any);
 
+function reducer(state: SettingsState, action: Partial<SettingsState>) {
+  return {
+    ...state,
+    ...action,
+  };
+}
+
 export function SettingsProvider({ children }: React.PropsWithChildren) {
-  const [state, dispatch] = useReducer(reducer, {});
+  const [state, dispatch] = useReducer(reducer, { WhisperSource: "local" });
 
   const configStore = useConfigStore();
 
@@ -41,21 +45,16 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
 
     if (config) {
       dispatch({
-        NotionApiKey: config.NotionApiKey || "",
-        OpenAIApiKey: config.OpenAIApiKey || "",
+        ...(config as any),
+        WhisperSource: config.WhisperSource || "local",
       });
     }
   }, [configStore.config]);
 
   const handleSave = useCallback(() => {
-    configStore
-      .writeConfig({
-        NotionApiKey: state.NotionApiKey,
-        OpenAIApiKey: state.OpenAIApiKey,
-      })
-      .then(() => {
-        toast.success("Settings saved successfully!");
-      });
+    configStore.writeConfig(state).then(() => {
+      toast.success("Settings saved successfully!");
+    });
   }, [state]);
 
   return (

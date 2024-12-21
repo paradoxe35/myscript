@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { PropsWithChildren } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
-import { useSettings } from "./context";
+import { useSettings, WhisperSource } from "./context";
 import {
   Select,
   SelectContent,
@@ -37,7 +37,7 @@ export function SettingsModal(props: PropsWithChildren) {
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex flex-col gap-4">
-            <Label htmlFor="name">Notion API Key</Label>
+            <Label>Notion API Key</Label>
             <ApiKeyInput
               className="col-span-3"
               tabIndex={-1}
@@ -49,9 +49,14 @@ export function SettingsModal(props: PropsWithChildren) {
           <Separator />
 
           <div className="flex flex-col gap-4 relative">
-            <Label htmlFor="name">Speech Recognition (Whisper)</Label>
+            <Label>Speech Recognition (Whisper)</Label>
             <SelectSpeechSource />
           </div>
+
+          <Separator />
+
+          {state.WhisperSource === "local" && <LocalWhisperInputs />}
+          {state.WhisperSource === "openai" && <OpenAIApiKeyInput />}
         </div>
 
         <DialogFooter>
@@ -65,27 +70,38 @@ export function SettingsModal(props: PropsWithChildren) {
 }
 
 function LocalWhisperInputs() {
-  return <div></div>;
+  return <></>;
 }
 
 function OpenAIApiKeyInput() {
   const { state, dispatch } = useSettings();
 
   return (
-    <ApiKeyInput
-      className="col-span-3"
-      tabIndex={-1}
-      value={state.OpenAIApiKey}
-      onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
-    />
+    <div className="flex flex-col gap-3 relative">
+      <Label className="text-xs text-white/50">OpenAI API Key</Label>
+
+      <ApiKeyInput
+        className="col-span-3"
+        tabIndex={-1}
+        value={state.OpenAIApiKey}
+        onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
+      />
+    </div>
   );
 }
 
 function SelectSpeechSource() {
+  const { state, dispatch } = useSettings();
+
   return (
-    <Select>
-      <SelectTrigger className="w-[190px]" value="local">
-        <SelectValue placeholder="Select a fruit" />
+    <Select
+      value={state.WhisperSource}
+      onValueChange={(value: WhisperSource) => {
+        dispatch({ WhisperSource: value });
+      }}
+    >
+      <SelectTrigger className="w-[190px]">
+        <SelectValue placeholder="Select a source" />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>

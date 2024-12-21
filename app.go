@@ -4,6 +4,8 @@ import (
 	"context"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
+	"myscript/internal/utils"
+	"myscript/internal/whisper"
 
 	"github.com/jomei/notionapi"
 	"gorm.io/gorm"
@@ -26,10 +28,18 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
-// Get Config
+// --- Config ---
+
 func (a *App) GetConfig() *repository.Config {
 	return repository.GetConfig(a.db)
 }
+
+func (a *App) SaveConfig(config *repository.Config) *repository.Config {
+	repository.SaveConfig(a.db, config)
+	return a.GetConfig()
+}
+
+// --- Notion Pages ---
 
 func (a *App) getNotionClient() *notion.NotionClient {
 	config := a.GetConfig()
@@ -40,13 +50,6 @@ func (a *App) getNotionClient() *notion.NotionClient {
 	return notion.NewClient(*config.NotionApiKey)
 }
 
-// Save Config
-func (a *App) SaveConfig(config *repository.Config) *repository.Config {
-	repository.SaveConfig(a.db, config)
-	return a.GetConfig()
-}
-
-// Get Notion Pages
 func (a *App) GetNotionPages() []notionapi.Object {
 	client := a.getNotionClient()
 	if client == nil {
@@ -56,12 +59,13 @@ func (a *App) GetNotionPages() []notionapi.Object {
 	return client.GetPages()
 }
 
-// Get Notion Page Blocks
 func (a *App) GetNotionPageBlocks(pageID string) []notion.NotionBlock {
 	client := a.getNotionClient()
 
 	return client.GetPageBlocks(pageID)
 }
+
+// --- Local Pages ---
 
 func (a *App) GetLocalPages() []repository.Page {
 	return repository.GetPages(a.db)
@@ -79,6 +83,8 @@ func (a *App) DeleteLocalPage(id uint) {
 	repository.DeletePage(a.db, id)
 }
 
+// --- Cache ---
+
 func (a *App) GetCache(key string) *repository.CacheValue {
 	return repository.GetCache(a.db, key)
 }
@@ -89,4 +95,15 @@ func (a *App) SaveCache(key string, value interface{}) *repository.Cache {
 
 func (a *App) DeleteCache(key string) {
 	repository.DeleteCache(a.db, key)
+}
+
+// --- Whisper ---
+
+func (a *App) GetBestWhisperModel() string {
+	availableRAM, err := utils.GetAvailableRAM()
+	if err != nil {
+		return "tiny"
+	}
+
+	return whisper.SuggestWhisperModel(availableRAM)
 }
