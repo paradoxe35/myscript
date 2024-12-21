@@ -22,11 +22,12 @@ export const LOCAL_WHISPER_MODELS = [
   {
     name: "large",
     englishOnly: false,
-    versions: ["v1", "v2", "v3"],
+    version: "v3",
   },
 
   {
-    name: "turbo",
+    name: "large-turbo",
     englishOnly: false,
+    version: "v3",
   },
 ] as const;

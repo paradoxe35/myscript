@@ -12,7 +12,7 @@ var LOCAL_WHISPER_MODELS = []WhisperModel{
 	{"small", 2, 4},
 	{"medium", 5, 2},
 	{"large", 10, 1},
-	{"turbo", 6, 8},
+	{"large-turbo", 6, 8},
 }
 
 func SuggestWhisperModel(availableRAM float64) string {
