@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PropsWithChildren, useState } from "react";
+import { PropsWithChildren } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
 import { useSettings, WhisperSource } from "./context";
@@ -23,12 +23,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { LOCAL_WHISPER_MODELS } from "@/lib/whisper";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../ui/collapsible";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +33,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -148,10 +142,10 @@ function ModelsRamRequirements() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="sm">
-              {/* <EyeOff className="h-4 w-4" /> */}
               <Eye className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent className="w-56">
             <Table>
               <TableHeader>
@@ -174,23 +168,6 @@ function ModelsRamRequirements() {
           </DropdownMenuContent>
         </DropdownMenu>
       </p>
-
-      {/* <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-        <p className="text-xs text-white/50 flex items-center">
-          Here are the available models and their RAM requirements{" "}
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm">
-              {isOpen ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-        </p>
-
-        <CollapsibleContent className="space-y-2"></CollapsibleContent>
-      </Collapsible> */}
     </>
   );
 }
