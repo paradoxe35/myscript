@@ -46,3 +46,12 @@ export type NotionSimplePage = {
   id: string;
   title: string;
 };
+
+export type RepositoryBaseFields =
+  | "ID"
+  | "CreatedAt"
+  | "UpdatedAt"
+  | "DeletedAt"
+  | "convertValues";
+
+export type WithoutRepositoryBaseFields<T> = Omit<T, RepositoryBaseFields>;

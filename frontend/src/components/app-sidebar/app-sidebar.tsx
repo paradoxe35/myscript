@@ -2,7 +2,7 @@ import * as React from "react";
 import { Trash, Plus, RotateCw } from "lucide-react";
 
 import { SearchForm } from "@/components/app-sidebar/search-form";
-import { SettingsButton } from "@/components/settings/settings-button";
+import { Settings } from "@/components/settings/settings";
 import {
   Sidebar,
   SidebarContent,
@@ -85,7 +85,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props}>
       <SidebarHeader>
-        <SettingsButton />
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Settings />
+          </SidebarMenuItem>
+        </SidebarMenu>
+
         <SearchForm />
       </SidebarHeader>
 

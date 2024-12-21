@@ -37,6 +37,7 @@ function ResetScroll() {
 
   useEffect(() => {
     requestAnimationFrame(() => {
+      // @ts-ignore
       document.body.scrollTo({ top: 0, behavior: "instant" });
     });
   }, [activePageStore.getPageId()]);
