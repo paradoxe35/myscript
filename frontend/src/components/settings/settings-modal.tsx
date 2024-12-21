@@ -39,7 +39,7 @@ import {
 } from "../ui/table";
 
 export function SettingsModal(props: PropsWithChildren) {
-  const { state, dispatch, handleSave } = useSettings();
+  const { state, dispatch, configModified, handleSave } = useSettings();
 
   return (
     <Dialog>
@@ -75,7 +75,7 @@ export function SettingsModal(props: PropsWithChildren) {
         </div>
 
         <DialogFooter>
-          <Button type="submit" onClick={handleSave}>
+          <Button type="submit" disabled={!configModified} onClick={handleSave}>
             Save changes
           </Button>
         </DialogFooter>

@@ -5,12 +5,15 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useState,
 } from "react";
 import { toast } from "sonner";
 import { GetBestWhisperModel } from "~wails/main/App";
 import { repository } from "~wails/models";
+
+import isEqual from "lodash/isEqual";
 
 export type WhisperSource = "local" | "openai";
 
@@ -21,6 +24,7 @@ type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
 export type SettingsContextValue = {
   state: SettingsState;
   bestWhisperModel: string | undefined;
+  configModified: boolean;
   dispatch: React.Dispatch<Partial<SettingsState>>;
   handleSave: () => void;
 };
@@ -66,9 +70,13 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
     });
   }, [state]);
 
+  const configModified = useMemo(() => {
+    return !isEqual(state, configStore.config);
+  }, [state, configStore.config]);
+
   return (
     <SettingsContext.Provider
-      value={{ state, dispatch, handleSave, bestWhisperModel }}
+      value={{ state, dispatch, handleSave, bestWhisperModel, configModified }}
     >
       {children}
     </SettingsContext.Provider>
