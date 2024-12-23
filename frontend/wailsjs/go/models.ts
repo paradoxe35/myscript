@@ -188,3 +188,43 @@ export namespace repository {
 
 }
 
+export namespace structs {
+	
+	export class Language {
+	    Name: string;
+	    Code: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Language(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Code = source["Code"];
+	    }
+	}
+
+}
+
+export namespace whisper {
+	
+	export class WhisperModel {
+	    Name: string;
+	    EnglishOnly: boolean;
+	    RAMRequired: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new WhisperModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.EnglishOnly = source["EnglishOnly"];
+	        this.RAMRequired = source["RAMRequired"];
+	    }
+	}
+
+}
+

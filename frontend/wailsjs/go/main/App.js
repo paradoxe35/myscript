@@ -38,6 +38,14 @@ export function GetNotionPages() {
   return window['go']['main']['App']['GetNotionPages']();
 }
 
+export function GetWhisperLanguages() {
+  return window['go']['main']['App']['GetWhisperLanguages']();
+}
+
+export function GetWhisperModels() {
+  return window['go']['main']['App']['GetWhisperModels']();
+}
+
 export function SaveCache(arg1, arg2) {
   return window['go']['main']['App']['SaveCache'](arg1, arg2);
 }

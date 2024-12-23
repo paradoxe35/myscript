@@ -4,6 +4,7 @@ import (
 	"context"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
+	"myscript/internal/transcribe/structs"
 	"myscript/internal/transcribe/whisper"
 	"myscript/internal/utils"
 
@@ -106,4 +107,12 @@ func (a *App) GetBestWhisperModel() string {
 	}
 
 	return whisper.SuggestWhisperModel(availableRAM)
+}
+
+func (a *App) GetWhisperLanguages() []structs.Language {
+	return whisper.GetWhisperLanguages()
+}
+
+func (a *App) GetWhisperModels() []whisper.WhisperModel {
+	return whisper.GetWhisperModels()
 }

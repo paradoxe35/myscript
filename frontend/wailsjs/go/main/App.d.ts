@@ -3,6 +3,8 @@
 import {repository} from '../models';
 import {notion} from '../models';
 import {notionapi} from '../models';
+import {structs} from '../models';
+import {whisper} from '../models';
 
 export function DeleteCache(arg1:string):Promise<void>;
 
@@ -21,6 +23,10 @@ export function GetLocalPages():Promise<Array<repository.Page>>;
 export function GetNotionPageBlocks(arg1:string):Promise<Array<notion.NotionBlock>>;
 
 export function GetNotionPages():Promise<Array<notionapi.Object>>;
+
+export function GetWhisperLanguages():Promise<Array<structs.Language>>;
+
+export function GetWhisperModels():Promise<Array<whisper.WhisperModel>>;
 
 export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 

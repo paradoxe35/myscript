@@ -4,16 +4,17 @@ import "myscript/internal/transcribe/structs"
 
 type WhisperModel struct {
 	Name        string
+	EnglishOnly bool
 	RAMRequired float64 // in GB
 }
 
 var LOCAL_WHISPER_MODELS = []WhisperModel{
-	{"tiny", 6},    // ~1GB VRAM -> 6GB RAM
-	{"base", 6},    // ~1GB VRAM -> 6GB RAM
-	{"small", 12},  // ~2GB VRAM -> 12GB RAM
-	{"medium", 30}, // ~5GB VRAM -> 30GB RAM
-	{"large", 60},  // ~10GB VRAM -> 60GB RAM
-	{"turbo", 36},  // ~6GB VRAM -> 36GB RAM
+	{"tiny", true, 6},    // ~1GB VRAM -> 6GB RAM
+	{"base", true, 6},    // ~1GB VRAM -> 6GB RAM
+	{"small", true, 12},  // ~2GB VRAM -> 12GB RAM
+	{"medium", true, 30}, // ~5GB VRAM -> 30GB RAM
+	{"large", false, 60}, // ~10GB VRAM -> 60GB RAM
+	{"turbo", false, 36}, // ~6GB VRAM -> 36GB RAM
 }
 
 var LANGUAGES = []structs.Language{
@@ -77,6 +78,14 @@ var LANGUAGES = []structs.Language{
 	{Code: "vi", Name: "Vietnamese"},
 	{Code: "cy", Name: "Welsh"},
 	{Code: "yi", Name: "Yiddish"},
+}
+
+func GetWhisperLanguages() []structs.Language {
+	return LANGUAGES
+}
+
+func GetWhisperModels() []WhisperModel {
+	return LOCAL_WHISPER_MODELS
 }
 
 func SuggestWhisperModel(availableRAM float64) string {

@@ -22,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { LOCAL_WHISPER_MODELS } from "@/lib/transcribe/whisper";
 import { Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -103,7 +102,7 @@ function WitAIHint() {
 }
 
 function LocalWhisperInputs() {
-  const { state, dispatch, bestWhisperModel } = useSettings();
+  const { state, dispatch, bestWhisperModel, whisperModels } = useSettings();
 
   return (
     <>
@@ -123,10 +122,10 @@ function LocalWhisperInputs() {
           <SelectContent>
             <SelectGroup>
               <SelectLabel>Models</SelectLabel>
-              {LOCAL_WHISPER_MODELS.map((item) => {
+              {whisperModels.map((item) => {
                 return (
-                  <SelectItem key={item.name} value={item.name}>
-                    {item.name}
+                  <SelectItem key={item.Name} value={item.Name}>
+                    {item.Name}
                   </SelectItem>
                 );
               })}
@@ -153,6 +152,8 @@ function LocalWhisperInputs() {
 }
 
 function ModelsRamRequirements() {
+  const { whisperModels } = useSettings();
+
   return (
     <>
       <p className="text-xs text-white/50 flex items-center gap-1">
@@ -173,11 +174,11 @@ function ModelsRamRequirements() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {LOCAL_WHISPER_MODELS.map((item) => {
+                {whisperModels.map((item) => {
                   return (
-                    <TableRow key={item.name}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.requiredRAM} GB</TableCell>
+                    <TableRow key={item.Name}>
+                      <TableCell className="font-medium">{item.Name}</TableCell>
+                      <TableCell>{item.RAMRequired} GB</TableCell>
                     </TableRow>
                   );
                 })}
