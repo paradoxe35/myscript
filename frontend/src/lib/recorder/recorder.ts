@@ -18,20 +18,19 @@ export default class Recorder {
   public async init(mediaStream: MediaStream) {
     await register(await connect());
 
-    const mediaStreamAudioSourceNode = new MediaStreamAudioSourceNode(
-      this.audioContext,
-      { mediaStream }
-    );
-    const mediaStreamAudioDestinationNode = new MediaStreamAudioDestinationNode(
-      this.audioContext
-    );
+    // const mediaStreamAudioSourceNode = new MediaStreamAudioSourceNode(
+    //   this.audioContext,
+    //   { mediaStream }
+    // );
+    // const mediaStreamAudioDestinationNode = new MediaStreamAudioDestinationNode(
+    //   this.audioContext
+    // );
 
-    mediaStreamAudioSourceNode.connect(mediaStreamAudioDestinationNode);
+    // mediaStreamAudioSourceNode.connect(mediaStreamAudioDestinationNode);
 
-    this.mediaRecorder = new MediaRecorder(
-      mediaStreamAudioDestinationNode.stream,
-      { mimeType: EXPORT_MIME_TYPE }
-    );
+    this.mediaRecorder = new MediaRecorder(mediaStream, {
+      mimeType: EXPORT_MIME_TYPE,
+    });
   }
 
   public get recording() {
@@ -68,9 +67,11 @@ export default class Recorder {
   public stop() {
     this.mustBeInitialized();
     this.mediaRecorder!.stop();
-    this.mediaRecorder!.ondataavailable = null;
-    this.mediaRecorder!.onstop = null;
-    this.mediaRecorder!.onstart = null;
+    setTimeout(() => {
+      this.mediaRecorder!.ondataavailable = null;
+      this.mediaRecorder!.onstop = null;
+      this.mediaRecorder!.onstart = null;
+    }, 100);
 
     const chunks = this.chunks.slice();
     this.chunks = [];
