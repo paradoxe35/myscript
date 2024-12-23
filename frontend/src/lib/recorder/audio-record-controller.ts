@@ -1,28 +1,11 @@
+import debounce from "lodash/debounce";
 import Recorder from "./recorder";
 import SequentializerStatus from "./sequentializer-status";
-
-const noiseCaptureConfig = {
-  min_decibels: -40, // Noise detection sensitivity
-  max_blank_time: 500, // Maximum time to consider a blank (ms)
-};
-
-const SAMPLE_RATE = 16000;
-const AUDIO_NUM_CHANNELS = 1;
-const EXPORT_MIME_TYPE = "audio/wav";
-
-const audio_options = {
-  sampleRate: SAMPLE_RATE,
-};
-
-const mediaStreamConstraints: MediaStreamConstraints = {
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    channelCount: AUDIO_NUM_CHANNELS,
-    sampleRate: SAMPLE_RATE,
-  },
-  video: false,
-};
+import {
+  audio_options,
+  mediaStreamConstraints,
+  noiseCaptureConfig,
+} from "./constants";
 
 type SequentializeCallback = (data: Blob) => void;
 
@@ -58,7 +41,7 @@ export class AudioRecordController {
     }
   }
 
-  static async create() {
+  static create() {
     if (this._instance) {
       throw new Error("RecorderController.init() must be called only once.");
     }
@@ -169,7 +152,7 @@ export class AudioRecordController {
     };
   }
 
-  public async startRecording() {
+  private _startRecording = debounce(async () => {
     await this.initUserAgent();
     await this.audioContext.resume();
 
@@ -177,6 +160,10 @@ export class AudioRecordController {
     this.startSequentializer();
     // start the recorder
     await this.recorder.start();
+  }, 500);
+
+  public async startRecording() {
+    await this._startRecording();
   }
 
   public async stopRecording() {
@@ -188,8 +175,10 @@ export class AudioRecordController {
     // stop the sequentializer
     this.stopSequentializer();
 
-    this._onSequentializeCallbacks.forEach((callback) => {
-      callback(blob);
-    });
+    if (blob) {
+      this._onSequentializeCallbacks.forEach((callback) => {
+        callback(blob);
+      });
+    }
   }
 }

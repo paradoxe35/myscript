@@ -4,6 +4,7 @@ import {
   register,
 } from "extendable-media-recorder";
 import { connect } from "extendable-media-recorder-wav-encoder";
+import { EXPORT_MIME_TYPE } from "./constants";
 
 export default class Recorder {
   private mediaRecorder?: IMediaRecorder;
@@ -29,7 +30,7 @@ export default class Recorder {
 
     this.mediaRecorder = new MediaRecorder(
       mediaStreamAudioDestinationNode.stream,
-      { mimeType: "audio/wav" }
+      { mimeType: EXPORT_MIME_TYPE }
     );
   }
 
@@ -47,14 +48,17 @@ export default class Recorder {
     this.mustBeInitialized();
 
     this.mediaRecorder!.onstart = () => {
+      console.log("Recording started...");
       this._recording = true;
     };
 
     this.mediaRecorder!.onstop = () => {
+      console.log("Recording stopped...");
       this._recording = false;
     };
 
     this.mediaRecorder!.ondataavailable = (event) => {
+      console.log("Recording data available...");
       this.chunks.push(event.data);
     };
 
@@ -71,7 +75,7 @@ export default class Recorder {
     const chunks = this.chunks.slice();
     this.chunks = [];
 
-    return new Blob(chunks);
+    return chunks.length > 0 ? new Blob(chunks) : null;
   }
 
   public export() {

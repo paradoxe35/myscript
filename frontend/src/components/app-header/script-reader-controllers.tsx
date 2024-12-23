@@ -8,11 +8,31 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { AudioRecordController } from "@/lib/recorder/audio-record-controller";
+import { useEffect } from "react";
+
+const audioRecordController = AudioRecordController.create();
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const activePageStore = useActivePageStore();
   const activePage = activePageStore.page;
   const readMode = activePageStore.readMode;
+
+  useEffect(() => {
+    const onSequentialize = (blob: Blob) => {
+      console.log("Sequentialize", blob);
+    };
+
+    return audioRecordController.onSequentialize(onSequentialize);
+  }, [activePageStore.readMode]);
+
+  useEffect(() => {
+    if (activePageStore.isReadMode()) {
+      audioRecordController.startRecording();
+    } else {
+      audioRecordController.stopRecording();
+    }
+  }, [activePageStore.readMode]);
 
   const startReadMode = () => {
     activePageStore.toggleReadMode();

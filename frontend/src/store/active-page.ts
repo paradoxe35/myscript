@@ -34,6 +34,7 @@ type ActivePageStore = {
   unsetActivePage: () => void;
   fetchPageBlocks(): void;
   toggleReadMode: () => void;
+  isReadMode(): boolean;
   canEdit(): boolean;
 };
 
@@ -52,6 +53,10 @@ export const useActivePageStore = create(
         return activePage?.__typename === "local_page"
           ? activePage.page.ID
           : activePage?.page.id;
+      },
+
+      isReadMode() {
+        return get().readMode;
       },
 
       setActivePage: (page: ActivePage) => {
