@@ -94,10 +94,16 @@ function NotionInputs() {
 
 function WitAIHint() {
   return (
-    <p className="text-xs text-white/50">
-      <b>Wit.ai</b> does not require any additional configuration. However, it
-      may not be as accurate as OpenAI Whisper.
-    </p>
+    <>
+      <p className="text-xs text-white/50">
+        <b>Wit.ai</b> doesn't require any extra configuration. However, it may
+        not be as accurate as OpenAI Whisper.
+      </p>
+
+      <p className="text-xs text-white/50">
+        <em>Internet connection is required</em>
+      </p>
+    </>
   );
 }
 
@@ -136,6 +142,8 @@ function LocalWhisperInputs() {
 
       <p className="text-xs text-white/50">
         Best model based on available resources: <b>{bestWhisperModel}</b>
+        <br />
+        <em>Doesn't require Internet connection</em>
       </p>
 
       <Separator />
@@ -195,16 +203,22 @@ function OpenAIApiKeyInput() {
   const { state, dispatch } = useSettings();
 
   return (
-    <div className="flex flex-col gap-3 relative">
-      <Label className="text-xs text-white/50">OpenAI API Key</Label>
+    <>
+      <div className="flex flex-col gap-3 relative">
+        <Label className="text-xs text-white/50">OpenAI API Key</Label>
 
-      <ApiKeyInput
-        className="col-span-3"
-        tabIndex={-1}
-        value={state.OpenAIApiKey}
-        onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
-      />
-    </div>
+        <ApiKeyInput
+          className="col-span-3"
+          tabIndex={-1}
+          value={state.OpenAIApiKey}
+          onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
+        />
+      </div>
+
+      <p className="text-xs text-white/50">
+        <em>Internet connection is required</em>
+      </p>
+    </>
   );
 }
 
