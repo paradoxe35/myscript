@@ -6,7 +6,7 @@ type Config struct {
 	gorm.Model
 	NotionApiKey      *string `gorm:"column:notion_api_key"`
 	OpenAIApiKey      *string `gorm:"column:openai_api_key"`
-	WhisperSource     string  `gorm:"column:whisper_source;default:local"` // local, openai
+	WhisperSource     string  `gorm:"column:whisper_source;default:local"` // local, openai, witai
 	LocalWhisperModel *string `gorm:"column:local_whisper_model"`
 	LocalWhisperGPU   *bool   `gorm:"column:local_whisper_gpu"`
 }

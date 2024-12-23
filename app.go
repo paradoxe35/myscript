@@ -4,8 +4,8 @@ import (
 	"context"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
+	"myscript/internal/transcribe/whisper"
 	"myscript/internal/utils"
-	"myscript/internal/whisper"
 
 	"github.com/jomei/notionapi"
 	"gorm.io/gorm"

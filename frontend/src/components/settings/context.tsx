@@ -15,7 +15,29 @@ import { repository } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
 
-export type WhisperSource = "local" | "openai";
+export type WhisperSource = "local" | "openai" | "witai";
+
+export type TranscriberSources = {
+  [key in WhisperSource]: {
+    name: string;
+    key: key;
+  };
+};
+
+export const TRANSCRIBER_SOURCES: TranscriberSources = {
+  local: {
+    name: "Local",
+    key: "local",
+  },
+  openai: {
+    name: "OpenAI",
+    key: "openai",
+  },
+  witai: {
+    name: "Wit.ai",
+    key: "witai",
+  },
+};
 
 type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
   WhisperSource: WhisperSource;
@@ -65,9 +87,16 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, [state.WhisperSource]);
 
   const handleSave = useCallback(() => {
-    if (state.WhisperSource === "openai" && !state.OpenAIApiKey) {
-      toast.error("OpenAI API key is required");
-      return;
+    if (state.WhisperSource === "openai") {
+      if (!state.OpenAIApiKey) {
+        toast.error("OpenAI API key is required");
+        return;
+      }
+
+      if (!state.OpenAIApiKey.startsWith("sk-")) {
+        toast.error("OpenAI API key must start with 'sk-'");
+        return;
+      }
     }
 
     configStore.writeConfig(state).then(() => {

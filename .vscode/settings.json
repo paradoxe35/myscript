@@ -5,6 +5,7 @@
         "datatypes",
         "gorm",
         "myscript",
-        "notionapi"
+        "notionapi",
+        "witai"
     ]
 }

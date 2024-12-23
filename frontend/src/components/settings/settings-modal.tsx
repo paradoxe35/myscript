@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { PropsWithChildren } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
-import { useSettings, WhisperSource } from "./context";
+import { TRANSCRIBER_SOURCES, useSettings, WhisperSource } from "./context";
 import {
   Select,
   SelectContent,
@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { LOCAL_WHISPER_MODELS } from "@/lib/whisper";
+import { LOCAL_WHISPER_MODELS } from "@/lib/transcribe/whisper";
 import { Eye } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,20 +51,12 @@ export function SettingsModal(props: PropsWithChildren) {
           <DialogDescription></DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="flex flex-col gap-4">
-            <Label>Notion API Key</Label>
-            <ApiKeyInput
-              className="col-span-3"
-              tabIndex={-1}
-              value={state.NotionApiKey}
-              onChange={(e) => dispatch({ NotionApiKey: e.target.value })}
-            />
-          </div>
+          <NotionInputs />
 
           <Separator />
 
           <div className="flex flex-col gap-4 relative">
-            <Label>Speech Recognition (Whisper)</Label>
+            <Label>Speech Recognition (Whisper, Wit.ai)</Label>
             <SelectSpeechSource />
           </div>
 
@@ -72,6 +64,7 @@ export function SettingsModal(props: PropsWithChildren) {
 
           {state.WhisperSource === "local" && <LocalWhisperInputs />}
           {state.WhisperSource === "openai" && <OpenAIApiKeyInput />}
+          {state.WhisperSource === "witai" && <WitAIHint />}
         </div>
 
         <DialogFooter>
@@ -81,6 +74,31 @@ export function SettingsModal(props: PropsWithChildren) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function NotionInputs() {
+  const { state, dispatch } = useSettings();
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Label>Notion API Key</Label>
+      <ApiKeyInput
+        className="col-span-3"
+        tabIndex={-1}
+        value={state.NotionApiKey}
+        onChange={(e) => dispatch({ NotionApiKey: e.target.value })}
+      />
+    </div>
+  );
+}
+
+function WitAIHint() {
+  return (
+    <p className="text-xs text-white/50">
+      <b>Wit.ai</b> does not require any additional configuration. However, it
+      may not be as accurate as OpenAI Whisper.
+    </p>
   );
 }
 
@@ -192,6 +210,8 @@ function OpenAIApiKeyInput() {
 function SelectSpeechSource() {
   const { state, dispatch } = useSettings();
 
+  const items = Object.values(TRANSCRIBER_SOURCES);
+
   return (
     <Select
       value={state.WhisperSource}
@@ -202,10 +222,16 @@ function SelectSpeechSource() {
       <SelectTrigger className="w-[190px]">
         <SelectValue placeholder="Select a source" />
       </SelectTrigger>
+
       <SelectContent>
         <SelectGroup>
-          <SelectItem value="local">Local Whisper</SelectItem>
-          <SelectItem value="openai">OpenAI Whisper</SelectItem>
+          {items.map((item) => {
+            return (
+              <SelectItem key={item.key} value={item.key}>
+                {item.name}
+              </SelectItem>
+            );
+          })}
         </SelectGroup>
       </SelectContent>
     </Select>
