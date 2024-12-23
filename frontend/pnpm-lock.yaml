@@ -83,6 +83,12 @@ importers:
       editorjs-html:
         specifier: ^3.4.3
         version: 3.4.3
+      extendable-media-recorder:
+        specifier: ^9.2.17
+        version: 9.2.17
+      extendable-media-recorder-wav-encoder:
+        specifier: ^7.0.121
+        version: 7.0.121
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -948,6 +954,10 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
+  automation-events@7.1.4:
+    resolution: {integrity: sha512-KCkUSGBKlZz2DTnjzHLnPzlTayExlkeIrzIgq5OqZgwvZsmgSsyQOXv/L+r8P14yR69xfSnwL2FmmzSCzI9o/g==}
+    engines: {node: '>=18.2.0'}
+
   autoprefixer@10.4.20:
     resolution: {integrity: sha512-XY25y5xSv/wEoqzDyXXME4AFfkZI0P23z6Fs3YgymDnKJkCGOnkL0iTxCa85UTqaSgfcqyf3UA6+c7wUvx/16g==}
     engines: {node: ^10 || ^12 || >=14}
@@ -968,6 +978,9 @@ packages:
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
+
+  broker-factory@3.0.107:
+    resolution: {integrity: sha512-ezlP7v08JM6R6M6fGAf1jeShyLKNAoXSw5fJB5/xXniGxGk83/xeDPDwUbaokow+t1o5+x/uHpE47YEhtayqRw==}
 
   browserslist@4.24.2:
     resolution: {integrity: sha512-ZIc+Q62revdMcqC6aChtW4jz3My3klmCO1fEmINZY/8J3EpBg5/A/D0AKmBveUh6pgoeycoMkVMko84tuYS+Gg==}
@@ -1191,9 +1204,25 @@ packages:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
     engines: {node: '>=6'}
 
+  extendable-media-recorder-wav-encoder-broker@7.0.111:
+    resolution: {integrity: sha512-tP+Sa+PdXiMwppy7HG/mj2DdKQNf98Z0mhM3f35m1YEGDJK3Ww4pz+38zIKcBlI9KC+s/O4IZgU7b9vXOhTVCg==}
+
+  extendable-media-recorder-wav-encoder-worker@8.0.108:
+    resolution: {integrity: sha512-LxWqsIZJBqmdIDhIxcSklS0vB39BZ8C+DAOD5Md+dNa4jtyxuPEuhm6mW3nMfFCU6g9BQrw7Rb15HyeBOeE8Bw==}
+
+  extendable-media-recorder-wav-encoder@7.0.121:
+    resolution: {integrity: sha512-IkNi2NxxCWaHfkxI1y+x4nBDx1m73uxpVV9DoRhcxnBO2u+4MJ3Sag0vVD8tduDEoSf/KzNy2rZGwVR4e0tw2w==}
+
+  extendable-media-recorder@9.2.17:
+    resolution: {integrity: sha512-CPcoSdXCMvRo1GsNtCfwsmJy6SkpHHDj0KrkFD6lfLJE2V/3LTUbyXwzWwOgtSv6R3d/+W0c6yQ1r667KmZZKw==}
+
   fast-glob@3.3.2:
     resolution: {integrity: sha512-oX2ruAFQwf/Orj8m737Y5adxDQO0LAB7/S5MnxCdTNDd4p6BsyIVsv9JQsATbTSq8KHRpLwIHbVlUNatxd+1Ow==}
     engines: {node: '>=8.6.0'}
+
+  fast-unique-numbers@9.0.14:
+    resolution: {integrity: sha512-UyRRMWsvgTfawWMoxmqdRshB32JiSAvyv1SM0LT1CXUShPQ8PXG7euhiKoBbIUzRkvibrktqsYh9bzgkzZ/mww==}
+    engines: {node: '>=18.2.0'}
 
   fastq@1.17.1:
     resolution: {integrity: sha512-sRVD3lWVIXWg6By68ZN7vho9a1pQcN/WBFaAAsDDFzlJjvoGx0P8z7V1t72grFJfJhu3YPZBuu25f7Kaw2jN1w==}
@@ -1337,6 +1366,15 @@ packages:
     resolution: {integrity: sha512-hX9XH3ziStPoPhJxLq1syWuZMxbDvGNbVchfrdCtanC7D13888bMFow61x8axrx+GfHLtVeAx2kxL7tTGRl+Ow==}
     engines: {node: '>=12'}
 
+  media-encoder-host-broker@8.0.11:
+    resolution: {integrity: sha512-8TVLhMhxwDQMfcBTEQHq9oONBa9EGG4hdzlr5aB2emE46BpI62CRNZ+XJT/UdK1txxAg4M3okDPyUNQtDrDqVw==}
+
+  media-encoder-host-worker@10.0.11:
+    resolution: {integrity: sha512-ToQLyuFextqRRSIQoEWqMR38d+ZVMLW7Y/CGW68qkQIIfNikl8dZPHS7K8KHHDqVd4XJ8+aUwKonFO4aFwYeuA==}
+
+  media-encoder-host@9.0.12:
+    resolution: {integrity: sha512-TEdM2WpHkxn9I1Cyw6JI9kVOZk/xHwpRXZmWjkrrUGuKXXr2wVsw/hhXhnh6uiuxF+JtR7aiQuXOjpWhCNY20w==}
+
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
@@ -1363,6 +1401,10 @@ packages:
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
+
+  multi-buffer-data-view@6.0.15:
+    resolution: {integrity: sha512-3CAiJ/6hOJtcEXLR1fzfU6lmanmK85jJk52B/SO8ondTpDwWiDkscV+1MWsXB6Yro3cJuzb1C0A/fETi1oSMwQ==}
+    engines: {node: '>=18.2.0'}
 
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
@@ -1563,6 +1605,12 @@ packages:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
 
+  recorder-audio-worklet-processor@5.0.29:
+    resolution: {integrity: sha512-lb1KSBaH1UU7aYY2s3/LpRVXBb4eCxuFpcpzuS1bT5jL4Z9W8jP9pohOZq9/tuRCqEJdy5awivaB+0QLpqx3vQ==}
+
+  recorder-audio-worklet@6.0.39:
+    resolution: {integrity: sha512-M+KygYlgI9HIGV0QWkuoC/4Guhe9KBZM4olBkVujQuqPEIuFgf8D2CVZzcmIWK755omCsKcqQ8k6PbuptXCJWw==}
+
   regenerator-runtime@0.14.1:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
@@ -1581,6 +1629,9 @@ packages:
 
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
+
+  rxjs-interop@2.0.0:
+    resolution: {integrity: sha512-ASEq9atUw7lualXB+knvgtvwkCEvGWV2gDD/8qnASzBkzEARZck9JAyxmY8OS6Nc1pCPEgDTKNcx+YqqYfzArw==}
 
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
@@ -1615,6 +1666,9 @@ packages:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
     deprecated: Please use @jridgewell/sourcemap-codec instead
 
+  standardized-audio-context@25.3.77:
+    resolution: {integrity: sha512-Ki9zNz6pKcC5Pi+QPjPyVsD9GwJIJWgryji0XL9cAJXMGyn+dPOf6Qik1AHei0+UNVcc4BOCa0hWLBzlwqsW/A==}
+
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -1630,6 +1684,9 @@ packages:
   strip-ansi@7.1.0:
     resolution: {integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==}
     engines: {node: '>=12'}
+
+  subscribable-things@2.1.45:
+    resolution: {integrity: sha512-AgCe++4CaIkZWj3h2xY93hwDz/ByG7T+2sLWBUmUDGFjNeT6tlG+UNbtFF8wh83Momo/gz2xdLO/nXIjey7f6A==}
 
   sucrase@3.35.0:
     resolution: {integrity: sha512-8EbVDiu9iN/nESwxeSxDKe0dunta1GOlHufmSSXxMD2z2/tMZpDMpvXQGsc+ajGo8y2uYUmixaSRUc/QPoQ0GA==}
@@ -1755,6 +1812,9 @@ packages:
     resolution: {integrity: sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==}
     engines: {node: '>= 8'}
     hasBin: true
+
+  worker-factory@7.0.34:
+    resolution: {integrity: sha512-Li/V2KNVJmcXjURgIB3iktmpT6+VJjQorGsp9JgOKljpEfCn+5YtM/uWYuhYocBBUTQpOwa4dy7wS1Fs01bIAQ==}
 
   wrap-ansi@7.0.0:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
@@ -2611,6 +2671,11 @@ snapshots:
 
   asynckit@0.4.0: {}
 
+  automation-events@7.1.4:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      tslib: 2.8.1
+
   autoprefixer@10.4.20(postcss@8.4.49):
     dependencies:
       browserslist: 4.24.2
@@ -2632,6 +2697,13 @@ snapshots:
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
+
+  broker-factory@3.0.107:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      fast-unique-numbers: 9.0.14
+      tslib: 2.8.1
+      worker-factory: 7.0.34
 
   browserslist@4.24.2:
     dependencies:
@@ -2797,6 +2869,36 @@ snapshots:
 
   escalade@3.2.0: {}
 
+  extendable-media-recorder-wav-encoder-broker@7.0.111:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      broker-factory: 3.0.107
+      extendable-media-recorder-wav-encoder-worker: 8.0.108
+      tslib: 2.8.1
+
+  extendable-media-recorder-wav-encoder-worker@8.0.108:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      tslib: 2.8.1
+      worker-factory: 7.0.34
+
+  extendable-media-recorder-wav-encoder@7.0.121:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      extendable-media-recorder-wav-encoder-broker: 7.0.111
+      extendable-media-recorder-wav-encoder-worker: 8.0.108
+      tslib: 2.8.1
+
+  extendable-media-recorder@9.2.17:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      media-encoder-host: 9.0.12
+      multi-buffer-data-view: 6.0.15
+      recorder-audio-worklet: 6.0.39
+      standardized-audio-context: 25.3.77
+      subscribable-things: 2.1.45
+      tslib: 2.8.1
+
   fast-glob@3.3.2:
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -2804,6 +2906,11 @@ snapshots:
       glob-parent: 5.1.2
       merge2: 1.4.1
       micromatch: 4.0.8
+
+  fast-unique-numbers@9.0.14:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      tslib: 2.8.1
 
   fastq@1.17.1:
     dependencies:
@@ -2926,6 +3033,28 @@ snapshots:
     dependencies:
       sourcemap-codec: 1.4.8
 
+  media-encoder-host-broker@8.0.11:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      broker-factory: 3.0.107
+      fast-unique-numbers: 9.0.14
+      media-encoder-host-worker: 10.0.11
+      tslib: 2.8.1
+
+  media-encoder-host-worker@10.0.11:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      extendable-media-recorder-wav-encoder-broker: 7.0.111
+      tslib: 2.8.1
+      worker-factory: 7.0.34
+
+  media-encoder-host@9.0.12:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      media-encoder-host-broker: 8.0.11
+      media-encoder-host-worker: 10.0.11
+      tslib: 2.8.1
+
   merge2@1.4.1: {}
 
   micromatch@4.0.8:
@@ -2946,6 +3075,11 @@ snapshots:
   minipass@7.1.2: {}
 
   ms@2.1.3: {}
+
+  multi-buffer-data-view@6.0.15:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      tslib: 2.8.1
 
   mz@2.7.0:
     dependencies:
@@ -3112,6 +3246,22 @@ snapshots:
     dependencies:
       picomatch: 2.3.1
 
+  recorder-audio-worklet-processor@5.0.29:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      tslib: 2.8.1
+
+  recorder-audio-worklet@6.0.39:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      broker-factory: 3.0.107
+      fast-unique-numbers: 9.0.14
+      recorder-audio-worklet-processor: 5.0.29
+      standardized-audio-context: 25.3.77
+      subscribable-things: 2.1.45
+      tslib: 2.8.1
+      worker-factory: 7.0.34
+
   regenerator-runtime@0.14.1: {}
 
   resolve@1.22.8:
@@ -3129,6 +3279,8 @@ snapshots:
   run-parallel@1.2.0:
     dependencies:
       queue-microtask: 1.2.3
+
+  rxjs-interop@2.0.0: {}
 
   scheduler@0.23.2:
     dependencies:
@@ -3153,6 +3305,12 @@ snapshots:
 
   sourcemap-codec@1.4.8: {}
 
+  standardized-audio-context@25.3.77:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      automation-events: 7.1.4
+      tslib: 2.8.1
+
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -3172,6 +3330,12 @@ snapshots:
   strip-ansi@7.1.0:
     dependencies:
       ansi-regex: 6.1.0
+
+  subscribable-things@2.1.45:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      rxjs-interop: 2.0.0
+      tslib: 2.8.1
 
   sucrase@3.35.0:
     dependencies:
@@ -3290,6 +3454,12 @@ snapshots:
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
+
+  worker-factory@7.0.34:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      fast-unique-numbers: 9.0.14
+      tslib: 2.8.1
 
   wrap-ansi@7.0.0:
     dependencies:

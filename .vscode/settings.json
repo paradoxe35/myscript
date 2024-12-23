@@ -6,6 +6,9 @@
         "gorm",
         "myscript",
         "notionapi",
+        "Sequentialize",
+        "sequentializer",
+        "sequentializing",
         "witai"
     ]
 }
