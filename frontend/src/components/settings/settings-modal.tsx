@@ -39,7 +39,7 @@ import {
 } from "../ui/table";
 
 export function SettingsModal(props: PropsWithChildren) {
-  const { state, dispatch, configModified, handleSave } = useSettings();
+  const { state, configModified, handleSave } = useSettings();
 
   return (
     <Dialog>
