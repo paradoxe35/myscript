@@ -119,7 +119,7 @@ export class AudioRecordController {
     requestAnimationFrame(loop);
   }
 
-  private async stopSequentializer() {
+  private stopSequentializer() {
     this.sequentializing = false;
   }
 
