@@ -5,10 +5,11 @@ const defaultConfig = {
   onAnalysed: null,
 };
 
-interface RecorderResult {
+export interface RecorderResult {
   blob: Blob;
-  lastSequence?: Blob;
   buffer: Float32Array[];
+  encodeBlob: () => Promise<string>;
+  lastSequence?: Blob;
   sampleRate?: number;
 }
 
@@ -89,12 +90,29 @@ export default class Recorder {
     });
   }
 
+  private encodeBlob(audioData: Blob) {
+    return async () => {
+      const fileBuffer = await audioData.arrayBuffer();
+      return btoa(
+        new Uint8Array(fileBuffer).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ""
+        )
+      );
+    };
+  }
+
   export(): Promise<RecorderResult> {
     return new Promise((resolve) => {
       this.audioRecorder?.getBuffer(
         (buffer: Float32Array[], sampleRate: number) => {
           this.audioRecorder?.exportWAV((blob: Blob) => {
-            resolve({ buffer, blob, sampleRate });
+            resolve({
+              buffer,
+              blob,
+              sampleRate,
+              encodeBlob: this.encodeBlob(blob),
+            });
           });
         }
       );
@@ -108,7 +126,12 @@ export default class Recorder {
       this.audioRecorder?.getBuffer(
         (buffer: Float32Array[], sampleRate: number) => {
           this.audioRecorder?.exportWAV((blob: Blob) =>
-            resolve({ buffer, blob, sampleRate })
+            resolve({
+              buffer,
+              blob,
+              sampleRate,
+              encodeBlob: this.encodeBlob(blob),
+            })
           );
         }
       );

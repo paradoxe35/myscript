@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import Recorder from "./recorder";
+import Recorder, { RecorderResult } from "./recorder";
 import SequentializerStatus from "./sequentializer-status";
 import {
   audio_options,
@@ -7,7 +7,7 @@ import {
   noiseCaptureConfig,
 } from "./constants";
 
-type SequentializeCallback = (data: Blob) => void;
+type SequentializeCallback = (data: RecorderResult) => void;
 
 export class AudioRecordController {
   private static _instance: AudioRecordController;
@@ -110,7 +110,7 @@ export class AudioRecordController {
           this.recorder.audioRecorder.clear();
 
           this._onSequentializeCallbacks.forEach((callback) => {
-            callback(audioData.blob);
+            callback(audioData);
           });
         }
       }
@@ -177,7 +177,7 @@ export class AudioRecordController {
 
     if (blob) {
       this._onSequentializeCallbacks.forEach((callback) => {
-        callback(blob.blob);
+        callback(blob);
       });
     }
   }

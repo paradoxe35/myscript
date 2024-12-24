@@ -8,8 +8,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { AudioRecordController } from "@/lib/recorder/audio-record-controller";
 import { useEffect } from "react";
+import { RecorderResult, AudioRecordController } from "@/lib/recorder";
+import { WitTranscribe } from "~wails/main/App";
 
 const audioRecordController = AudioRecordController.create();
 
@@ -19,8 +20,11 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const readMode = activePageStore.readMode;
 
   useEffect(() => {
-    const onSequentialize = (blob: Blob) => {
-      console.log("Sequentialize", blob);
+    const onSequentialize = async (result: RecorderResult) => {
+      const encoded = await result.encodeBlob();
+      WitTranscribe(encoded, "en").then((value) => {
+        console.log("Transcribed:", value);
+      });
     };
 
     return audioRecordController.onSequentialize(onSequentialize);

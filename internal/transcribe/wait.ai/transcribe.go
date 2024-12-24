@@ -76,8 +76,6 @@ func (w *WitTranscriber) Transcribe(chunk []byte) string {
 		return ""
 	}
 
-	logger.Printf("Request response %s", string(body))
-
 	var witResp WitResponse
 	if err := json.Unmarshal(body, &witResp); err != nil {
 		logger.Printf("Error unmarshaling response: %v", err)
@@ -130,16 +128,9 @@ func splitAudioBytes(audioData []byte, sampleRate int, channels int, bytesPerSam
 	return chunks, nil
 }
 
-func preprocessAudio(file string) ([]byte, error) {
-	// Open the input file
-	f, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
+func preprocessAudio(r io.ReadSeeker) ([]byte, error) {
 	// Create a new decoder
-	decoder := wav.NewDecoder(f)
+	decoder := wav.NewDecoder(r)
 
 	// Read the full buffer
 	buf, err := decoder.FullPCMBuffer()
@@ -184,13 +175,13 @@ func preprocessAudio(file string) ([]byte, error) {
 	return outputBytes, nil
 }
 
-func WitAITranscribe(file string, apiKey string) (chan string, error) {
+func witAITranscribe(r io.ReadSeeker, apiKey string) (chan string, error) {
 	textChan := make(chan string)
 
 	go func() {
 		defer close(textChan)
 
-		processedAudio, err := preprocessAudio(file)
+		processedAudio, err := preprocessAudio(r)
 		if err != nil {
 			logger.Printf("Error preprocessing audio: %v", err)
 			return
@@ -209,4 +200,25 @@ func WitAITranscribe(file string, apiKey string) (chan string, error) {
 	}()
 
 	return textChan, nil
+}
+
+func WitAITranscribeFromFile(file string, apiKey string) (chan string, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return witAITranscribe(f, apiKey)
+}
+
+func WitAITranscribeFromBuffer(buffer []byte, apiKey string) (string, error) {
+	r := bytes.NewReader(buffer)
+
+	resultChan, err := witAITranscribe(r, apiKey)
+	if err != nil {
+		return "", err
+	}
+
+	return <-resultChan, nil
 }

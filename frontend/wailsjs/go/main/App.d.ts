@@ -33,3 +33,5 @@ export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
 
 export function SaveLocalPage(arg1:repository.Page):Promise<repository.Page>;
+
+export function WitTranscribe(arg1:string,arg2:string):Promise<string>;

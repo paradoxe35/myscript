@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
 	"myscript/internal/transcribe/structs"
+	witai "myscript/internal/transcribe/wait.ai"
 	"myscript/internal/transcribe/whisper"
 	"myscript/internal/utils"
 
@@ -115,4 +118,24 @@ func (a *App) GetWhisperLanguages() []structs.Language {
 
 func (a *App) GetWhisperModels() []whisper.WhisperModel {
 	return whisper.GetWhisperModels()
+}
+
+// --- Transcribe ---
+
+func (a *App) WitTranscribe(base64Data string, language string) (string, error) {
+	apiKey := witai.GetAPIKey(language)
+	if apiKey == nil {
+		return "", fmt.Errorf("no API key found for language %s", language)
+	}
+
+	data, err := base64.StdEncoding.DecodeString(base64Data)
+	if err != nil {
+		fmt.Println("Error decoding base64 data:", err)
+		return "", err
+	}
+
+	fmt.Println("Bytes:", len(data))
+
+	// return witai.WitAITranscribeFromFile(file, apiKey)
+	return witai.WitAITranscribeFromBuffer(data, apiKey.Key)
 }

@@ -57,3 +57,7 @@ export function SaveConfig(arg1) {
 export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
 }
+
+export function WitTranscribe(arg1, arg2) {
+  return window['go']['main']['App']['WitTranscribe'](arg1, arg2);
+}
