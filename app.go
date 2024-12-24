@@ -134,8 +134,5 @@ func (a *App) WitTranscribe(base64Data string, language string) (string, error) 
 		return "", err
 	}
 
-	fmt.Println("Bytes:", len(data))
-
-	// return witai.WitAITranscribeFromFile(file, apiKey)
 	return witai.WitAITranscribeFromBuffer(data, apiKey.Key)
 }

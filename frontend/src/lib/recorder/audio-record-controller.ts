@@ -109,14 +109,43 @@ export class AudioRecordController {
           // clear all buffer from the recorder
           this.recorder.audioRecorder.clear();
 
-          this._onSequentializeCallbacks.forEach((callback) => {
-            callback(audioData);
-          });
+          const hasVoice = await this.hasVoice(audioData.blob);
+
+          if (hasVoice) {
+            this._onSequentializeCallbacks.forEach((callback) => {
+              callback(audioData);
+            });
+          }
         }
       }
     };
 
     requestAnimationFrame(loop);
+  }
+
+  private async hasVoice(audioData: Blob): Promise<boolean> {
+    // Convert Blob to ArrayBuffer
+    const arrayBuffer = await audioData.arrayBuffer();
+
+    // Decode the audio data
+    const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+    const channelData = audioBuffer.getChannelData(0);
+
+    // Calculate the RMS
+    const rms = Math.sqrt(
+      channelData.reduce((sum, value) => sum + value * value, 0) /
+        channelData.length
+    );
+
+    // Calculate an adaptive threshold
+    const mean =
+      channelData.reduce((sum, value) => sum + Math.abs(value), 0) /
+      channelData.length;
+
+    const adaptiveThreshold = Math.max(0.02, mean * 1.5);
+
+    return rms > adaptiveThreshold;
   }
 
   private stopSequentializer() {
@@ -163,7 +192,7 @@ export class AudioRecordController {
   }, 500);
 
   public async startRecording() {
-    await this._startRecording();
+    return this._startRecording();
   }
 
   public async stopRecording() {

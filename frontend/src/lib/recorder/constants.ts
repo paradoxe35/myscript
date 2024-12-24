@@ -1,6 +1,6 @@
 export const noiseCaptureConfig = {
-  min_decibels: -40, // Noise detection sensitivity
-  max_blank_time: 500, // Maximum time to consider a blank (ms)
+  min_decibels: -45, // Noise detection sensitivity
+  max_blank_time: 700, // Maximum time to consider a blank (ms)
 };
 
 export const SAMPLE_RATE = 32000;
