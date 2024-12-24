@@ -40,17 +40,12 @@ func TranscribeFromBuffer(buffer []byte, language, apiKey string) (string, error
 		option.WithAPIKey(apiKey),
 		option.WithMaxRetries(2),
 	)
-
 	ctx := context.Background()
 
-	reqFileName := "transcription.wav"
-	reqContentType := "audio/wav"
-
 	res, err := client.Audio.Transcriptions.New(ctx, openai.AudioTranscriptionNewParams{
-		File:           openai.FileParam(r, reqFileName, reqContentType),
-		Model:          openai.String(WHISPER_MODEL),
-		Language:       openai.String(language),
-		ResponseFormat: openai.F(openai.AudioResponseFormatText),
+		File:     openai.FileParam(r, "stt.wav", "audio/wav"),
+		Model:    openai.F(openai.AudioModelWhisper1),
+		Language: openai.F(language),
 	})
 
 	if err != nil {
