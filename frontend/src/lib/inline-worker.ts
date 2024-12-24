@@ -17,6 +17,10 @@ function InlineWorker(this: any, func: any, self: {}) {
     );
   }
 
+  if (!WORKER_ENABLED) {
+    throw new Error("Worker is not supported in this environment");
+  }
+
   function postMessage(data: any) {
     setTimeout(function () {
       _this.onmessage({ data: data });

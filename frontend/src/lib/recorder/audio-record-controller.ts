@@ -102,7 +102,6 @@ export class AudioRecordController {
           this.sequentializerStatus?.enableInPending();
 
           const audioData = await this.recorder.export();
-          // this.sequentializeBlobs.push(audioData);
 
           // disable pending the exportation
           this.sequentializerStatus?.disableInPending();
@@ -200,14 +199,22 @@ export class AudioRecordController {
       return;
     }
 
+    // Get all audio tracks
+    const tracks = this.mediaStream?.getTracks();
+
+    // Stop each track
+    tracks?.forEach((track) => track.stop());
+    this.mediaStream?.getAudioTracks().forEach((track) => track.stop());
+    this.mediaStream = undefined;
+
     this.stopSequentializer();
 
-    const blob = await this.recorder.stop();
-
-    if (blob) {
-      this._onSequentializeCallbacks.forEach((callback) => {
-        callback(blob);
-      });
-    }
+    // In our case, we don't need use latest chunk
+    // const blob = await this.recorder.stop();
+    // if (blob) {
+    //   this._onSequentializeCallbacks.forEach((callback) => {
+    //     callback(blob);
+    //   });
+    // }
   }
 }

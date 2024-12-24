@@ -1,9 +1,9 @@
 export const noiseCaptureConfig = {
   min_decibels: -45, // Noise detection sensitivity
-  max_blank_time: 700, // Maximum time to consider a blank (ms)
+  max_blank_time: 1 * 1000, // Maximum time to consider a blank (ms)
 };
 
-export const SAMPLE_RATE = 32000;
+export const SAMPLE_RATE = 32000; // 32kHz
 export const AUDIO_NUM_CHANNELS = 1;
 export const EXPORT_MIME_TYPE = "audio/wav";
 
