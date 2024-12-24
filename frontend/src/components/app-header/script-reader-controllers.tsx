@@ -23,7 +23,7 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
       console.log("Sequentialize", blob);
     };
 
-    audioRecordController.onSequentialize(onSequentialize);
+    return audioRecordController.onSequentialize(onSequentialize);
   }, []);
 
   useEffect(() => {

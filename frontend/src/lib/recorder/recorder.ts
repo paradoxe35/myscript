@@ -1,89 +1,154 @@
-import {
-  IMediaRecorder,
-  MediaRecorder,
-  register,
-} from "extendable-media-recorder";
-import { connect } from "extendable-media-recorder-wav-encoder";
-import { EXPORT_MIME_TYPE } from "./constants";
+import Microphone from "./microphone";
+
+const defaultConfig = {
+  nFrequencyBars: 255,
+  onAnalysed: null,
+};
+
+interface RecorderResult {
+  blob: Blob;
+  lastSequence?: Blob;
+  buffer: Float32Array[];
+  sampleRate?: number;
+}
 
 export default class Recorder {
-  private mediaRecorder?: IMediaRecorder;
+  config: { nFrequencyBars: number; onAnalysed: any };
+  static download: (blob: Blob, filename?: string) => void;
+  audioContext: AudioContext;
+  audioInput: MediaStreamAudioSourceNode | null;
+  realAudioInput: MediaStreamAudioSourceNode | null;
+  inputPoint: GainNode | null;
+  audioRecorder?: Microphone;
+  rafID: any;
+  analyserContext: any;
+  recIndex: number;
+  stream: MediaStream | null;
+  analyserNode: AnalyserNode | undefined;
+  private cancelRequestAnimationFrame: number | undefined;
 
-  private chunks: Blob[] = [];
+  constructor(
+    audioContext: AudioContext,
+    config?: Omit<typeof defaultConfig, "onAnalysed">
+  ) {
+    this.config = Object.assign({}, defaultConfig, config || {});
 
-  private _recording: boolean = false;
+    this.audioContext = audioContext;
+    this.audioInput = null;
+    this.realAudioInput = null;
+    this.inputPoint = null;
+    // @ts-ignore
+    this.audioRecorder = null;
+    this.rafID = null;
+    this.analyserContext = null;
+    this.recIndex = 0;
+    this.stream = null;
 
-  constructor(private audioContext: AudioContext) {}
+    this.updateAnalysers = this.updateAnalysers.bind(this);
+  }
 
-  public async init(mediaStream: MediaStream) {
-    await register(await connect());
+  init(stream: MediaStream) {
+    return new Promise<void>((resolve) => {
+      this.inputPoint = this.audioContext.createGain();
 
-    // const mediaStreamAudioSourceNode = new MediaStreamAudioSourceNode(
-    //   this.audioContext,
-    //   { mediaStream }
-    // );
-    // const mediaStreamAudioDestinationNode = new MediaStreamAudioDestinationNode(
-    //   this.audioContext
-    // );
+      this.stream = stream;
 
-    // mediaStreamAudioSourceNode.connect(mediaStreamAudioDestinationNode);
+      this.realAudioInput = this.audioContext.createMediaStreamSource(stream);
+      this.audioInput = this.realAudioInput;
+      this.audioInput?.connect(this.inputPoint);
 
-    this.mediaRecorder = new MediaRecorder(mediaStream, {
-      mimeType: EXPORT_MIME_TYPE,
+      this.analyserNode = this.audioContext.createAnalyser();
+      this.analyserNode.fftSize = 2048;
+      this.inputPoint.connect(this.analyserNode);
+
+      this.audioRecorder = new Microphone(this.inputPoint);
+
+      const zeroGain = this.audioContext.createGain();
+      zeroGain.gain.value = 0.0;
+
+      this.inputPoint.connect(zeroGain);
+      zeroGain.connect(this.audioContext.destination);
+
+      this.updateAnalysers();
+
+      resolve();
     });
   }
 
-  public get recording() {
-    return this._recording;
+  start() {
+    return new Promise<MediaStream>((resolve, reject) => {
+      if (!this.audioRecorder) {
+        reject("Not currently recording");
+        return;
+      }
+
+      this.audioRecorder.clear();
+      this.audioRecorder.record();
+
+      resolve(this.stream!);
+    });
   }
 
-  private mustBeInitialized() {
-    if (!this.mediaRecorder) {
-      throw new Error("MediaRecorder is not initialized");
+  export(): Promise<RecorderResult> {
+    return new Promise((resolve) => {
+      this.audioRecorder?.getBuffer(
+        (buffer: Float32Array[], sampleRate: number) => {
+          this.audioRecorder?.exportWAV((blob: Blob) => {
+            resolve({ buffer, blob, sampleRate });
+          });
+        }
+      );
+    });
+  }
+
+  stop() {
+    return new Promise<RecorderResult>((resolve) => {
+      this.audioRecorder?.stop();
+
+      this.audioRecorder?.getBuffer(
+        (buffer: Float32Array[], sampleRate: number) => {
+          this.audioRecorder?.exportWAV((blob: Blob) =>
+            resolve({ buffer, blob, sampleRate })
+          );
+        }
+      );
+    });
+  }
+
+  updateAnalysers() {
+    if (this.config.onAnalysed) {
+      this.cancelRequestAnimationFrame = requestAnimationFrame(
+        this.updateAnalysers
+      );
+
+      const freqByteData = new Uint8Array(
+        this.analyserNode?.frequencyBinCount!
+      );
+
+      this.analyserNode?.getByteFrequencyData(freqByteData);
+
+      const data = new Array(255);
+      let lastNonZero = 0;
+      let datum;
+
+      for (let idx = 0; idx < 255; idx += 1) {
+        datum =
+          Math.floor(freqByteData[idx]) - (Math.floor(freqByteData[idx]) % 5);
+
+        if (datum !== 0) {
+          lastNonZero = idx;
+        }
+
+        data[idx] = datum;
+      }
+
+      this.config.onAnalysed({ data, lineTo: lastNonZero });
+    } else if (this.cancelRequestAnimationFrame && this.config.onAnalysed) {
+      cancelAnimationFrame(this.cancelRequestAnimationFrame);
     }
   }
 
-  public start() {
-    this.mustBeInitialized();
-
-    this.mediaRecorder!.onstart = () => {
-      console.log("Recording started...");
-      this._recording = true;
-    };
-
-    this.mediaRecorder!.onstop = () => {
-      console.log("Recording stopped...");
-      this._recording = false;
-    };
-
-    this.mediaRecorder!.ondataavailable = (event) => {
-      console.log("Recording data available...");
-      this.chunks.push(event.data);
-    };
-
-    this.mediaRecorder!.start();
-  }
-
-  public stop() {
-    this.mustBeInitialized();
-    this.mediaRecorder!.stop();
-    setTimeout(() => {
-      this.mediaRecorder!.ondataavailable = null;
-      this.mediaRecorder!.onstop = null;
-      this.mediaRecorder!.onstart = null;
-    }, 100);
-
-    const chunks = this.chunks.slice();
-    this.chunks = [];
-
-    return chunks.length > 0 ? new Blob(chunks) : null;
-  }
-
-  public export() {
-    return new Blob(this.chunks);
-  }
-
-  public clear() {
-    this.chunks = [];
+  setOnAnalysed(handler: () => void) {
+    this.config.onAnalysed = handler;
   }
 }

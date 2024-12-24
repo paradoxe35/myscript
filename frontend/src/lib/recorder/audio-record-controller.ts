@@ -75,7 +75,7 @@ export class AudioRecordController {
     let triggered = false;
 
     const loop = async (time: number) => {
-      if (!this.sequentializing || !this.recorder?.recording) {
+      if (!this.sequentializing || !this.recorder?.audioRecorder?.recording) {
         return;
       }
 
@@ -101,16 +101,16 @@ export class AudioRecordController {
           // Enable pending the exportation
           this.sequentializerStatus?.enableInPending();
 
-          const audioData = this.recorder.export();
+          const audioData = await this.recorder.export();
           // this.sequentializeBlobs.push(audioData);
 
           // disable pending the exportation
           this.sequentializerStatus?.disableInPending();
           // clear all buffer from the recorder
-          this.recorder.clear();
+          this.recorder.audioRecorder.clear();
 
           this._onSequentializeCallbacks.forEach((callback) => {
-            callback(audioData);
+            callback(audioData.blob);
           });
         }
       }
@@ -167,17 +167,17 @@ export class AudioRecordController {
   }
 
   public async stopRecording() {
-    if (!this.recorder.recording) {
+    if (!this.recorder.audioRecorder?.recording) {
       return;
     }
 
-    const blob = await this.recorder.stop();
-    // stop the sequentializer
     this.stopSequentializer();
+
+    const blob = await this.recorder.stop();
 
     if (blob) {
       this._onSequentializeCallbacks.forEach((callback) => {
-        callback(blob);
+        callback(blob.blob);
       });
     }
   }

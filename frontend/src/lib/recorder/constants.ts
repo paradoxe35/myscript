@@ -8,7 +8,7 @@ export const AUDIO_NUM_CHANNELS = 1;
 export const EXPORT_MIME_TYPE = "audio/wav";
 
 export const audio_options = {
-//   sampleRate: SAMPLE_RATE,
+  sampleRate: SAMPLE_RATE,
 };
 
 export const mediaStreamConstraints: MediaStreamConstraints = {
