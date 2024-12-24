@@ -46,6 +46,10 @@ export function GetWhisperModels() {
   return window['go']['main']['App']['GetWhisperModels']();
 }
 
+export function OpenAPITranscribe(arg1, arg2) {
+  return window['go']['main']['App']['OpenAPITranscribe'](arg1, arg2);
+}
+
 export function SaveCache(arg1, arg2) {
   return window['go']['main']['App']['SaveCache'](arg1, arg2);
 }

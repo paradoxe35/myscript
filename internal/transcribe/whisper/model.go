@@ -1,12 +1,17 @@
 package whisper
 
-import "myscript/internal/transcribe/structs"
+import (
+	"errors"
+	"myscript/internal/transcribe/structs"
+)
 
 type WhisperModel struct {
 	Name        string
 	EnglishOnly bool
 	RAMRequired float64 // in GB
 }
+
+var ErrInvalidLanguage = errors.New("invalid language")
 
 var LOCAL_WHISPER_MODELS = []WhisperModel{
 	{"tiny", true, 6},    // ~1GB VRAM -> 6GB RAM

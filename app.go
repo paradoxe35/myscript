@@ -9,6 +9,7 @@ import (
 	"myscript/internal/transcribe/structs"
 	witai "myscript/internal/transcribe/wait.ai"
 	"myscript/internal/transcribe/whisper"
+	"myscript/internal/transcribe/whisper/openai"
 	"myscript/internal/utils"
 
 	"github.com/jomei/notionapi"
@@ -135,4 +136,25 @@ func (a *App) WitTranscribe(base64Data string, language string) (string, error) 
 	}
 
 	return witai.WitAITranscribeFromBuffer(data, apiKey.Key)
+}
+
+func (a *App) OpenAPITranscribe(base64Data string, language string) (string, error) {
+	config := a.GetConfig()
+
+	if config.OpenAIApiKey == nil || *config.OpenAIApiKey == "" {
+		return "", fmt.Errorf("no OpenAI API key found")
+	}
+
+	data, err := base64.StdEncoding.DecodeString(base64Data)
+	if err != nil {
+		fmt.Println("Error decoding base64 data:", err)
+		return "", err
+	}
+
+	text, err := openai.TranscribeFromBuffer(data, language, *config.OpenAIApiKey)
+	if err != nil {
+		return "", err
+	}
+
+	return text, nil
 }

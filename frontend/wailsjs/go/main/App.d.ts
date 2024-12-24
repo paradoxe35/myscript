@@ -28,6 +28,8 @@ export function GetWhisperLanguages():Promise<Array<structs.Language>>;
 
 export function GetWhisperModels():Promise<Array<whisper.WhisperModel>>;
 
+export function OpenAPITranscribe(arg1:string,arg2:string):Promise<string>;
+
 export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
