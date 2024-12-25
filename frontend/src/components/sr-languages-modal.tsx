@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useEffect, useState } from "react";
+import { useConfigStore } from "@/store/config";
 
 type Props = {
   trigger: React.ReactNode | null;
@@ -29,6 +30,8 @@ type Props = {
 };
 
 export function SRLanguagesModal(props: Props) {
+  const config = useConfigStore((state) => state.config);
+
   const transcriberStore = useTranscriberStore();
   const languages = transcriberStore.languages;
 
@@ -42,7 +45,7 @@ export function SRLanguagesModal(props: Props) {
 
   useEffect(() => {
     transcriberStore.getLanguages();
-  }, []);
+  }, [config?.TranscriberSource]);
 
   return (
     <Dialog>

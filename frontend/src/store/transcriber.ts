@@ -45,8 +45,10 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   },
 
   getRecordingStatus: () => {
-    IsRecording().then((isRecording) => {
+    return IsRecording().then((isRecording) => {
       set({ isRecording });
+
+      return isRecording;
     });
   },
 
