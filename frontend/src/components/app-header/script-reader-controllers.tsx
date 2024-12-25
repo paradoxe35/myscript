@@ -35,6 +35,11 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
     });
   }, []);
 
+  // Stop recording when page changes
+  useEffect(() => {
+    transcriberStore.stopRecording();
+  }, [activePageStore.getPageId()]);
+
   useEffect(() => {
     return transcriberStore.setOnTranscribeError((error) => {
       console.log("Transcription error:", error);

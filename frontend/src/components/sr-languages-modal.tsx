@@ -1,4 +1,4 @@
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -9,11 +9,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,7 +32,6 @@ export function SRLanguagesModal(props: Props) {
   const transcriberStore = useTranscriberStore();
   const languages = transcriberStore.languages;
 
-  const [open, setOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   const handleLanguageSelected = () => {
@@ -71,7 +65,6 @@ export function SRLanguagesModal(props: Props) {
                   value={language.Code}
                   onSelect={(currentValue) => {
                     setSelectedLanguage(currentValue);
-                    setOpen(false);
                   }}
                 >
                   {language.Name}
@@ -89,7 +82,7 @@ export function SRLanguagesModal(props: Props) {
           </CommandList>
         </Command>
 
-        <DialogFooter className="sm:justify-start">
+        <DialogFooter className="sm:justify-end">
           <DialogClose asChild>
             <Button
               type="button"
