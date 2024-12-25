@@ -1,6 +1,7 @@
 package microphone
 
 import (
+	"bytes"
 	"encoding/binary"
 	"math"
 	"sync"
@@ -223,4 +224,36 @@ func (ar *AudioSequencer) detectNoise(samples []byte) bool {
 
 	// Return true if the sound is above our noise threshold
 	return db > noiseThreshold
+}
+
+func (ar *AudioSequencer) RawBytesToWAV(audioData []byte) ([]byte, error) {
+	// Create a buffer to store WAV data
+	var wavBuffer bytes.Buffer
+
+	channels := ar.config.Channels
+	sampleRate := ar.config.SampleRate
+
+	// Write WAV header
+	// RIFF chunk descriptor
+	wavBuffer.WriteString("RIFF")                             // ChunkID, 4 bytes
+	fileSize := uint32(36 + len(audioData))                   // Total file size - 8 bytes for RIFF header
+	binary.Write(&wavBuffer, binary.LittleEndian, fileSize-8) // Size (remaining bytes after this field)
+	wavBuffer.WriteString("WAVE")
+
+	// fmt sub-chunk
+	wavBuffer.WriteString("fmt ")
+	binary.Write(&wavBuffer, binary.LittleEndian, uint32(16)) // Subchunk1Size (16 for PCM)
+	binary.Write(&wavBuffer, binary.LittleEndian, uint16(1))  // AudioFormat (1 for PCM)
+	binary.Write(&wavBuffer, binary.LittleEndian, uint16(channels))
+	binary.Write(&wavBuffer, binary.LittleEndian, sampleRate)
+	binary.Write(&wavBuffer, binary.LittleEndian, uint32(sampleRate*uint32(channels)*2)) // ByteRate
+	binary.Write(&wavBuffer, binary.LittleEndian, uint16(channels*2))                    // BlockAlign
+	binary.Write(&wavBuffer, binary.LittleEndian, uint16(16))                            // BitsPerSample
+
+	// data sub-chunk
+	wavBuffer.WriteString("data")
+	binary.Write(&wavBuffer, binary.LittleEndian, uint32(len(audioData)))
+	wavBuffer.Write(audioData)
+
+	return wavBuffer.Bytes(), nil
 }

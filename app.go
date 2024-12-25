@@ -197,10 +197,12 @@ func (a *App) StartRecording(language string) error {
 	log.Printf("Starting recording with language: %s", language)
 
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
-		transcribed, err := a.Transcribe(buffer, language)
+		waveBuffer, _ := a.audioSequencer.RawBytesToWAV(buffer)
+		transcribed, err := a.Transcribe(waveBuffer, language)
 
 		if err != nil {
-			runtime.EventsEmit(a.ctx, "on-transcribe-error", err)
+			log.Printf("Transcription error: %s\n", err.Error())
+			runtime.EventsEmit(a.ctx, "on-transcribe-error", err.Error())
 			return
 		}
 
