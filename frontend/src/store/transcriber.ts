@@ -31,13 +31,17 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   languages: [],
 
   async startRecording(languageCode: string) {
-    await StartRecording(languageCode);
-    get().getRecordingStatus();
+    if (!get().isRecording) {
+      await StartRecording(languageCode);
+      get().getRecordingStatus();
+    }
   },
 
   async stopRecording() {
-    await StopRecording();
-    get().getRecordingStatus();
+    if (get().isRecording) {
+      await StopRecording();
+      get().getRecordingStatus();
+    }
   },
 
   getRecordingStatus: () => {

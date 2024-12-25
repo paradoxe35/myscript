@@ -2,12 +2,6 @@ import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { Button } from "../ui/button";
 import { BookOpenText, Play } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useEffect } from "react";
 import { SRLanguagesModal } from "../sr-languages-modal";
