@@ -12,7 +12,7 @@ import (
 
 const (
 	// If 10 seconds of silence is detected, we go stop recording
-	MAX_SILENCE_TIME = 1000 * 10 // 10 seconds
+	MAX_SILENCE_TIME = 1000 * 20 // 20 seconds
 )
 
 type NoiseConfig struct {
@@ -44,7 +44,7 @@ func NewAudioSequencer() *AudioSequencer {
 	config := NoiseConfig{
 		MinDecibels:    -100,
 		maxDecibels:    0,
-		NoiseThreshold: -50,
+		NoiseThreshold: -35,
 		MaxBlankTime:   800,
 
 		SampleRate: 44100,
@@ -161,11 +161,13 @@ func (ar *AudioSequencer) Stop(autoStopped bool) {
 
 	if ar.device != nil {
 		ar.device.Uninit()
+		ar.device = nil
 	}
 
 	if ar.ctx != nil {
 		ar.ctx.Uninit()
 		ar.ctx.Free()
+		ar.ctx = nil
 	}
 
 	if ar.config.OnStop != nil {
