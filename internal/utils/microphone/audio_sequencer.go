@@ -11,7 +11,7 @@ import (
 
 const (
 	// If 10 seconds of silence is detected, we go stop recording
-	MAX_SILENCE_TIME = 1000 * 20 // 20 seconds
+	MAX_SILENCE_TIME = 1000 * 10 // 10 seconds
 )
 
 type NoiseConfig struct {
