@@ -78,24 +78,14 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
 
   return (
     <div {...props} className={cn("flex gap-2 items-center", props.className)}>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger slot="div">
-            {readMode ? (
-              button
-            ) : (
-              <SRLanguagesModal
-                trigger={button}
-                onLanguageSelected={handleLanguageSelected}
-              />
-            )}
-          </TooltipTrigger>
-
-          <TooltipContent>
-            {readMode ? <p>Stop reading mode</p> : <p>Start reading mode</p>}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {readMode ? (
+        button
+      ) : (
+        <SRLanguagesModal
+          trigger={button}
+          onLanguageSelected={handleLanguageSelected}
+        />
+      )}
     </div>
   );
 }

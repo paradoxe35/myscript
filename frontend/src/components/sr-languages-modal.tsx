@@ -54,58 +54,40 @@ export function SRLanguagesModal(props: Props) {
     <Dialog>
       <DialogTrigger asChild>{props.trigger}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md z-50">
         <DialogHeader>
           <DialogTitle>Select your script language</DialogTitle>
           <DialogDescription></DialogDescription>
         </DialogHeader>
 
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className="w-full justify-between"
-            >
-              {selectedLanguage
-                ? languages.find((lang) => lang.Code === selectedLanguage)?.Name
-                : "Select Language..."}
-              <ChevronsUpDown className="opacity-50" />
-            </Button>
-          </PopoverTrigger>
-
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search language..." className="h-9" />
-              <CommandList>
-                <CommandEmpty>No language found.</CommandEmpty>
-                <CommandGroup>
-                  {languages.map((language) => (
-                    <CommandItem
-                      key={language.Code}
-                      value={language.Code}
-                      onSelect={(currentValue) => {
-                        setSelectedLanguage(currentValue);
-                        setOpen(false);
-                      }}
-                    >
-                      {language.Name}
-                      <Check
-                        className={cn(
-                          "ml-auto",
-                          selectedLanguage === language.Code
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <Command>
+          <CommandInput placeholder="Search language..." className="h-9" />
+          <CommandList>
+            <CommandEmpty>No language found.</CommandEmpty>
+            <CommandGroup>
+              {languages.map((language) => (
+                <CommandItem
+                  key={language.Code}
+                  value={language.Code}
+                  onSelect={(currentValue) => {
+                    setSelectedLanguage(currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  {language.Name}
+                  <Check
+                    className={cn(
+                      "ml-auto",
+                      selectedLanguage === language.Code
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
 
         <DialogFooter className="sm:justify-start">
           <DialogClose asChild>
