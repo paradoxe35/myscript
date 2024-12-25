@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"fmt"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -12,6 +12,8 @@ type ProcessQueue struct {
 	processing     bool
 	lock           sync.Mutex
 	executionId    BookID
+
+	logger *log.Logger
 }
 
 type process struct {
@@ -21,12 +23,13 @@ type process struct {
 
 type BookID uint
 
-func NewProcessQueue() *ProcessQueue {
+func NewProcessQueue(name string) *ProcessQueue {
 	return &ProcessQueue{
 		processCounter: 0,
 		processes:      make(map[BookID]*process),
 		processing:     false,
 		lock:           sync.Mutex{},
+		logger:         log.New(os.Stdout, name, log.LstdFlags),
 	}
 }
 
@@ -81,7 +84,7 @@ func (pq *ProcessQueue) worker() {
 	// Wait for the process to be ready
 	<-proc.ready
 
-	fmt.Printf("ProcessQueue: executing process %d\n", pq.executionId)
+	pq.logger.Printf("ProcessQueue: executing process %d\n", pq.executionId)
 
 	proc.callback()
 

@@ -80,7 +80,7 @@ func (ar *AudioSequencer) GetNoiseConfig() NoiseConfig {
 }
 
 // This function will block until the recording is stopped
-func (ar *AudioSequencer) Start(started chan<- bool) error {
+func (ar *AudioSequencer) Start() error {
 	if ar.isRecording {
 		return nil
 	}

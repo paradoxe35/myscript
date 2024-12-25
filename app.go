@@ -196,7 +196,7 @@ func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 func (a *App) StartRecording(language string) error {
 	log.Printf("Starting recording with language: %s", language)
 
-	pq := utils.NewProcessQueue()
+	pq := utils.NewProcessQueue("transcriber-queue")
 
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
 		bookId := pq.Book()
@@ -219,13 +219,7 @@ func (a *App) StartRecording(language string) error {
 		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
 	})
 
-	started := make(chan bool)
-	a.audioSequencer.Start(started)
-
-	// Wait for the device to start
-	// <-started
-
-	return nil
+	return a.audioSequencer.Start()
 }
 
 func (a *App) StopRecording() {
