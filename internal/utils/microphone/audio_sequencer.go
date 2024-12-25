@@ -67,6 +67,10 @@ func (ar *AudioSequencer) GetDeviceConfig() malgo.DeviceConfig {
 }
 
 func (ar *AudioSequencer) Start() error {
+	if ar.isRecording {
+		return nil
+	}
+
 	ctx, err := malgo.InitContext(nil, malgo.ContextConfig{}, nil)
 	if err != nil {
 		return err

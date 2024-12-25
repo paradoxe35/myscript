@@ -22,6 +22,10 @@ export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
 }
 
+export function GetLanguages() {
+  return window['go']['main']['App']['GetLanguages']();
+}
+
 export function GetLocalPage(arg1) {
   return window['go']['main']['App']['GetLocalPage'](arg1);
 }
@@ -46,6 +50,18 @@ export function GetWhisperModels() {
   return window['go']['main']['App']['GetWhisperModels']();
 }
 
+export function GetWitAILanguages() {
+  return window['go']['main']['App']['GetWitAILanguages']();
+}
+
+export function IsRecording() {
+  return window['go']['main']['App']['IsRecording']();
+}
+
+export function LocalTranscribe(arg1, arg2) {
+  return window['go']['main']['App']['LocalTranscribe'](arg1, arg2);
+}
+
 export function OpenAPITranscribe(arg1, arg2) {
   return window['go']['main']['App']['OpenAPITranscribe'](arg1, arg2);
 }
@@ -60,6 +76,18 @@ export function SaveConfig(arg1) {
 
 export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
+}
+
+export function StartRecording(arg1) {
+  return window['go']['main']['App']['StartRecording'](arg1);
+}
+
+export function StopRecording() {
+  return window['go']['main']['App']['StopRecording']();
+}
+
+export function Transcribe(arg1, arg2) {
+  return window['go']['main']['App']['Transcribe'](arg1, arg2);
 }
 
 export function WitTranscribe(arg1, arg2) {

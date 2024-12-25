@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
@@ -12,6 +11,8 @@ import (
 	"myscript/internal/transcribe/whisper/openai"
 	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
+
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 
 	"github.com/jomei/notionapi"
 	"gorm.io/gorm"
@@ -144,35 +145,23 @@ func (a *App) GetLanguages() []structs.Language {
 
 // --- Transcribe ---
 
-func (a *App) WitTranscribe(base64Data string, language string) (string, error) {
+func (a *App) WitTranscribe(buffer []byte, language string) (string, error) {
 	apiKey := witai.GetAPIKey(language)
 	if apiKey == nil {
 		return "", fmt.Errorf("no API key found for language %s", language)
 	}
 
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		fmt.Println("Error decoding base64 data:", err)
-		return "", err
-	}
-
-	return witai.WitAITranscribeFromBuffer(data, apiKey.Key)
+	return witai.WitAITranscribeFromBuffer(buffer, apiKey.Key)
 }
 
-func (a *App) OpenAPITranscribe(base64Data string, language string) (string, error) {
+func (a *App) OpenAPITranscribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
 
 	if config.OpenAIApiKey == nil || *config.OpenAIApiKey == "" {
 		return "", fmt.Errorf("no OpenAI API key found")
 	}
 
-	data, err := base64.StdEncoding.DecodeString(base64Data)
-	if err != nil {
-		fmt.Println("Error decoding base64 data:", err)
-		return "", err
-	}
-
-	text, err := openai.TranscribeFromBuffer(data, language, *config.OpenAIApiKey)
+	text, err := openai.TranscribeFromBuffer(buffer, language, *config.OpenAIApiKey)
 	if err != nil {
 		return "", err
 	}
@@ -180,20 +169,20 @@ func (a *App) OpenAPITranscribe(base64Data string, language string) (string, err
 	return text, nil
 }
 
-func (a *App) LocalTranscribe(base64Data string, language string) (string, error) {
+func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
 	return "", fmt.Errorf("not implemented")
 }
 
-func (a *App) Transcribe(base64Data string, language string) (string, error) {
+func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
 
 	switch config.TranscriberSource {
 	case "witai":
-		return a.WitTranscribe(base64Data, language)
+		return a.WitTranscribe(buffer, language)
 	case "openai":
-		return a.OpenAPITranscribe(base64Data, language)
+		return a.OpenAPITranscribe(buffer, language)
 	case "local":
-		return a.LocalTranscribe(base64Data, language)
+		return a.LocalTranscribe(buffer, language)
 	}
 
 	return "", fmt.Errorf("invalid transcriber source: %s", config.TranscriberSource)
@@ -201,11 +190,23 @@ func (a *App) Transcribe(base64Data string, language string) (string, error) {
 
 // --- Microphone Recording ---
 
-func (a *App) StartRecording() error {
+func (a *App) StartRecording(language string) error {
+	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
+		transcribed, err := a.Transcribe(buffer, language)
+
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "on-transcribe-error", err)
+			return
+		}
+
+		runtime.EventsEmit(a.ctx, "on-transcribed-text", transcribed)
+	})
+
 	return a.audioSequencer.Start()
 }
 
 func (a *App) StopRecording() {
+	a.audioSequencer.SetSequentializeCallback(nil)
 	a.audioSequencer.Stop()
 }
 
