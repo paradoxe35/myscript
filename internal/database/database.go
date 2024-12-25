@@ -9,7 +9,7 @@ import (
 
 const DB_NAME = "data.db"
 
-func CreateDatabase(homeDir string) *gorm.DB {
+func NewDatabase(homeDir string) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(homeDir+"/"+DB_NAME), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")

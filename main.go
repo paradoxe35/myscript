@@ -4,6 +4,7 @@ import (
 	"embed"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
+	"myscript/internal/utils/microphone"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -24,11 +25,11 @@ func main() {
 	// Create the directory if it doesn't exist
 	homeDir := filesystem.CreateDirectoryInHome(APP_DIR)
 
-	// Create the database
-	db := database.CreateDatabase(homeDir)
-
 	// Create an instance of the app structure
-	app := NewApp(db)
+	app := NewApp(
+		database.NewDatabase(homeDir),
+		microphone.NewAudioSequencer(),
+	)
 
 	// Create application with options
 	err := wails.Run(&options.App{

@@ -11,6 +11,7 @@ import (
 	"myscript/internal/transcribe/whisper"
 	"myscript/internal/transcribe/whisper/openai"
 	"myscript/internal/utils"
+	"myscript/internal/utils/microphone"
 
 	"github.com/jomei/notionapi"
 	"gorm.io/gorm"
@@ -18,13 +19,14 @@ import (
 
 // App struct
 type App struct {
-	ctx context.Context
-	db  *gorm.DB
+	ctx            context.Context
+	audioSequencer *microphone.AudioSequencer
+	db             *gorm.DB
 }
 
 // NewApp creates a new App application struct
-func NewApp(db *gorm.DB) *App {
-	return &App{db: db}
+func NewApp(db *gorm.DB, audioSequencer *microphone.AudioSequencer) *App {
+	return &App{db: db, audioSequencer: audioSequencer}
 }
 
 // startup is called when the app starts. The context is saved
@@ -133,13 +135,11 @@ func (a *App) GetLanguages() []structs.Language {
 	config := a.GetConfig()
 
 	switch config.TranscriberSource {
-	case "local":
-		return a.GetLocalLanguages()
 	case "witai":
 		return a.GetWitAILanguages()
+	default:
+		return a.GetWhisperLanguages()
 	}
-
-	return []structs.Language{}
 }
 
 // --- Transcribe ---
@@ -178,4 +178,37 @@ func (a *App) OpenAPITranscribe(base64Data string, language string) (string, err
 	}
 
 	return text, nil
+}
+
+func (a *App) LocalTranscribe(base64Data string, language string) (string, error) {
+	return "", fmt.Errorf("not implemented")
+}
+
+func (a *App) Transcribe(base64Data string, language string) (string, error) {
+	config := a.GetConfig()
+
+	switch config.TranscriberSource {
+	case "witai":
+		return a.WitTranscribe(base64Data, language)
+	case "openai":
+		return a.OpenAPITranscribe(base64Data, language)
+	case "local":
+		return a.LocalTranscribe(base64Data, language)
+	}
+
+	return "", fmt.Errorf("invalid transcriber source: %s", config.TranscriberSource)
+}
+
+// --- Microphone Recording ---
+
+func (a *App) StartRecording() error {
+	return a.audioSequencer.Start()
+}
+
+func (a *App) StopRecording() {
+	a.audioSequencer.Stop()
+}
+
+func (a *App) IsRecording() bool {
+	return a.audioSequencer.Recording()
 }

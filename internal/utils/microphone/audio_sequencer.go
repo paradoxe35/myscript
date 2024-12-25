@@ -149,6 +149,10 @@ func (ar *AudioSequencer) SetSequentializeCallback(callback func([]byte)) {
 	ar.config.OnSequential = callback
 }
 
+func (ar *AudioSequencer) Recording() bool {
+	return ar.isRecording
+}
+
 func (ar *AudioSequencer) detectNoise(samples []byte) bool {
 	if len(samples) < 2 {
 		return false
