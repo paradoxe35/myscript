@@ -20,7 +20,7 @@ type NoiseConfig struct {
 	MinDecibels    float64 // Minimum decibel value (-100 default)
 	maxDecibels    float64 // Maximum decibel value (0 default)
 	NoiseThreshold float64 // Noise detection sensitivity
-	MaxBlankTime   int64   // Maximum time to consider a blank (ms) - 800 default
+	MaxBlankTime   int64   // Maximum time to consider a blank (ms) - 1000 default
 
 	// Audio stream
 	SampleRate uint32 // Sample rate (44100 default)
@@ -45,7 +45,7 @@ func NewAudioSequencer() *AudioSequencer {
 		MinDecibels:    -100,
 		maxDecibels:    0,
 		NoiseThreshold: -35,
-		MaxBlankTime:   800,
+		MaxBlankTime:   1000,
 
 		SampleRate: 44100,
 		Channels:   1,
