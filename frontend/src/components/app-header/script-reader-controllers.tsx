@@ -8,38 +8,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { useEffect } from "react";
-import { RecorderResult, AudioRecordController } from "@/lib/recorder";
-import { OpenAPITranscribe, WitTranscribe } from "~wails/main/App";
-
-const audioRecordController = AudioRecordController.create();
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const activePageStore = useActivePageStore();
   const activePage = activePageStore.page;
   const readMode = activePageStore.readMode;
-
-  useEffect(() => {
-    const onSequentialize = async (result: RecorderResult) => {
-      const encoded = await result.encodeBlob();
-
-      console.log("Transcribing...", result.blob.size);
-
-      OpenAPITranscribe(encoded, "en").then((value) => {
-        console.log("Transcribed:", value);
-      });
-    };
-
-    return audioRecordController.onSequentialize(onSequentialize);
-  }, []);
-
-  useEffect(() => {
-    if (activePageStore.isReadMode()) {
-      audioRecordController.startRecording();
-    } else {
-      audioRecordController.stopRecording();
-    }
-  }, [activePageStore.readMode]);
 
   const startReadMode = () => {
     activePageStore.toggleReadMode();

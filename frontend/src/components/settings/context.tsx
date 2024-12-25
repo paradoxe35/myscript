@@ -15,10 +15,10 @@ import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
 
-export type WhisperSource = "local" | "openai" | "witai";
+export type TranscriberSource = "local" | "openai" | "witai";
 
 export type TranscriberSources = {
-  [key in WhisperSource]: {
+  [key in TranscriberSource]: {
     name: string;
     key: key;
   };
@@ -40,7 +40,7 @@ export const TRANSCRIBER_SOURCES: TranscriberSources = {
 };
 
 type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
-  WhisperSource: WhisperSource;
+  TranscriberSource: TranscriberSource;
 };
 
 export type SettingsContextValue = {
@@ -62,7 +62,7 @@ function reducer(state: SettingsState, action: Partial<SettingsState>) {
 }
 
 export function SettingsProvider({ children }: React.PropsWithChildren) {
-  const [state, dispatch] = useReducer(reducer, { WhisperSource: "local" });
+  const [state, dispatch] = useReducer(reducer, { TranscriberSource: "local" });
   const [whisperModels, setWhisperModels] = useState<whisper.WhisperModel[]>(
     []
   );
@@ -83,12 +83,12 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, [configStore.config]);
 
   useEffect(() => {
-    if (state.WhisperSource === "local") {
+    if (state.TranscriberSource === "local") {
       GetBestWhisperModel().then((bestWhisperModel) => {
         setBestWhisperModel(bestWhisperModel);
       });
     }
-  }, [state.WhisperSource]);
+  }, [state.TranscriberSource]);
 
   useEffect(() => {
     GetWhisperModels().then((models) => {
@@ -97,7 +97,7 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
   }, []);
 
   const handleSave = useCallback(() => {
-    if (state.WhisperSource === "openai") {
+    if (state.TranscriberSource === "openai") {
       if (!state.OpenAIApiKey) {
         toast.error("OpenAI API key is required");
         return;

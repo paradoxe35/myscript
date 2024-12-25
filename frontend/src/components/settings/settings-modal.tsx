@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { PropsWithChildren } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
-import { TRANSCRIBER_SOURCES, useSettings, WhisperSource } from "./context";
+import { TRANSCRIBER_SOURCES, useSettings, TranscriberSource } from "./context";
 import {
   Select,
   SelectContent,
@@ -61,9 +61,9 @@ export function SettingsModal(props: PropsWithChildren) {
 
           <Separator />
 
-          {state.WhisperSource === "local" && <LocalWhisperInputs />}
-          {state.WhisperSource === "openai" && <OpenAIApiKeyInput />}
-          {state.WhisperSource === "witai" && <WitAIHint />}
+          {state.TranscriberSource === "local" && <LocalWhisperInputs />}
+          {state.TranscriberSource === "openai" && <OpenAIApiKeyInput />}
+          {state.TranscriberSource === "witai" && <WitAIHint />}
         </div>
 
         <DialogFooter>
@@ -229,9 +229,9 @@ function SelectSpeechSource() {
 
   return (
     <Select
-      value={state.WhisperSource}
-      onValueChange={(value: WhisperSource) => {
-        dispatch({ WhisperSource: value });
+      value={state.TranscriberSource}
+      onValueChange={(value: TranscriberSource) => {
+        dispatch({ TranscriberSource: value });
       }}
     >
       <SelectTrigger className="w-[190px]">

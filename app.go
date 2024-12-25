@@ -121,6 +121,27 @@ func (a *App) GetWhisperModels() []whisper.WhisperModel {
 	return whisper.GetWhisperModels()
 }
 
+// --- WitAI ---
+
+func (a *App) GetWitAILanguages() []structs.Language {
+	return witai.GetSupportedLanguages()
+}
+
+// --- Languages ---
+
+func (a *App) GetLanguages() []structs.Language {
+	config := a.GetConfig()
+
+	switch config.TranscriberSource {
+	case "local":
+		return a.GetLocalLanguages()
+	case "witai":
+		return a.GetWitAILanguages()
+	}
+
+	return []structs.Language{}
+}
+
 // --- Transcribe ---
 
 func (a *App) WitTranscribe(base64Data string, language string) (string, error) {
