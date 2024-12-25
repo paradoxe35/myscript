@@ -211,7 +211,13 @@ func (a *App) StartRecording(language string) error {
 		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
 	})
 
-	return a.audioSequencer.Start()
+	started := make(chan bool)
+	go a.audioSequencer.Start(started)
+
+	// Wait for the device to start
+	<-started
+
+	return nil
 }
 
 func (a *App) StopRecording() {

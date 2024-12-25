@@ -11,7 +11,7 @@ import (
 
 const (
 	// If 10 seconds of silence is detected, we go stop recording
-	MAX_SILENCE_TIME = 1000 * 10 // 10 seconds
+	MAX_SILENCE_TIME = 1000 * 20 // 20 seconds
 )
 
 type NoiseConfig struct {
@@ -34,6 +34,7 @@ type AudioSequencer struct {
 	device        *malgo.Device
 	config        NoiseConfig
 	lastNoiseTime time.Time
+	processing    chan bool
 	isRecording   bool
 	mu            sync.Mutex
 }
@@ -72,7 +73,8 @@ func (ar *AudioSequencer) GetDeviceConfig() malgo.DeviceConfig {
 	return deviceConfig
 }
 
-func (ar *AudioSequencer) Start() error {
+// This function will block until the recording is stopped
+func (ar *AudioSequencer) Start(started chan<- bool) error {
 	if ar.isRecording {
 		return nil
 	}
@@ -84,11 +86,11 @@ func (ar *AudioSequencer) Start() error {
 
 	ar.ctx = ctx
 
-	deviceConfig := ar.GetDeviceConfig()
-
 	var currentBuffer []byte
 	// Set this to true to start recording, to prevent unnecessary OnSequential calls on Start
 	var triggered = true
+
+	ar.lastNoiseTime = time.Now()
 
 	onRecvFrames := func(pSample2, pSample []byte, framecount uint32) {
 		ar.mu.Lock()
@@ -133,9 +135,8 @@ func (ar *AudioSequencer) Start() error {
 		}
 	}
 
-	deviceCallbacks := malgo.DeviceCallbacks{
-		Data: onRecvFrames,
-	}
+	deviceConfig := ar.GetDeviceConfig()
+	deviceCallbacks := malgo.DeviceCallbacks{Data: onRecvFrames}
 
 	device, err := malgo.InitDevice(ctx.Context, deviceConfig, deviceCallbacks)
 	if err != nil {
@@ -145,7 +146,13 @@ func (ar *AudioSequencer) Start() error {
 	ar.device = device
 	ar.isRecording = true
 
-	return device.Start()
+	err = device.Start()
+	started <- true
+
+	// Block execution until the device is stopped
+	<-ar.processing
+
+	return err
 }
 
 func (ar *AudioSequencer) Stop(autoStopped bool) {
@@ -162,6 +169,10 @@ func (ar *AudioSequencer) Stop(autoStopped bool) {
 
 	if ar.config.OnStop != nil {
 		ar.config.OnStop(autoStopped)
+	}
+
+	if ar.processing != nil {
+		close(ar.processing)
 	}
 }
 
