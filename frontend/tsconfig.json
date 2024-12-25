@@ -27,7 +27,7 @@
       "~wails/*": [
         "./wailsjs/go/*"
       ],
-      "~wails/runtime": [
+      "~wails-runtime": [
         "./wailsjs/runtime/runtime"
       ]
     }

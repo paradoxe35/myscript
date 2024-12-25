@@ -6,7 +6,7 @@ import {
   StopRecording,
 } from "~wails/main/App";
 import { structs } from "~wails/models";
-import { EventsOn, EventsOff } from "~wails/runtime";
+import { EventsOn, EventsOff } from "~wails-runtime";
 
 type TranscriberState = {
   isRecording: boolean;
