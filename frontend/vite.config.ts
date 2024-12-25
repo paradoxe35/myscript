@@ -9,6 +9,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "~wails": path.resolve(__dirname, "./wailsjs/go"),
+      "~wails/runtime": path.resolve(__dirname, "./wailsjs/runtime/runtime.js"),
     },
   },
 });
