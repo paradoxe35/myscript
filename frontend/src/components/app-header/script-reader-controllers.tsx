@@ -10,7 +10,7 @@ import {
 } from "../ui/tooltip";
 import { useEffect } from "react";
 import { RecorderResult, AudioRecordController } from "@/lib/recorder";
-import { WitTranscribe } from "~wails/main/App";
+import { OpenAPITranscribe, WitTranscribe } from "~wails/main/App";
 
 const audioRecordController = AudioRecordController.create();
 
@@ -22,7 +22,10 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   useEffect(() => {
     const onSequentialize = async (result: RecorderResult) => {
       const encoded = await result.encodeBlob();
-      WitTranscribe(encoded, "en").then((value) => {
+
+      console.log("Transcribing...", result.blob.size);
+
+      OpenAPITranscribe(encoded, "en").then((value) => {
         console.log("Transcribed:", value);
       });
     };
