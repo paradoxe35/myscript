@@ -36,7 +36,6 @@ type AudioSequencer struct {
 	device        *malgo.Device
 	config        NoiseConfig
 	lastNoiseTime time.Time
-	processing    chan bool
 	isRecording   bool
 	mu            sync.Mutex
 }
@@ -153,16 +152,7 @@ func (ar *AudioSequencer) Start(started chan<- bool) error {
 	ar.device = device
 	ar.isRecording = true
 
-	err = device.Start()
-	started <- true
-
-	// Block execution until the device is stopped
-	select {
-	case <-ar.processing:
-	default:
-	}
-
-	return err
+	return device.Start()
 }
 
 func (ar *AudioSequencer) Stop(autoStopped bool) {
@@ -181,10 +171,6 @@ func (ar *AudioSequencer) Stop(autoStopped bool) {
 
 	if ar.config.OnStop != nil {
 		ar.config.OnStop(autoStopped)
-	}
-
-	if ar.processing != nil {
-		close(ar.processing)
 	}
 }
 
