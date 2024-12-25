@@ -9,6 +9,11 @@ import (
 	"github.com/gen2brain/malgo"
 )
 
+const (
+	// If 10 seconds of silence is detected, we go stop recording
+	MAX_SILENCE_TIME = 1000 * 10 // 10 seconds
+)
+
 type NoiseConfig struct {
 	// Noise detection
 	MinDecibels    float64 // Minimum decibel value (-100 default)
@@ -20,7 +25,8 @@ type NoiseConfig struct {
 	SampleRate uint32 // Sample rate (44100 default)
 	Channels   uint32 // Number of channels (1 default)
 
-	OnSequential func([]byte) // Callback when silence is detected
+	OnSequential func([]byte)           // Callback when silence is detected
+	OnStop       func(autoStopped bool) // Callback when recording is stopped
 }
 
 type AudioSequencer struct {
@@ -119,6 +125,12 @@ func (ar *AudioSequencer) Start() error {
 				currentBuffer = append(currentBuffer, pSample...)
 			}
 		}
+
+		// if silence duration exceeds MaxSilenceTime
+		// we stop recording
+		if triggered && time.Since(ar.lastNoiseTime).Milliseconds() > MAX_SILENCE_TIME {
+			ar.Stop(true)
+		}
 	}
 
 	deviceCallbacks := malgo.DeviceCallbacks{
@@ -136,7 +148,7 @@ func (ar *AudioSequencer) Start() error {
 	return device.Start()
 }
 
-func (ar *AudioSequencer) Stop() {
+func (ar *AudioSequencer) Stop(autoStopped bool) {
 	ar.isRecording = false
 
 	if ar.device != nil {
@@ -147,6 +159,14 @@ func (ar *AudioSequencer) Stop() {
 		ar.ctx.Uninit()
 		ar.ctx.Free()
 	}
+
+	if ar.config.OnStop != nil {
+		ar.config.OnStop(autoStopped)
+	}
+}
+
+func (ar *AudioSequencer) SetStopCallback(callback func(autoStopped bool)) {
+	ar.config.OnStop = callback
 }
 
 func (ar *AudioSequencer) SetSequentializeCallback(callback func([]byte)) {

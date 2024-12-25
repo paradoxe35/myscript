@@ -202,12 +202,18 @@ func (a *App) StartRecording(language string) error {
 		runtime.EventsEmit(a.ctx, "on-transcribed-text", transcribed)
 	})
 
+	a.audioSequencer.SetStopCallback(func(autoStopped bool) {
+		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
+	})
+
 	return a.audioSequencer.Start()
 }
 
 func (a *App) StopRecording() {
+	a.audioSequencer.Stop(false)
+	// Should be called after Stop()
 	a.audioSequencer.SetSequentializeCallback(nil)
-	a.audioSequencer.Stop()
+	a.audioSequencer.SetStopCallback(nil)
 }
 
 func (a *App) IsRecording() bool {
