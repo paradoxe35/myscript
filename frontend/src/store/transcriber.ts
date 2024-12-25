@@ -18,7 +18,7 @@ type TranscriberState = {
   getLanguages: () => void;
 
   setOnTranscribedText: (callback: (text: string) => void) => void;
-  setOnTranscribeError: (callback: (error: Error) => void) => void;
+  setOnTranscribeError: (callback: (error: string) => void) => void;
   setOnRecordingStopped: (callback: (autoStopped: boolean) => void) => void;
 };
 
@@ -76,7 +76,7 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
     };
   },
 
-  setOnTranscribeError(callback: (error: Error) => void) {
+  setOnTranscribeError(callback: (error: string) => void) {
     EventsOff(ON_TRANSCRIBE_ERROR);
     EventsOn(ON_TRANSCRIBE_ERROR, callback);
 
