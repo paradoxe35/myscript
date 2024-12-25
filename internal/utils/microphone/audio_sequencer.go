@@ -17,13 +17,14 @@ const (
 
 type NoiseConfig struct {
 	// Noise detection
-	MinDecibels    float64 // Minimum decibel value (-100 default)
-	maxDecibels    float64 // Maximum decibel value (0 default)
-	NoiseThreshold float64 // Noise detection sensitivity
-	MaxBlankTime   int64   // Maximum time to consider a blank (ms) - 1000 default
+	MinDecibels     float64 // Minimum decibel value (-100 default)
+	MaxDecibels     float64 // Maximum decibel value (0 default)
+	TriggerDecibels float64 // Decibel value to trigger the callback (-30 default)
+	NoiseThreshold  float64 // Noise detection sensitivity
+	MaxBlankTime    int64   // Maximum time to consider a blank (ms) - 600 default
 
 	// Audio stream
-	SampleRate uint32 // Sample rate (44100 default)
+	SampleRate uint32 // Sample rate (32000 default)
 	Channels   uint32 // Number of channels (1 default)
 
 	OnSequential func([]byte)           // Callback when silence is detected
@@ -42,12 +43,13 @@ type AudioSequencer struct {
 
 func NewAudioSequencer() *AudioSequencer {
 	config := NoiseConfig{
-		MinDecibels:    -100,
-		maxDecibels:    0,
-		NoiseThreshold: -35,
-		MaxBlankTime:   1000,
+		MinDecibels:     -100,
+		MaxDecibels:     0,
+		TriggerDecibels: -30,
+		NoiseThreshold:  -50,
+		MaxBlankTime:    700,
 
-		SampleRate: 44100,
+		SampleRate: 32000,
 		Channels:   1,
 	}
 
@@ -72,6 +74,10 @@ func (ar *AudioSequencer) GetDeviceConfig() malgo.DeviceConfig {
 	deviceConfig.Alsa.NoMMap = 1
 
 	return deviceConfig
+}
+
+func (ar *AudioSequencer) GetNoiseConfig() NoiseConfig {
+	return ar.config
 }
 
 // This function will block until the recording is stopped
@@ -102,10 +108,10 @@ func (ar *AudioSequencer) Start(started chan<- bool) error {
 		}
 
 		// Detect noise in the current frame
-		hasNoise := ar.detectNoise(pSample)
+		hasNoise, db := ar.detectNoise(pSample)
 
 		if hasNoise {
-			if triggered {
+			if triggered && db >= ar.config.TriggerDecibels {
 				triggered = false
 			}
 
@@ -191,9 +197,9 @@ func (ar *AudioSequencer) Recording() bool {
 	return ar.isRecording
 }
 
-func (ar *AudioSequencer) detectNoise(samples []byte) bool {
+func (ar *AudioSequencer) detectNoise(samples []byte) (bool, float64) {
 	if len(samples) < 2 {
-		return false
+		return false, 0
 	}
 
 	var sum float64
@@ -210,7 +216,7 @@ func (ar *AudioSequencer) detectNoise(samples []byte) bool {
 	amplitude := rms / maxPossibleValue
 
 	minDecibels := ar.config.MinDecibels
-	maxDecibels := ar.config.maxDecibels
+	maxDecibels := ar.config.MaxDecibels
 	noiseThreshold := ar.config.NoiseThreshold
 
 	// Calculate decibels relative to full scale (dBFS)
@@ -225,7 +231,7 @@ func (ar *AudioSequencer) detectNoise(samples []byte) bool {
 	}
 
 	// Return true if the sound is above our noise threshold
-	return db > noiseThreshold
+	return db > noiseThreshold, db
 }
 
 func (ar *AudioSequencer) RawBytesToWAV(audioData []byte) ([]byte, error) {
