@@ -171,7 +171,7 @@ func (a *App) OpenAPITranscribe(buffer []byte, language string) (string, error) 
 }
 
 func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
-	return "", fmt.Errorf("not implemented")
+	return "", fmt.Errorf("local transcribe not implemented yet")
 }
 
 func (a *App) Transcribe(buffer []byte, language string) (string, error) {
