@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
 	"myscript/internal/transcribe/structs"
@@ -176,6 +177,8 @@ func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
 func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
 
+	log.Printf("Transcribing with language: %s, source: %s", language, config.TranscriberSource)
+
 	switch config.TranscriberSource {
 	case "witai":
 		return a.WitTranscribe(buffer, language)
@@ -191,6 +194,8 @@ func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 // --- Microphone Recording ---
 
 func (a *App) StartRecording(language string) error {
+	log.Printf("Starting recording with language: %s", language)
+
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
 		transcribed, err := a.Transcribe(buffer, language)
 
@@ -210,6 +215,8 @@ func (a *App) StartRecording(language string) error {
 }
 
 func (a *App) StopRecording() {
+	log.Println("Stopping recording")
+
 	a.audioSequencer.Stop(false)
 	// Should be called after Stop()
 	a.audioSequencer.SetSequentializeCallback(nil)
