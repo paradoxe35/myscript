@@ -157,7 +157,10 @@ func (ar *AudioSequencer) Start(started chan<- bool) error {
 	started <- true
 
 	// Block execution until the device is stopped
-	<-ar.processing
+	select {
+	case <-ar.processing:
+	default:
+	}
 
 	return err
 }
