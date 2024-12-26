@@ -24,7 +24,7 @@ type NoiseConfig struct {
 	MaxBlankTime    int64   // Maximum time to consider a blank (ms) - 600 default
 
 	// Audio stream
-	SampleRate uint32 // Sample rate (32000 default)
+	SampleRate uint32 // Sample rate (16000 default)
 	Channels   uint32 // Number of channels (1 default)
 
 	OnSequential func([]byte)           // Callback when silence is detected
@@ -48,7 +48,7 @@ func NewAudioSequencer() *AudioSequencer {
 		NoiseThreshold:  -50,
 		MaxBlankTime:    600,
 
-		SampleRate: 32000,
+		SampleRate: 16000,
 		Channels:   1,
 	}
 

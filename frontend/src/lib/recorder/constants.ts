@@ -3,7 +3,7 @@ export const noiseCaptureConfig = {
   max_blank_time: 1 * 1000, // Maximum time to consider a blank (ms)
 };
 
-export const SAMPLE_RATE = 32000; // 32kHz
+export const SAMPLE_RATE = 16000; // 32kHz
 export const AUDIO_NUM_CHANNELS = 1;
 export const EXPORT_MIME_TYPE = "audio/wav";
 

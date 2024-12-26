@@ -213,6 +213,7 @@ export namespace whisper {
 	    Name: string;
 	    EnglishOnly: boolean;
 	    RAMRequired: number;
+	    Enabled: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new WhisperModel(source);
@@ -223,6 +224,7 @@ export namespace whisper {
 	        this.Name = source["Name"];
 	        this.EnglishOnly = source["EnglishOnly"];
 	        this.RAMRequired = source["RAMRequired"];
+	        this.Enabled = source["Enabled"];
 	    }
 	}
 

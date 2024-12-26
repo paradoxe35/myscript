@@ -9,17 +9,18 @@ type WhisperModel struct {
 	Name        string
 	EnglishOnly bool
 	RAMRequired float64 // in GB
+	Enabled     bool
 }
 
 var ErrInvalidLanguage = errors.New("invalid language")
 
 var LOCAL_WHISPER_MODELS = []WhisperModel{
-	{"tiny", true, 6},    // ~1GB VRAM -> 6GB RAM
-	{"base", true, 6},    // ~1GB VRAM -> 6GB RAM
-	{"small", true, 12},  // ~2GB VRAM -> 12GB RAM
-	{"medium", true, 30}, // ~5GB VRAM -> 30GB RAM
-	{"large", false, 60}, // ~10GB VRAM -> 60GB RAM
-	{"turbo", false, 36}, // ~6GB VRAM -> 36GB RAM
+	{"tiny", true, 6, true},     // ~1GB VRAM -> 6GB RAM
+	{"base", true, 6, true},     // ~1GB VRAM -> 6GB RAM
+	{"small", true, 12, false},  // ~2GB VRAM -> 12GB RAM
+	{"medium", true, 30, false}, // ~5GB VRAM -> 30GB RAM
+	{"large", false, 60, false}, // ~10GB VRAM -> 60GB RAM
+	{"turbo", false, 36, false}, // ~6GB VRAM -> 36GB RAM
 }
 
 var LANGUAGES = []structs.Language{
