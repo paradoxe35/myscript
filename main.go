@@ -15,19 +15,15 @@ import (
 var assets embed.FS
 
 const (
-	APP_DIR = ".myscript"
-	title   = "myscript"
-	width   = 1024
-	height  = 768
+	title  = "myscript"
+	width  = 1024
+	height = 768
 )
 
 func main() {
-	// Create the directory if it doesn't exist
-	homeDir := filesystem.CreateDirectoryInHome(APP_DIR)
-
 	// Create an instance of the app structure
 	app := NewApp(
-		database.NewDatabase(homeDir),
+		database.NewDatabase(filesystem.HOME_DIR),
 		microphone.NewAudioSequencer(),
 	)
 

@@ -6,9 +6,14 @@ import (
 	"path/filepath"
 )
 
-func CreateDirectoryInHome(dirName string) string {
+const homeDirName = ".myscript"
+
+var HOME_DIR string
+
+func createDirectoryInHome(dirName string) string {
 	// Get the user's home directory
 	homeDir, err := os.UserHomeDir()
+
 	if err != nil {
 		log.Fatalf("error getting home directory: %s", err)
 	}
@@ -30,4 +35,8 @@ func CreateDirectoryInHome(dirName string) string {
 	}
 
 	return newDirPath
+}
+
+func init() {
+	HOME_DIR = createDirectoryInHome(homeDirName)
 }
