@@ -6,6 +6,7 @@ import (
 	"io"
 	"myscript/internal/filesystem"
 	"myscript/internal/utils"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -131,7 +132,7 @@ func areModelsDownloading(models []LocalWhisperModel) bool {
 	return downloading
 }
 
-func downloadModel(ctx context.Context, url string, modelPath string, progress chan<- DownloadProgress) error {
+func downloadModel(ctx context.Context, modelUrl string, modelPath string, progress chan<- DownloadProgress) error {
 	// Create HTTP client
 	client := http.Client{
 		Timeout: downloadTimeout,
@@ -142,13 +143,36 @@ func downloadModel(ctx context.Context, url string, modelPath string, progress c
 	fmt.Printf("Downloading model: %s\n", modelName)
 
 	// Initiate the download
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", modelUrl, nil)
 	if err != nil {
 		return err
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
+
+		// Type assert to check if it's a network error
+		if urlErr, ok := err.(*url.Error); ok {
+			switch {
+			case urlErr.Timeout():
+				return fmt.Errorf("request timed out: %w", err)
+			case urlErr.Temporary():
+				return fmt.Errorf("temporary error: %w", err)
+			}
+
+			// Check for specific network-related errors
+			switch t := urlErr.Err.(type) {
+			case *net.OpError:
+				if t.Op == "dial" {
+					return fmt.Errorf("no network connection (dial error)")
+				} else if t.Op == "read" {
+					return fmt.Errorf("connection reset/refused (read error)")
+				}
+			case *net.DNSError:
+				return fmt.Errorf("DNS resolution failed: %w", err)
+			}
+		}
+
 		return err
 	}
 
