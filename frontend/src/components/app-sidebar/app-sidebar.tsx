@@ -82,6 +82,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   };
 
+  // Refresh notion pages when the user is online
+  React.useEffect(() => {
+    addEventListener("online", refreshNotionPages);
+
+    return () => {
+      removeEventListener("online", refreshNotionPages);
+    };
+  }, []);
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
