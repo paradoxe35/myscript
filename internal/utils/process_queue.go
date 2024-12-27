@@ -29,7 +29,7 @@ func NewProcessQueue(name string) *ProcessQueue {
 		processes:      make(map[BookID]*process),
 		processing:     false,
 		lock:           sync.Mutex{},
-		logger:         log.New(os.Stdout, name, log.LstdFlags),
+		logger:         log.New(os.Stdout, name+" - ", log.LstdFlags),
 	}
 }
 

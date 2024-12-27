@@ -1,10 +1,10 @@
 package local_whisper
 
 import (
-	"encoding/binary"
+	"bytes"
 	"fmt"
-	"math"
 
+	"github.com/go-audio/wav"
 	whisper "github.com/kardianos/whisper.cpp/stt"
 
 	whisper_model "myscript/internal/transcribe/whisper"
@@ -86,7 +86,12 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 
 	fmt.Printf("Local transcribing with language: %s\n", language)
 
-	if err := context.Process(GetFloatArray(buffer), nil); err != nil {
+	samples, err := bytesToFloat32Buffer(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	if err := context.Process(samples, nil); err != nil {
 		return "", err
 	}
 
@@ -108,6 +113,8 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 
 func (l *LocalWhisperTranscriber) Close() error {
 	if l.model != nil {
+		fmt.Printf("Unloading local whisper model\n")
+
 		l.model.Close()
 		l.model = nil
 	}
@@ -115,16 +122,30 @@ func (l *LocalWhisperTranscriber) Close() error {
 	return nil
 }
 
-func GetFloatArray(aBytes []byte) []float32 {
-	aArr := make([]float32, 3)
-	for i := 0; i < 3; i++ {
-		aArr[i] = BytesFloat32(aBytes[i*4:])
+func bytesToFloat32Buffer(b []byte) ([]float32, error) {
+	// Validate minimum WAV file size
+	if len(b) < 44 { // 44 bytes is the minimum size for a valid WAV header
+		return nil, fmt.Errorf("invalid WAV file: too small (%d bytes)", len(b))
 	}
-	return aArr
-}
 
-func BytesFloat32(bytes []byte) float32 {
-	bits := binary.LittleEndian.Uint32(bytes)
-	float := math.Float32frombits(bits)
-	return float
+	fh := bytes.NewReader(b)
+
+	// Decode the WAV file - load the full buffer
+	dec := wav.NewDecoder(fh)
+	buf, err := dec.FullPCMBuffer()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if dec.SampleRate != whisper.SampleRate {
+		return nil, fmt.Errorf("unsupported sample rate: %d", dec.SampleRate)
+	}
+
+	if dec.NumChans != 1 {
+		return nil, fmt.Errorf("expected mono audio, got %d channels", dec.NumChans)
+	}
+
+	return buf.AsFloat32Buffer().Data, nil
+
 }

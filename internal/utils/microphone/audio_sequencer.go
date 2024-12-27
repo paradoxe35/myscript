@@ -13,6 +13,10 @@ import (
 const (
 	// If 10 seconds of silence is detected, we go stop recording
 	MAX_SILENCE_TIME = 1000 * 20 // 20 seconds
+
+	DEFAULT_SAMPLE_RATE = 16000
+
+	DEFAULT_CHANNELS = 1
 )
 
 type NoiseConfig struct {
@@ -48,8 +52,8 @@ func NewAudioSequencer() *AudioSequencer {
 		NoiseThreshold:  -50,
 		MaxBlankTime:    600,
 
-		SampleRate: 16000,
-		Channels:   1,
+		SampleRate: DEFAULT_SAMPLE_RATE,
+		Channels:   DEFAULT_CHANNELS,
 	}
 
 	return &AudioSequencer{
