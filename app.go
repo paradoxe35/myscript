@@ -111,7 +111,7 @@ func (a *App) DeleteCache(key string) {
 func (a *App) GetBestWhisperModel() string {
 	availableRAM, err := utils.GetAvailableRAM()
 	if err != nil {
-		return whisper.LOCAL_WHISPER_MODELS[0].Name
+		return whisper.GetWhisperModels()[0].Name
 	}
 
 	return whisper.SuggestWhisperModel(availableRAM)

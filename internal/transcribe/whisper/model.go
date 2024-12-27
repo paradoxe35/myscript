@@ -6,21 +6,23 @@ import (
 )
 
 type WhisperModel struct {
-	Name        string
-	EnglishOnly bool
-	RAMRequired float64 // in GB
-	Enabled     bool
+	Name           string
+	HasEnglishOnly bool
+	RAMRequired    float64 // in GB
+	Enabled        bool
 }
 
 var ErrInvalidLanguage = errors.New("invalid language")
+var ErrInvalidModelName = errors.New("invalid model name")
 
-var LOCAL_WHISPER_MODELS = []WhisperModel{
-	{"tiny", true, 6, true},     // ~1GB VRAM -> 6GB RAM
-	{"base", true, 6, true},     // ~1GB VRAM -> 6GB RAM
-	{"small", true, 12, false},  // ~2GB VRAM -> 12GB RAM
-	{"medium", true, 30, false}, // ~5GB VRAM -> 30GB RAM
-	{"large", false, 60, false}, // ~10GB VRAM -> 60GB RAM
-	{"turbo", false, 36, false}, // ~6GB VRAM -> 36GB RAM
+var localWhisperModels = []WhisperModel{
+	{"tiny", true, 6, true},   // ~1GB VRAM -> 6GB RAM
+	{"base", true, 6, true},   // ~1GB VRAM -> 6GB RAM
+	{"small", true, 12, true}, // ~2GB VRAM -> 12GB RAM
+	// Disabled models
+	{"medium", true, 30, false},       // ~5GB VRAM -> 30GB RAM
+	{"large", false, 60, false},       // ~10GB VRAM -> 60GB RAM
+	{"large-turbo", false, 36, false}, // ~6GB VRAM -> 36GB RAM
 }
 
 var LANGUAGES = []structs.Language{
@@ -86,19 +88,39 @@ var LANGUAGES = []structs.Language{
 	{Code: "yi", Name: "Yiddish"},
 }
 
+// Get whisper from the predefined models
+//
+// The modelName value should be only name of the model without the extension
+// e.g. tiny, base, small, medium, large, turbo
+func GetWhisperModel(modelName string) (WhisperModel, error) {
+	for _, model := range localWhisperModels {
+		if model.Name == modelName {
+			return model, nil
+		}
+	}
+
+	return WhisperModel{}, ErrInvalidModelName
+}
+
 func GetWhisperLanguages() []structs.Language {
 	return LANGUAGES
 }
 
-func GetWhisperModels() []WhisperModel {
-	return LOCAL_WHISPER_MODELS
+func GetWhisperModels() (models []WhisperModel) {
+	for _, model := range localWhisperModels {
+		if model.Enabled {
+			models = append(models, model)
+		}
+	}
+
+	return models
 }
 
 func SuggestWhisperModel(availableRAM float64) string {
 	var bestModel string
 	var highestRAMUsage float64
 
-	for _, model := range LOCAL_WHISPER_MODELS {
+	for _, model := range localWhisperModels {
 		if availableRAM >= model.RAMRequired && model.RAMRequired >= highestRAMUsage {
 			highestRAMUsage = model.RAMRequired
 			bestModel = model.Name

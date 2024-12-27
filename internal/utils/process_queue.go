@@ -86,7 +86,9 @@ func (pq *ProcessQueue) worker() {
 
 	pq.logger.Printf("ProcessQueue: executing process %d\n", pq.executionId)
 
-	proc.callback()
+	if proc.callback != nil {
+		proc.callback()
+	}
 
 	delete(pq.processes, pq.executionId)
 
