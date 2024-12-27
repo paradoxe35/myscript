@@ -106,7 +106,7 @@ func GetWhisperLanguages() []structs.Language {
 	return LANGUAGES
 }
 
-func GetWhisperModels() (models []WhisperModel) {
+func GetLocalWhisperModels() (models []WhisperModel) {
 	for _, model := range localWhisperModels {
 		if model.Enabled {
 			models = append(models, model)

@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { GetBestWhisperModel, GetWhisperModels } from "~wails/main/App";
+import { GetBestLocalWhisperModel, GetLocalWhisperModels } from "~wails/main/App";
 import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
@@ -84,14 +84,14 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
 
   useEffect(() => {
     if (state.TranscriberSource === "local") {
-      GetBestWhisperModel().then((bestWhisperModel) => {
+      GetBestLocalWhisperModel().then((bestWhisperModel) => {
         setBestWhisperModel(bestWhisperModel);
       });
     }
   }, [state.TranscriberSource]);
 
   useEffect(() => {
-    GetWhisperModels().then((models) => {
+    GetLocalWhisperModels().then((models) => {
       setWhisperModels(models);
     });
   }, []);

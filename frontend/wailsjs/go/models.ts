@@ -1,3 +1,22 @@
+export namespace local_whisper {
+	
+	export class LocalWhisperModel {
+	    Name: string;
+	    EnglishOnly: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalWhisperModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.EnglishOnly = source["EnglishOnly"];
+	    }
+	}
+
+}
+
 export namespace notion {
 	
 	export class NotionBlock {

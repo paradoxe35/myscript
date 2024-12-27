@@ -9,9 +9,11 @@ import (
 	"myscript/internal/transcribe/structs"
 	witai "myscript/internal/transcribe/wait.ai"
 	"myscript/internal/transcribe/whisper"
+	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/transcribe/whisper/openai"
 	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 
@@ -108,21 +110,58 @@ func (a *App) DeleteCache(key string) {
 
 // --- Whisper ---
 
-func (a *App) GetBestWhisperModel() string {
+func (a *App) GetWhisperLanguages() []structs.Language {
+	return whisper.GetWhisperLanguages()
+}
+
+// --- Local Whisper ---
+
+func (a *App) GetBestLocalWhisperModel() string {
 	availableRAM, err := utils.GetAvailableRAM()
 	if err != nil {
-		return whisper.GetWhisperModels()[0].Name
+		return whisper.GetLocalWhisperModels()[0].Name
 	}
 
 	return whisper.SuggestWhisperModel(availableRAM)
 }
 
-func (a *App) GetWhisperLanguages() []structs.Language {
-	return whisper.GetWhisperLanguages()
+func (a *App) GetLocalWhisperModels() []whisper.WhisperModel {
+	return whisper.GetLocalWhisperModels()
 }
 
-func (a *App) GetWhisperModels() []whisper.WhisperModel {
-	return whisper.GetWhisperModels()
+func (a *App) ExistsLocalWhisperModel(model local_whisper.LocalWhisperModel) bool {
+	return local_whisper.ModelExists(model)
+}
+
+func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperModel) error {
+	downloadProgress := make(chan local_whisper.DownloadProgress)
+
+	go func() {
+		err := local_whisper.DownloadModels(models, downloadProgress)
+		if err != nil {
+			runtime.EventsEmit(a.ctx, "on-whisper-model-download-error", err.Error())
+			log.Printf("Error downloading models: %s", err.Error())
+		}
+	}()
+
+	ticker := time.NewTicker(5 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+		case progress := <-downloadProgress:
+			runtime.EventsEmit(a.ctx, "on-whisper-model-download-progress", progress)
+		default:
+			return nil
+		}
+	}
+}
+
+func (a *App) AreSomeLocalWhisperModelsDownloading() bool {
+	return local_whisper.AreSomeModelsDownloading()
+}
+
+func (a *App) IsLocalWhisperModelDownloading(model local_whisper.LocalWhisperModel) bool {
+	return local_whisper.IsModelDownloading(model)
 }
 
 // --- WitAI ---

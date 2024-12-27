@@ -96,7 +96,7 @@ func DownloadModels(models []LocalWhisperModel, progress chan<- DownloadProgress
 	return nil
 }
 
-func IsSomeModelsDownloading() bool {
+func AreSomeModelsDownloading() bool {
 	return len(modelsDownloadProgress) > 0
 }
 
