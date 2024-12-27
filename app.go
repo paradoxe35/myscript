@@ -278,10 +278,9 @@ func (a *App) StartRecording(language string) error {
 	})
 
 	a.audioSequencer.SetStopCallback(func(autoStopped bool) {
-		// Unload local whisper model, if it is loaded
-		a.lwt.Close()
-
 		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
+		// Unload local whisper model, if it is loaded
+		go a.lwt.Close()
 	})
 
 	return a.audioSequencer.Start()

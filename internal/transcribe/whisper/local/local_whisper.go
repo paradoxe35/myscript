@@ -3,6 +3,7 @@ package local_whisper
 import (
 	"bytes"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/go-audio/wav"
@@ -15,6 +16,7 @@ type LocalWhisperTranscriber struct {
 	model        whisper.Model
 	transcribing bool
 	closing      bool
+	mutex        sync.Mutex
 }
 
 func NewLocalWhisperTranscriber() *LocalWhisperTranscriber {
@@ -49,6 +51,10 @@ func (l *LocalWhisperTranscriber) getBestModelPath(modelName string, language st
 }
 
 func (l *LocalWhisperTranscriber) LoadModel(modelName string, language string) error {
+	if l.transcribing && l.model != nil {
+		return fmt.Errorf("another transcription is in progress; please wait.")
+	}
+
 	// Unload model if it is already loaded
 	if l.model != nil {
 		l.model.Close()
@@ -74,6 +80,9 @@ func (l *LocalWhisperTranscriber) LoadModel(modelName string, language string) e
 }
 
 func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (string, error) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
 	if l.model == nil {
 		return "", fmt.Errorf("no model loaded")
 	}
