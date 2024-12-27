@@ -93,6 +93,7 @@ function LocalWhisperModelsDownloadWrapper() {
   );
   const [refresh, setRefresh] = useState(0);
 
+  // Force re-render when model download is successful
   useEffect(() => {
     return onWhisperModelDownloadSuccess(() => {
       setRefresh((prev) => prev + 1);
