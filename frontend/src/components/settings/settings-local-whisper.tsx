@@ -91,12 +91,24 @@ function LocalWhisperModelsDownloadWrapper() {
   const onWhisperModelDownloadSuccess = useLocalWhisperStore(
     (state) => state.onWhisperModelDownloadSuccess
   );
+
+  const onWhisperModelDownloadError = useLocalWhisperStore(
+    (state) => state.onWhisperModelDownloadError
+  );
+
   const [refresh, setRefresh] = useState(0);
 
-  // Force re-render when model download is successful
+  // Force re-render on model download success
   useEffect(() => {
     return onWhisperModelDownloadSuccess(() => {
       setRefresh((prev) => prev + 1);
+    });
+  }, []);
+
+  // Force re-render on model download fail
+  useEffect(() => {
+    return onWhisperModelDownloadError(() => {
+      setTimeout(() => setRefresh((prev) => prev + 1), 1000);
     });
   }, []);
 
