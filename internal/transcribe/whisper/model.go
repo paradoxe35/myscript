@@ -6,10 +6,10 @@ import (
 )
 
 type WhisperModel struct {
-	Name           string
-	HasEnglishOnly bool
-	RAMRequired    float64 // in GB
-	Enabled        bool
+	Name                      string
+	HasAlsoAnEnglishOnlyModel bool
+	RAMRequired               float64 // in GB
+	Enabled                   bool
 }
 
 var ErrInvalidLanguage = errors.New("invalid language")

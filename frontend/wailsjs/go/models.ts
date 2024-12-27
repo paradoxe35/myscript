@@ -211,7 +211,7 @@ export namespace whisper {
 	
 	export class WhisperModel {
 	    Name: string;
-	    EnglishOnly: boolean;
+	    HasAlsoAnEnglishOnlyModel: boolean;
 	    RAMRequired: number;
 	    Enabled: boolean;
 	
@@ -222,7 +222,7 @@ export namespace whisper {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
-	        this.EnglishOnly = source["EnglishOnly"];
+	        this.HasAlsoAnEnglishOnlyModel = source["HasAlsoAnEnglishOnlyModel"];
 	        this.RAMRequired = source["RAMRequired"];
 	        this.Enabled = source["Enabled"];
 	    }

@@ -8,6 +8,7 @@ require (
 	github.com/gen2brain/malgo v0.11.23
 	github.com/go-audio/wav v1.1.0
 	github.com/jomei/notionapi v1.13.2
+	github.com/kardianos/whisper.cpp v1.1.4
 	github.com/openai/openai-go v0.1.0-alpha.41
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/wailsapp/wails/v2 v2.9.2
@@ -29,7 +30,6 @@ require (
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
-	github.com/kardianos/whisper.cpp v1.1.4 // indirect
 	github.com/labstack/echo/v4 v4.10.2 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
 	github.com/leaanthony/go-ansi-parser v1.6.0 // indirect
