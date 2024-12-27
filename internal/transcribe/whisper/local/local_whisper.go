@@ -3,6 +3,7 @@ package local_whisper
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/go-audio/wav"
 	whisper "github.com/kardianos/whisper.cpp/stt"
@@ -11,7 +12,9 @@ import (
 )
 
 type LocalWhisperTranscriber struct {
-	model whisper.Model
+	model        whisper.Model
+	transcribing bool
+	closing      bool
 }
 
 func NewLocalWhisperTranscriber() *LocalWhisperTranscriber {
@@ -75,6 +78,12 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 		return "", fmt.Errorf("no model loaded")
 	}
 
+	l.transcribing = true
+	l.closing = false
+	defer func() {
+		l.transcribing = false
+	}()
+
 	// Create processing context
 	context, err := l.model.NewContext()
 	if err != nil {
@@ -112,14 +121,32 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 }
 
 func (l *LocalWhisperTranscriber) Close() error {
-	if l.model != nil {
-		fmt.Printf("Unloading local whisper model\n")
+	l.closing = true
 
+	if l.model != nil && l.canClose() {
+		fmt.Printf("Unloading local whisper model\n")
 		l.model.Close()
 		l.model = nil
 	}
 
 	return nil
+}
+
+func (l *LocalWhisperTranscriber) canClose() bool {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if !l.closing {
+				return false
+			}
+			if !l.transcribing {
+				return true
+			}
+		}
+	}
 }
 
 func bytesToFloat32Buffer(b []byte) ([]float32, error) {

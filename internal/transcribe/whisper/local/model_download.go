@@ -200,7 +200,9 @@ func downloadModel(ctx context.Context, modelUrl string, modelPath string, progr
 	// Progressively download the model
 	data := make([]byte, bufSize)
 	count := int64(0)
+
 	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
 
 	for {
 		select {
