@@ -3,6 +3,7 @@ package local_whisper
 import (
 	"context"
 	"fmt"
+	"io"
 	"myscript/internal/filesystem"
 	"myscript/internal/utils"
 	"net/http"
@@ -14,11 +15,12 @@ import (
 )
 
 const (
-	srcUrl          = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main?download=true" // The location of the models
-	srcExt          = ".bin"                                                                    // Filename extension
-	bufSize         = 1024 * 64                                                                 // Size of the buffer used for downloading the model
-	outDir          = "./models"                                                                // Directory where the model will be downloaded
-	downloadTimeout = 30 * time.Minute                                                          // Timeout for downloading the model
+	srcUrl          = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main" // The location of the models
+	srcPrefix       = "ggml-"                                                     // Prefix of the model name
+	srcExt          = ".bin"                                                      // Filename extension
+	bufSize         = 1024 * 64                                                   // Size of the buffer used for downloading the model
+	outDir          = "./models"                                                  // Directory where the model will be downloaded
+	downloadTimeout = 30 * time.Minute                                            // Timeout for downloading the model
 )
 
 type LocalWhisperModel struct {
@@ -84,9 +86,11 @@ func DownloadModels(models []LocalWhisperModel, progress chan<- DownloadProgress
 
 		// Download the model
 		err = downloadModel(ctx, url, modelPath, progress)
-		if err != nil {
-			os.Remove(modelPath)
+		if err == nil || err == io.EOF {
+			continue
+		} else {
 			close(progress)
+			os.Remove(modelPath)
 			return err
 		}
 	}
@@ -223,7 +227,7 @@ func getModelOutDir() (string, error) {
 }
 
 func getModelFullName(model LocalWhisperModel) string {
-	modelName := model.Name
+	modelName := srcPrefix + model.Name
 	if model.EnglishOnly {
 		modelName += ".en"
 	}

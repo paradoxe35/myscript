@@ -32,6 +32,7 @@ import { local_whisper } from "~wails/models";
 
 export function LocalWhisperInputs() {
   const { state, dispatch, bestWhisperModel, whisperModels } = useSettings();
+  const modelName = state.LocalWhisperModel || bestWhisperModel;
 
   return (
     <>
@@ -39,7 +40,7 @@ export function LocalWhisperInputs() {
         <Label className="text-xs text-white/70">{"Local Whisper Model"}</Label>
 
         <Select
-          value={state.LocalWhisperModel || bestWhisperModel}
+          value={modelName}
           onValueChange={(value: string) => {
             dispatch({ LocalWhisperModel: value });
           }}
@@ -72,14 +73,15 @@ export function LocalWhisperInputs() {
       <Separator />
 
       {/* 
-      <ModelsRamRequirements />
-      <Separator />
+        <ModelsRamRequirements />
+        <Separator />
 
-     <p className="text-xs text-white/50">
+        <p className="text-xs text-white/50">
           <b>GPU acceleration:</b> This feature is currently not supported.
-        </p> */}
+        </p> 
+    */}
 
-      <LocalWhisperModelsDownload />
+      <LocalWhisperModelsDownload key={modelName} />
     </>
   );
 }
@@ -102,6 +104,10 @@ function LocalWhisperModelsDownload() {
       setDownloading(status);
     });
   }, []);
+
+  useEffect(() => {
+    setSelectedModels([]);
+  }, [modelName]);
 
   const startDownload = async () => {
     console.log("Downloading... models:", selectedModels);
