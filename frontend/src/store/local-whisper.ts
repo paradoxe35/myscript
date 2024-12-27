@@ -1,5 +1,6 @@
+import { EventClear } from "@/types";
 import { create } from "zustand";
-import { EventsOff, EventsOn } from "~wails-runtime";
+import { EventsOff, EventsOn, EventsOnMultiple } from "~wails-runtime";
 import {
   AreSomeLocalWhisperModelsDownloading,
   DownloadLocalWhisperModels,
@@ -29,16 +30,23 @@ type LocalWhisperState = {
   isModelDownloading: (
     model: local_whisper.LocalWhisperModel
   ) => Promise<boolean>;
+
   areSomeModelsDownloading: () => Promise<boolean>;
 
   onWhisperModelDownloadProgress: (
     callback: (progress: local_whisper.DownloadProgress) => void
-  ) => void;
-  onWhisperModelDownloadError: (callback: (error: string) => void) => void;
+  ) => EventClear;
+
+  onWhisperModelDownloadError: (
+    callback: (error: string) => void
+  ) => EventClear;
+
+  onWhisperModelDownloadSuccess: (callback: () => void) => EventClear;
 };
 
 const ON_WHISPER_MODEL_DOWNLOAD_PROGRESS = "on-whisper-model-download-progress";
 const ON_WHISPER_MODEL_DOWNLOAD_ERROR = "on-whisper-model-download-error";
+const ON_WHISPER_MODEL_DOWNLOAD_SUCCESS = "on-whisper-model-download-success";
 
 export const useLocalWhisperStore = create<LocalWhisperState>((set) => ({
   models: [],
@@ -80,20 +88,14 @@ export const useLocalWhisperStore = create<LocalWhisperState>((set) => ({
   },
 
   onWhisperModelDownloadProgress: (callback) => {
-    EventsOff(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS);
-    EventsOn(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS, callback);
-
-    return () => {
-      EventsOff(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS);
-    };
+    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS, callback, -1);
   },
 
   onWhisperModelDownloadError: (callback) => {
-    EventsOff(ON_WHISPER_MODEL_DOWNLOAD_ERROR);
-    EventsOn(ON_WHISPER_MODEL_DOWNLOAD_ERROR, callback);
+    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_ERROR, callback, -1);
+  },
 
-    return () => {
-      EventsOff(ON_WHISPER_MODEL_DOWNLOAD_ERROR);
-    };
+  onWhisperModelDownloadSuccess: (callback) => {
+    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_SUCCESS, callback, -1);
   },
 }));

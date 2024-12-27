@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
-import { Eye } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -81,9 +81,25 @@ export function LocalWhisperInputs() {
         </p> 
     */}
 
-      <LocalWhisperModelsDownload key={modelName} />
+      {/* Passe the key to force re-render when model changes */}
+      <LocalWhisperModelsDownloadWrapper key={modelName} />
     </>
   );
+}
+
+function LocalWhisperModelsDownloadWrapper() {
+  const onWhisperModelDownloadSuccess = useLocalWhisperStore(
+    (state) => state.onWhisperModelDownloadSuccess
+  );
+  const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => {
+    return onWhisperModelDownloadSuccess(() => {
+      setRefresh((prev) => prev + 1);
+    });
+  }, []);
+
+  return <LocalWhisperModelsDownload key={refresh} />;
 }
 
 function LocalWhisperModelsDownload() {
@@ -110,11 +126,11 @@ function LocalWhisperModelsDownload() {
   }, [modelName]);
 
   const startDownload = async () => {
-    console.log("Downloading... models:", selectedModels);
+    setDownloading(true);
 
-    localWhisperStore.downloadModels(selectedModels).then((res) => {
-      console.log("Downloaded models:", res);
-    });
+    localWhisperStore
+      .downloadModels(selectedModels)
+      .finally(() => setDownloading(false));
   };
 
   return (
@@ -150,8 +166,9 @@ function LocalWhisperModelsDownload() {
           size="sm"
           variant="secondary"
           onClick={startDownload}
-          disabled={selectedModels.length === 0}
+          disabled={selectedModels.length === 0 || downloading}
         >
+          {downloading && <Loader2 className="animate-spin" />}
           Download
         </Button>
       </div>

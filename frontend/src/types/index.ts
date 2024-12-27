@@ -55,3 +55,5 @@ export type RepositoryBaseFields =
   | "convertValues";
 
 export type WithoutRepositoryBaseFields<T> = Omit<T, RepositoryBaseFields>;
+
+export type EventClear = () => void;
