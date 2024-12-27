@@ -145,7 +145,7 @@ func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperMode
 	}()
 
 	for progress := range downloadProgress {
-		log.Printf("Downloading model: %s (%d%%)", progress.Name, progress.Size)
+		log.Printf("Downloading model progress: %s (%d%%)", progress.Name, progress.Size)
 		runtime.EventsEmit(a.ctx, "on-whisper-model-download-progress", progress)
 	}
 

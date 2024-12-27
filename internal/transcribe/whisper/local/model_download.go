@@ -132,14 +132,14 @@ func areModelsDownloading(models []LocalWhisperModel) bool {
 }
 
 func downloadModel(ctx context.Context, url string, modelPath string, progress chan<- DownloadProgress) error {
-	fmt.Printf("Downloading model: %s\n", url)
-
 	// Create HTTP client
 	client := http.Client{
 		Timeout: downloadTimeout,
 	}
 
 	modelName := filepath.Base(modelPath)
+
+	fmt.Printf("Downloading model: %s\n", modelName)
 
 	// Initiate the download
 	req, err := http.NewRequest("GET", url, nil)
