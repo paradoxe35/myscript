@@ -130,6 +130,9 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 }
 
 func (l *LocalWhisperTranscriber) Close() error {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
+
 	l.closing = true
 
 	if l.model != nil && l.canClose() {
