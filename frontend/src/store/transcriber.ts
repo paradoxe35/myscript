@@ -17,9 +17,9 @@ type TranscriberState = {
   getRecordingStatus: () => void;
   getLanguages: () => void;
 
-  setOnTranscribedText: (callback: (text: string) => void) => void;
-  setOnTranscribeError: (callback: (error: string) => void) => void;
-  setOnRecordingStopped: (callback: (autoStopped: boolean) => void) => void;
+  onTranscribedText: (callback: (text: string) => void) => void;
+  onTranscribeError: (callback: (error: string) => void) => void;
+  onRecordingStopped: (callback: (autoStopped: boolean) => void) => void;
 };
 
 const ON_TRANSCRIBED_TEXT = "on-transcribed-text";
@@ -30,7 +30,7 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   isRecording: false,
   languages: [],
 
-  async startRecording(languageCode: string) {
+  async startRecording(languageCode) {
     if (!get().isRecording) {
       await StartRecording(languageCode);
       get().getRecordingStatus();
@@ -58,7 +58,7 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
     });
   },
 
-  setOnRecordingStopped(callback: (autoStopped: boolean) => void) {
+  onRecordingStopped(callback) {
     EventsOff(ON_RECORDING_STOPPED);
     EventsOn(ON_RECORDING_STOPPED, callback);
 
@@ -67,7 +67,7 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
     };
   },
 
-  setOnTranscribedText(callback: (text: string) => void) {
+  onTranscribedText(callback) {
     EventsOff(ON_TRANSCRIBED_TEXT);
     EventsOn(ON_TRANSCRIBED_TEXT, callback);
 
@@ -76,7 +76,7 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
     };
   },
 
-  setOnTranscribeError(callback: (error: string) => void) {
+  onTranscribeError(callback) {
     EventsOff(ON_TRANSCRIBE_ERROR);
     EventsOn(ON_TRANSCRIBE_ERROR, callback);
 

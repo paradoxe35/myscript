@@ -46,6 +46,10 @@ export function GetLocalPages() {
   return window['go']['main']['App']['GetLocalPages']();
 }
 
+export function GetLocalWhisperDownloadProgress() {
+  return window['go']['main']['App']['GetLocalWhisperDownloadProgress']();
+}
+
 export function GetLocalWhisperModels() {
   return window['go']['main']['App']['GetLocalWhisperModels']();
 }

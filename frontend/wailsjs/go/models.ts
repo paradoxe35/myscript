@@ -1,5 +1,21 @@
 export namespace local_whisper {
 	
+	export class DownloadProgress {
+	    Name: string;
+	    Size: number;
+	    Total: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new DownloadProgress(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Size = source["Size"];
+	        this.Total = source["Total"];
+	    }
+	}
 	export class LocalWhisperModel {
 	    Name: string;
 	    EnglishOnly: boolean;

@@ -10,10 +10,14 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { GetBestLocalWhisperModel, GetLocalWhisperModels } from "~wails/main/App";
+import {
+  GetBestLocalWhisperModel,
+  GetLocalWhisperModels,
+} from "~wails/main/App";
 import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
+import { useLocalWhisperStore } from "@/store/local-whisper";
 
 export type TranscriberSource = "local" | "openai" | "witai";
 
@@ -63,11 +67,8 @@ function reducer(state: SettingsState, action: Partial<SettingsState>) {
 
 export function SettingsProvider({ children }: React.PropsWithChildren) {
   const [state, dispatch] = useReducer(reducer, { TranscriberSource: "local" });
-  const [whisperModels, setWhisperModels] = useState<whisper.WhisperModel[]>(
-    []
-  );
-  const [bestWhisperModel, setBestWhisperModel] = useState<string>();
 
+  const localWhisperStore = useLocalWhisperStore();
   const configStore = useConfigStore();
 
   useEffect(() => {
@@ -84,16 +85,12 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
 
   useEffect(() => {
     if (state.TranscriberSource === "local") {
-      GetBestLocalWhisperModel().then((bestWhisperModel) => {
-        setBestWhisperModel(bestWhisperModel);
-      });
+      localWhisperStore.getBestModel();
     }
   }, [state.TranscriberSource]);
 
   useEffect(() => {
-    GetLocalWhisperModels().then((models) => {
-      setWhisperModels(models);
-    });
+    localWhisperStore.getModels();
   }, []);
 
   const handleSave = useCallback(() => {
@@ -124,9 +121,9 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
         state,
         dispatch,
         handleSave,
-        bestWhisperModel,
         configModified,
-        whisperModels,
+        bestWhisperModel: localWhisperStore.bestModel,
+        whisperModels: localWhisperStore.models,
       }}
     >
       {children}

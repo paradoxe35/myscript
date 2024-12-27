@@ -5,6 +5,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import App from "./app";
 import { Toaster } from "./components/ui/sonner";
 import { TranscriberInit } from "./components/transcriber-init";
+import { LocalWhisperInit } from "./components/local-whisper-init";
 
 const container = document.getElementById("root");
 
@@ -16,6 +17,7 @@ root.render(
       <App />
       <Toaster />
       <TranscriberInit />
+      <LocalWhisperInit />
     </ThemeProvider>
   </React.StrictMode>
 );

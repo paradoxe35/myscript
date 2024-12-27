@@ -12,7 +12,7 @@ export function TranscriberInit() {
   }, []);
 
   useEffect(() => {
-    return transcriberStore.setOnTranscribedText((text) => {
+    return transcriberStore.onTranscribedText((text) => {
       console.log("Transcribed text:", text);
       // toast.success("Transcription saved successfully!");
     });
@@ -24,14 +24,14 @@ export function TranscriberInit() {
   }, [activePageStore.getPageId()]);
 
   useEffect(() => {
-    return transcriberStore.setOnTranscribeError((error) => {
+    return transcriberStore.onTranscribeError((error) => {
       console.log("Transcription error:", error);
       toast.error("Transcription error: " + error);
     });
   }, []);
 
   useEffect(() => {
-    return transcriberStore.setOnRecordingStopped((autoStopped) => {
+    return transcriberStore.onRecordingStopped((autoStopped) => {
       console.log("Recording stopped:", autoStopped);
 
       if (autoStopped) {

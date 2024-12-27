@@ -29,6 +29,8 @@ export function GetLocalPage(arg1:number):Promise<repository.Page>;
 
 export function GetLocalPages():Promise<Array<repository.Page>>;
 
+export function GetLocalWhisperDownloadProgress():Promise<local_whisper.DownloadProgress>;
+
 export function GetLocalWhisperModels():Promise<Array<whisper.WhisperModel>>;
 
 export function GetNotionPageBlocks(arg1:string):Promise<Array<notion.NotionBlock>>;
