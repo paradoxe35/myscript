@@ -12,6 +12,8 @@ type WhisperModel struct {
 	Enabled                   bool
 }
 
+const ENGLISH_LANG_CODE = "en"
+
 var ErrInvalidLanguage = errors.New("invalid language")
 var ErrInvalidModelName = errors.New("invalid model name")
 
@@ -26,7 +28,7 @@ var localWhisperModels = []WhisperModel{
 }
 
 var LANGUAGES = []structs.Language{
-	{Code: "en", Name: "English"},
+	{Code: ENGLISH_LANG_CODE, Name: "English"},
 	{Code: "ar", Name: "Arabic"},
 	{Code: "hy", Name: "Armenian"},
 	{Code: "az", Name: "Azerbaijani"},
@@ -94,7 +96,7 @@ var LANGUAGES = []structs.Language{
 // e.g. tiny, base, small, medium, large, turbo
 func GetWhisperModel(modelName string) (WhisperModel, error) {
 	for _, model := range localWhisperModels {
-		if model.Name == modelName {
+		if model.Name == modelName && model.Enabled {
 			return model, nil
 		}
 	}

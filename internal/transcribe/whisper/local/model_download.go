@@ -200,7 +200,7 @@ func downloadModel(ctx context.Context, modelUrl string, modelPath string, progr
 	// Progressively download the model
 	data := make([]byte, bufSize)
 	count := int64(0)
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 
 	for {
 		select {
@@ -248,6 +248,15 @@ func getModelOutDir() (string, error) {
 	}
 
 	return dir, nil
+}
+
+func getModelPath(model LocalWhisperModel) (string, error) {
+	modelDir, err := getModelOutDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(modelDir, getModelFullName(model)), nil
 }
 
 func getModelFullName(model LocalWhisperModel) string {

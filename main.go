@@ -4,6 +4,7 @@ import (
 	"embed"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
+	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/utils/microphone"
 
 	"github.com/wailsapp/wails/v2"
@@ -25,6 +26,7 @@ func main() {
 	app := NewApp(
 		database.NewDatabase(filesystem.HOME_DIR),
 		microphone.NewAudioSequencer(),
+		local_whisper.NewLocalWhisperTranscriber(),
 	)
 
 	// Create application with options

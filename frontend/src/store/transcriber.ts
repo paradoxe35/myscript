@@ -13,8 +13,8 @@ type TranscriberState = {
   isRecording: boolean;
   languages: Array<structs.Language>;
 
-  startRecording: (languageCode: string) => void;
-  stopRecording: () => void;
+  startRecording: (languageCode: string) => Promise<void>;
+  stopRecording: () => Promise<void>;
   getRecordingStatus: () => void;
   getLanguages: () => void;
 
@@ -33,15 +33,17 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
 
   async startRecording(languageCode) {
     if (!get().isRecording) {
-      await StartRecording(languageCode);
-      get().getRecordingStatus();
+      return StartRecording(languageCode).finally(() => {
+        get().getRecordingStatus();
+      });
     }
   },
 
   async stopRecording() {
     if (get().isRecording) {
-      await StopRecording();
-      get().getRecordingStatus();
+      return StopRecording().finally(() => {
+        get().getRecordingStatus();
+      });
     }
   },
 

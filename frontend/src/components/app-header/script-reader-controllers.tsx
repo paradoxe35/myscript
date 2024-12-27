@@ -4,6 +4,7 @@ import { Button } from "../ui/button";
 import { BookOpenText, Play } from "lucide-react";
 import { useTranscriberStore } from "@/store/transcriber";
 import { SRLanguagesModal } from "../sr-languages-modal";
+import { toast } from "sonner";
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const transcriberStore = useTranscriberStore();
@@ -13,7 +14,10 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const readMode = activePageStore.readMode;
 
   const handleLanguageSelected = (languageCode: string) => {
-    transcriberStore.startRecording(languageCode);
+    transcriberStore.startRecording(languageCode).catch((err) => {
+      console.error("Error starting recording:", err);
+      toast.error(err || "Error starting recording");
+    });
   };
 
   if (!activePage) return null;

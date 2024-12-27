@@ -24,12 +24,13 @@ import (
 type App struct {
 	ctx            context.Context
 	audioSequencer *microphone.AudioSequencer
+	lwt            *local_whisper.LocalWhisperTranscriber
 	db             *gorm.DB
 }
 
 // NewApp creates a new App application struct
-func NewApp(db *gorm.DB, audioSequencer *microphone.AudioSequencer) *App {
-	return &App{db: db, audioSequencer: audioSequencer}
+func NewApp(db *gorm.DB, audioSequencer *microphone.AudioSequencer, lwt *local_whisper.LocalWhisperTranscriber) *App {
+	return &App{db: db, audioSequencer: audioSequencer, lwt: lwt}
 }
 
 // startup is called when the app starts. The context is saved
@@ -211,7 +212,7 @@ func (a *App) OpenAPITranscribe(buffer []byte, language string) (string, error) 
 }
 
 func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
-	return "", fmt.Errorf("local transcribe not implemented yet")
+	return a.lwt.Transcribe(buffer, language)
 }
 
 func (a *App) Transcribe(buffer []byte, language string) (string, error) {
@@ -233,9 +234,30 @@ func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 
 // --- Microphone Recording ---
 
-func (a *App) StartRecording(language string) error {
-	log.Printf("Starting recording with language: %s", language)
+func (a *App) initLocalWhisperTranscriber(language string) error {
+	config := a.GetConfig()
 
+	if config != nil && config.TranscriberSource != "local" {
+		return nil
+	}
+
+	var configuredModel string
+	if config == nil || config.LocalWhisperModel == nil {
+		configuredModel = a.GetBestLocalWhisperModel()
+	} else {
+		configuredModel = *config.LocalWhisperModel
+	}
+
+	return a.lwt.LoadModel(configuredModel, language)
+}
+
+func (a *App) StartRecording(language string) error {
+	// If transcriber source is set to local, load the model
+	if err := a.initLocalWhisperTranscriber(language); err != nil {
+		return err
+	}
+
+	log.Printf("Starting recording with language: %s", language)
 	pq := utils.NewProcessQueue("transcriber-queue")
 
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
@@ -256,6 +278,9 @@ func (a *App) StartRecording(language string) error {
 	})
 
 	a.audioSequencer.SetStopCallback(func(autoStopped bool) {
+		// Unload local whisper model, if it is loaded
+		a.lwt.Close()
+
 		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
 	})
 
