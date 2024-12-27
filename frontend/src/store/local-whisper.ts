@@ -1,6 +1,6 @@
 import { EventClear } from "@/types";
 import { create } from "zustand";
-import { EventsOff, EventsOn, EventsOnMultiple } from "~wails-runtime";
+import { EventsOn } from "~wails-runtime";
 import {
   AreSomeLocalWhisperModelsDownloading,
   DownloadLocalWhisperModels,
@@ -88,14 +88,14 @@ export const useLocalWhisperStore = create<LocalWhisperState>((set) => ({
   },
 
   onWhisperModelDownloadProgress: (callback) => {
-    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS, callback, -1);
+    return EventsOn(ON_WHISPER_MODEL_DOWNLOAD_PROGRESS, callback);
   },
 
   onWhisperModelDownloadError: (callback) => {
-    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_ERROR, callback, -1);
+    return EventsOn(ON_WHISPER_MODEL_DOWNLOAD_ERROR, callback);
   },
 
   onWhisperModelDownloadSuccess: (callback) => {
-    return EventsOnMultiple(ON_WHISPER_MODEL_DOWNLOAD_SUCCESS, callback, -1);
+    return EventsOn(ON_WHISPER_MODEL_DOWNLOAD_SUCCESS, callback);
   },
 }));

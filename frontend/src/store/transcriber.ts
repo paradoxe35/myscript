@@ -6,7 +6,8 @@ import {
   StopRecording,
 } from "~wails/main/App";
 import { structs } from "~wails/models";
-import { EventsOn, EventsOff } from "~wails-runtime";
+import { EventsOn } from "~wails-runtime";
+import { EventClear } from "@/types";
 
 type TranscriberState = {
   isRecording: boolean;
@@ -17,9 +18,9 @@ type TranscriberState = {
   getRecordingStatus: () => void;
   getLanguages: () => void;
 
-  onTranscribedText: (callback: (text: string) => void) => void;
-  onTranscribeError: (callback: (error: string) => void) => void;
-  onRecordingStopped: (callback: (autoStopped: boolean) => void) => void;
+  onTranscribedText: (callback: (text: string) => void) => EventClear;
+  onTranscribeError: (callback: (error: string) => void) => EventClear;
+  onRecordingStopped: (callback: (autoStopped: boolean) => void) => EventClear;
 };
 
 const ON_TRANSCRIBED_TEXT = "on-transcribed-text";
@@ -59,29 +60,14 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   },
 
   onRecordingStopped(callback) {
-    EventsOff(ON_RECORDING_STOPPED);
-    EventsOn(ON_RECORDING_STOPPED, callback);
-
-    return () => {
-      EventsOff(ON_RECORDING_STOPPED);
-    };
+    return EventsOn(ON_RECORDING_STOPPED, callback);
   },
 
   onTranscribedText(callback) {
-    EventsOff(ON_TRANSCRIBED_TEXT);
-    EventsOn(ON_TRANSCRIBED_TEXT, callback);
-
-    return () => {
-      EventsOff(ON_TRANSCRIBED_TEXT);
-    };
+    return EventsOn(ON_TRANSCRIBED_TEXT, callback);
   },
 
   onTranscribeError(callback) {
-    EventsOff(ON_TRANSCRIBE_ERROR);
-    EventsOn(ON_TRANSCRIBE_ERROR, callback);
-
-    return () => {
-      EventsOff(ON_TRANSCRIBE_ERROR);
-    };
+    return EventsOn(ON_TRANSCRIBE_ERROR, callback);
   },
 }));
