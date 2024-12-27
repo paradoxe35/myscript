@@ -28,7 +28,9 @@ export function LocalWhisperInit() {
   useEffect(() => {
     return localWhisperStore.onWhisperModelDownloadError((error) => {
       console.log("Error downloading model:", error);
-      toast.error("Error downloading model: " + error);
+      toast.error("Error downloading model: " + error, {
+        id: "model-download",
+      });
     });
   }, []);
 

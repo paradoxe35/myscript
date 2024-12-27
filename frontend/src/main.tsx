@@ -16,6 +16,7 @@ root.render(
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <App />
       <Toaster />
+
       <TranscriberInit />
       <LocalWhisperInit />
     </ThemeProvider>

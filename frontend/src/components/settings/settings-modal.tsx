@@ -18,24 +18,10 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { Eye } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../ui/table";
+import { LocalWhisperInputs } from "./settings-local-whisper";
 
 export function SettingsModal(props: PropsWithChildren) {
   const { state, configModified, handleSave } = useSettings();
@@ -102,98 +88,6 @@ function WitAIHint() {
 
       <p className="text-xs text-white/50">
         <em>Internet connection is required</em>
-      </p>
-    </>
-  );
-}
-
-function LocalWhisperInputs() {
-  const { state, dispatch, bestWhisperModel, whisperModels } = useSettings();
-
-  return (
-    <>
-      <div className="flex flex-col gap-3 relative">
-        <Label className="text-xs text-white/70">{"Local Whisper Model"}</Label>
-
-        <Select
-          value={state.LocalWhisperModel || bestWhisperModel}
-          onValueChange={(value: string) => {
-            dispatch({ LocalWhisperModel: value });
-          }}
-        >
-          <SelectTrigger className="w-[190px]">
-            <SelectValue placeholder="Select a model" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Models</SelectLabel>
-              {whisperModels.map((item) => {
-                return (
-                  <SelectItem key={item.Name} value={item.Name}>
-                    {item.Name}
-                  </SelectItem>
-                );
-              })}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <p className="text-xs text-white/50">
-        Best model based on available resources: <b>{bestWhisperModel}</b>
-        <br />
-        <em>Doesn't require Internet connection</em>
-      </p>
-
-      <Separator />
-
-      <ModelsRamRequirements />
-
-      <Separator />
-
-      <p className="text-xs text-white/50">
-        <b>GPU acceleration:</b> This feature is currently not supported.
-      </p>
-    </>
-  );
-}
-
-function ModelsRamRequirements() {
-  const { whisperModels } = useSettings();
-
-  return (
-    <>
-      <p className="text-xs text-white/50 flex items-center gap-1">
-        Here are the available models and their RAM requirements{" "}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent className="w-56">
-            <Table>
-              <TableHeader>
-                <TableRow className="text-xs text-white/50">
-                  <TableHead>Model</TableHead>
-                  <TableHead>RAM (GB)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {whisperModels.map((item) => {
-                  return (
-                    <TableRow key={item.Name}>
-                      <TableCell className="font-medium">{item.Name}</TableCell>
-                      <TableCell>{item.RAMRequired} GB</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </p>
     </>
   );
