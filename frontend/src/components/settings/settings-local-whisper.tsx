@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { local_whisper } from "~wails/models";
 
 export function LocalWhisperInputs() {
   const { state, dispatch, bestWhisperModel, whisperModels } = useSettings();
@@ -49,7 +50,7 @@ export function LocalWhisperInputs() {
 
           <SelectContent>
             <SelectGroup>
-              <SelectLabel>Models</SelectLabel>
+              {/* <SelectLabel>Models</SelectLabel> */}
               {whisperModels.map((item) => {
                 return (
                   <SelectItem key={item.Name} value={item.Name}>
@@ -70,11 +71,11 @@ export function LocalWhisperInputs() {
 
       <Separator />
 
+      {/* 
       <ModelsRamRequirements />
-
       <Separator />
 
-      {/* <p className="text-xs text-white/50">
+     <p className="text-xs text-white/50">
           <b>GPU acceleration:</b> This feature is currently not supported.
         </p> */}
 
@@ -85,45 +86,160 @@ export function LocalWhisperInputs() {
 
 function LocalWhisperModelsDownload() {
   const { state, bestWhisperModel, whisperModels } = useSettings();
+  const localWhisperStore = useLocalWhisperStore();
+
+  const [downloading, setDownloading] = useState(false);
+
+  const [selectedModels, setSelectedModels] = useState<
+    local_whisper.LocalWhisperModel[]
+  >([]);
 
   const modelName = state.LocalWhisperModel || bestWhisperModel;
   const model = whisperModels.find((item) => item.Name === modelName);
 
+  useEffect(() => {
+    localWhisperStore.areSomeModelsDownloading().then((status) => {
+      setDownloading(status);
+    });
+  }, []);
+
+  const startDownload = async () => {
+    console.log("Downloading... models:", selectedModels);
+
+    localWhisperStore.downloadModels(selectedModels).then((res) => {
+      console.log("Downloaded models:", res);
+    });
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <p className="text-xs text-white/50">
-        Choose the model you want to use for speech recognition.
+        Choose the models you want to use for speech recognition. If some of
+        your scripts are in English, consider downloading the English-only
+        model.
       </p>
 
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-3">
         {model?.HasAlsoAnEnglishOnlyModel && (
-          <SingleModel modelName={model.Name} englishOnly />
+          <SingleModel
+            selectedModels={selectedModels}
+            setSelectedModels={setSelectedModels}
+            modelName={model.Name}
+            englishOnly={true}
+          />
         )}
 
-        {model && <SingleModel modelName={model.Name} />}
+        {model && (
+          <SingleModel
+            selectedModels={selectedModels}
+            setSelectedModels={setSelectedModels}
+            modelName={model.Name}
+            englishOnly={false}
+          />
+        )}
       </ul>
+
+      <div>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={startDownload}
+          disabled={selectedModels.length === 0}
+        >
+          Download
+        </Button>
+      </div>
     </div>
   );
 }
 
-function SingleModel(props: { modelName: string; englishOnly?: boolean }) {
-  const [status, setStatus] = useState<
-    "idle" | "downloading" | "downloaded" | "error"
-  >("idle");
+type SingleModelProps = {
+  selectedModels: local_whisper.LocalWhisperModel[];
+  setSelectedModels: React.Dispatch<
+    React.SetStateAction<local_whisper.LocalWhisperModel[]>
+  >;
+
+  modelName: string;
+  englishOnly: boolean;
+};
+
+function SingleModel(props: SingleModelProps) {
+  const [status, setStatus] = useState<"idle" | "downloading" | "downloaded">(
+    "idle"
+  );
 
   const localWhisperStore = useLocalWhisperStore();
 
-  useEffect(() => {}, []);
+  const localWhisperModelObject = useMemo(
+    () => localWhisperStore.newModelObject(props.modelName, props.englishOnly),
+    []
+  );
+
+  useEffect(() => {
+    (async () => {
+      const downloading = await localWhisperStore.isModelDownloading(
+        localWhisperModelObject
+      );
+
+      if (downloading) {
+        setStatus("downloading");
+        return;
+      }
+
+      const exists = await localWhisperStore.existsModel(
+        localWhisperModelObject
+      );
+
+      if (exists) {
+        setStatus("downloaded");
+      } else {
+        setStatus("idle");
+      }
+    })();
+  }, []);
+
+  const selected = props.selectedModels.some(
+    (item) =>
+      item.Name === props.modelName && item.EnglishOnly === props.englishOnly
+  );
+
+  const toggleSelected = () => {
+    if (status !== "idle") {
+      return;
+    }
+
+    if (selected) {
+      props.setSelectedModels(
+        props.selectedModels.filter(
+          (item) =>
+            !(
+              item.Name === props.modelName &&
+              item.EnglishOnly === props.englishOnly
+            )
+        )
+      );
+    } else {
+      props.setSelectedModels((prev) => [...prev, localWhisperModelObject]);
+    }
+  };
 
   return (
     <>
       <div className="flex items-center space-x-2">
-        <Checkbox id={`single-model-show-${props.englishOnly}`} />
+        <Checkbox
+          checked={
+            status === "downloaded" || status === "downloading" || selected
+          }
+          id={`single-model-show-${props.englishOnly}`}
+          disabled={status !== "idle"}
+          onCheckedChange={toggleSelected}
+        />
+
         <label
           htmlFor={`single-model-show-${props.englishOnly}`}
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          className="text-sm opacity-90 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
-          {props.englishOnly ? "English Only" : ""}
+          {props.englishOnly ? "English Only" : "Multilingual"}
         </label>
       </div>
     </>

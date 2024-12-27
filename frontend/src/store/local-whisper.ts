@@ -21,6 +21,11 @@ type LocalWhisperState = {
 
   downloadModels: (models: local_whisper.LocalWhisperModel[]) => Promise<void>;
 
+  newModelObject: (
+    name: string,
+    englishOnly: boolean
+  ) => local_whisper.LocalWhisperModel;
+
   isModelDownloading: (
     model: local_whisper.LocalWhisperModel
   ) => Promise<boolean>;
@@ -65,6 +70,13 @@ export const useLocalWhisperStore = create<LocalWhisperState>((set) => ({
 
   areSomeModelsDownloading() {
     return AreSomeLocalWhisperModelsDownloading();
+  },
+
+  newModelObject(name, englishOnly) {
+    return new local_whisper.LocalWhisperModel({
+      Name: name,
+      EnglishOnly: englishOnly,
+    });
   },
 
   onWhisperModelDownloadProgress: (callback) => {

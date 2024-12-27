@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	srcUrl          = "https://huggingface.co/datasets/ggerganov/whisper.cpp/resolve/main" // The location of the models
-	srcExt          = ".bin"                                                               // Filename extension
-	bufSize         = 1024 * 64                                                            // Size of the buffer used for downloading the model
-	outDir          = "./models"                                                           // Directory where the model will be downloaded
-	downloadTimeout = 30 * time.Minute                                                     // Timeout for downloading the model
+	srcUrl          = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main?download=true" // The location of the models
+	srcExt          = ".bin"                                                                    // Filename extension
+	bufSize         = 1024 * 64                                                                 // Size of the buffer used for downloading the model
+	outDir          = "./models"                                                                // Directory where the model will be downloaded
+	downloadTimeout = 30 * time.Minute                                                          // Timeout for downloading the model
 )
 
 type LocalWhisperModel struct {
@@ -32,7 +32,7 @@ type DownloadProgress struct {
 	Total int64
 }
 
-var modelsDownloadProgress map[string]bool
+var modelsDownloadProgress = make(map[string]bool)
 
 func ModelExists(model LocalWhisperModel) bool {
 	modelsDir, err := getModelOutDir()
@@ -46,7 +46,7 @@ func ModelExists(model LocalWhisperModel) bool {
 
 	info, err := os.Stat(modelPath)
 
-	return err == nil && !info.IsDir()
+	return err == nil && info != nil && !info.IsDir()
 }
 
 func DownloadModels(models []LocalWhisperModel, progress chan<- DownloadProgress) error {
@@ -206,7 +206,8 @@ func downloadModel(ctx context.Context, url string, modelPath string, progress c
 
 func getModelOutDir() (string, error) {
 	dir := filepath.Join(filesystem.HOME_DIR, outDir)
-	info, err := os.Stat(dir)
+
+	_, err := os.Stat(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			err = os.Mkdir(dir, 0755)
@@ -216,10 +217,6 @@ func getModelOutDir() (string, error) {
 		} else {
 			return "", err
 		}
-	}
-
-	if !info.IsDir() {
-		return "", fmt.Errorf("not a directory: %s", info.Name())
 	}
 
 	return dir, nil
