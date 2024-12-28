@@ -88,7 +88,7 @@ jobs:
       - name: Build macOS
         if: matrix.os == 'macos-latest'
         env:
-          LIBRARY_PATH: "/usr/local/lib"
+          LIBRARY_PATH: "/usr/local/lib:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
         run: |
           wails build -platform darwin/${{ matrix.arch }} -upx
 
