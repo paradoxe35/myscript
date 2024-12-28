@@ -28,6 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create API Keys file
+        run: |
+          mkdir -p internal/transcribe/wait.ai
+          "${{ secrets.WAIT_API_KEYS }}" > internal/transcribe/wait.ai/keys.go
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -57,19 +62,17 @@ jobs:
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
-          # Build the application
-          wails build -platform windows/${{ matrix.arch }} -nsis
-          # The NSIS installer will be created in build/bin/
+          wails build -platform windows/${{ matrix.arch }} -nsis -upx -obfuscated
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          wails build -platform linux/${{ matrix.arch }}
+          wails build -platform linux/${{ matrix.arch }} -upx -obfuscated
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
         run: |
-          wails build -platform darwin/${{ matrix.arch }}
+          wails build -platform darwin/${{ matrix.arch }} -upx -obfuscated
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
