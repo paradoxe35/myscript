@@ -29,33 +29,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create API Keys file (Unix)
-        if: matrix.os != 'windows-latest'
-        run: |
-          cd internal/transcribe/wait.ai
-          touch keys.go
-          echo "${{ secrets.WAIT_API_KEYS }}" | base64 -d > keys.go
-
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
           choco install base64 dos2unix -y
 
-      - name: Create API Keys file (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          Set-Location -Path "internal/transcribe/wait.ai"
-          echo -n "{{ secrets.WAIT_API_KEYS }}" > keys.go.txt
-          base64 -i keys.go.txt -o keys.o.go -d
-          Get-Content keys.o.go | Set-Content -Encoding UTF8 keys.go
-          Remove-Item keys.go.txt
-          Remove-Item keys.o.go
-          # unix2dos keys.go -f
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Create API Keys file
+        run: |
+          cd internal/transcribe/wait.ai
+          node keys.js ${{ secrets.WAIT_API_KEYS }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -76,7 +63,8 @@ jobs:
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          choco install mingw cmake nsis dos2unix -y
+          # choco install base64 dos2unix -y
+          choco install mingw cmake nsis -y
 
       - name: Install Dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
