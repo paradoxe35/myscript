@@ -72,7 +72,7 @@ jobs:
         run: |
           brew update
           brew install sdl2 cmake gcc
-          xcode-select --install
+          softwareupdate --install -a
           sudo xcode-select --reset
           sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
 
