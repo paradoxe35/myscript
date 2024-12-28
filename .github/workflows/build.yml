@@ -29,26 +29,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install base64 dos2unix -y
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      - name: Create API Keys file
-        run: |
-          cd internal/transcribe/wait.ai
-          node keys.js ${{ secrets.WAIT_API_KEYS }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: false
+
+      - name: Create API Keys file
+        run: |
+          cd internal/transcribe/wait.ai
+          node keys.js ${{ secrets.WAIT_API_KEYS }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
