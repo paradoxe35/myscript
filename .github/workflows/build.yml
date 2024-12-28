@@ -54,7 +54,7 @@ jobs:
       - name: Install Wails and garble
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          go install mvdan.cc/garble@latest
+          # go install mvdan.cc/garble@latest
 
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -77,19 +77,24 @@ jobs:
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |
-          wails build -platform windows/${{ matrix.arch }} -nsis -upx -obfuscated
+          wails build -platform windows/${{ matrix.arch }} -nsis -upx
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          wails build -platform linux/${{ matrix.arch }} -upx -obfuscated -tags webkit2_41
+          wails build -platform linux/${{ matrix.arch }} -upx -tags webkit2_41
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
         env:
-          LIBRARY_PATH: "$LIBRARY_PATH:/usr/local/lib"
+          LIBRARY_PATH: "/usr/local/lib"
         run: |
-          wails build -platform darwin/${{ matrix.arch }} -upx -obfuscated
+          wails build -platform darwin/${{ matrix.arch }} -upx
+
+      - name: Remove non-nsis files
+        if: matrix.os == 'windows-latest'
+        run: |
+          rm build/bin/MyScript.exe
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
