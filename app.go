@@ -61,16 +61,16 @@ func (a *App) getNotionClient() *notion.NotionClient {
 	return notion.NewClient(*config.NotionApiKey)
 }
 
-func (a *App) GetNotionPages() []notionapi.Object {
+func (a *App) GetNotionPages() ([]notionapi.Object, error) {
 	client := a.getNotionClient()
 	if client == nil {
-		return []notionapi.Object{}
+		return []notionapi.Object{}, nil
 	}
 
 	return client.GetPages()
 }
 
-func (a *App) GetNotionPageBlocks(pageID string) []notion.NotionBlock {
+func (a *App) GetNotionPageBlocks(pageID string) ([]notion.NotionBlock, error) {
 	client := a.getNotionClient()
 
 	return client.GetPageBlocks(pageID)

@@ -48,6 +48,10 @@ func (l *LocalWhisperTranscriber) getBestModelPath(modelName string, language st
 	// Fall back to alternative model
 	localWhisperModel.EnglishOnly = !localWhisperModel.EnglishOnly
 	if ModelExists(localWhisperModel) {
+		if localWhisperModel.EnglishOnly && language != whisper_model.ENGLISH_LANG_CODE {
+			return "", fmt.Errorf("You are using an English-only model on a non-English script. Please consider downloading the multilingual model as well.")
+		}
+
 		return getModelPath(localWhisperModel)
 	}
 

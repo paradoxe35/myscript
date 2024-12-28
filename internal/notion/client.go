@@ -26,20 +26,21 @@ func NewClient(token string) *NotionClient {
 	}
 }
 
-func (nc *NotionClient) GetPages() []notionapi.Object {
+func (nc *NotionClient) GetPages() ([]notionapi.Object, error) {
 	result, err := nc.Client.Search.Do(nc.ctx, &notionapi.SearchRequest{
 		PageSize: 200,
 		Filter:   notionapi.SearchFilter{Property: "object", Value: "page"},
 	})
+
 	if err != nil {
 		log.Printf("Error getting Notion pages: %s", err)
-		return []notionapi.Object{}
+		return []notionapi.Object{}, err
 	}
 
-	return result.Results
+	return result.Results, nil
 }
 
-func (nc *NotionClient) fetchBlocks(pageID string) []NotionBlock {
+func (nc *NotionClient) fetchBlocks(pageID string) ([]NotionBlock, error) {
 	blocks := []NotionBlock{}
 	result, err := nc.Client.Block.GetChildren(
 		nc.ctx,
@@ -49,22 +50,22 @@ func (nc *NotionClient) fetchBlocks(pageID string) []NotionBlock {
 
 	if err != nil {
 		log.Printf("Error getting Notion page blocks: %s", err)
-		return blocks
+		return blocks, err
 	}
 
 	for _, block := range result.Results {
 		newBlock := &NotionBlock{Block: block, Children: []NotionBlock{}}
 
 		if block.GetHasChildren() {
-			newBlock.Children = nc.fetchBlocks(string(block.GetID().String()))
+			newBlock.Children, _ = nc.fetchBlocks(string(block.GetID().String()))
 		}
 
 		blocks = append(blocks, *newBlock)
 	}
 
-	return blocks
+	return blocks, nil
 }
 
-func (nc *NotionClient) GetPageBlocks(pageID string) []NotionBlock {
+func (nc *NotionClient) GetPageBlocks(pageID string) ([]NotionBlock, error) {
 	return nc.fetchBlocks(pageID)
 }
