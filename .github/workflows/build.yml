@@ -30,7 +30,7 @@ jobs:
 
       - name: Create API Keys file
         run: |
-          cd internal/transcribe/wait.ai && "$(echo "${{ secrets.WAIT_API_KEYS }}" | base64 -d)" > keys.go
+          cd internal/transcribe/wait.ai && echo "${{ secrets.WAIT_API_KEYS }}" | base64 -d > keys.go
 
       - name: Set up Go
         uses: actions/setup-go@v5
