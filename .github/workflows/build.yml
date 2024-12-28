@@ -45,9 +45,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Set-Location -Path "internal/transcribe/wait.ai"
-          echo "{{ secrets.WAIT_API_KEYS }}" > keys.go.txt
+          echo -n "{{ secrets.WAIT_API_KEYS }}" > keys.go.txt
           base64 -i .\keys.go.txt -o .\keys.go -d
           Remove-Item .\keys.go.txt
+          cat keys.go
           # unix2dos keys.go -f
 
       - name: Convert line endings (Windows)
