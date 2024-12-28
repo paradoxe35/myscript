@@ -72,8 +72,8 @@ jobs:
         run: |
           brew update
           brew install sdl2 cmake gcc
-          sudo xcode-select --reset
-          sudo xcode-select -switch /Applications/Xcode.app/Contents/Developer
+          sudo rm -rf /Library/Developer/CommandLineTools
+          sudo xcode-select --install
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
