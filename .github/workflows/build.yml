@@ -40,10 +40,19 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Set-Location -Path "internal/transcribe/wait.ai"
+          New-Item -ItemType File -Path "keys.go" -Force
+          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:WAIT_API_KEYS)) | Set-Content -Path "keys.go"
 
-          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:WAIT_API_KEYS)) | 
-              ForEach-Object { $_ -replace "`r`n", "`n" } | 
-              Set-Content -Path "keys.go" -NoNewline
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -56,7 +65,12 @@ jobs:
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          choco install mingw cmake nsis -y
+          choco install mingw cmake nsis dos2unix -y
+
+      - name: Convert line endings (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          dos2unix internal/transcribe/wait.ai/keys.go
 
       - name: Install Dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
