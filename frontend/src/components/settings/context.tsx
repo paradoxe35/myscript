@@ -7,13 +7,8 @@ import {
   useEffect,
   useMemo,
   useReducer,
-  useState,
 } from "react";
 import { toast } from "sonner";
-import {
-  GetBestLocalWhisperModel,
-  GetLocalWhisperModels,
-} from "~wails/main/App";
 import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
