@@ -67,7 +67,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           brew install gcc
-          brew install gsl
+          brew install sdl2 cmake
+          # brew install gsl
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
@@ -81,6 +82,8 @@ jobs:
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
+        env:
+          LIBRARY_PATH: "$LIBRARY_PATH:/usr/local/lib"
         run: |
           wails build -platform darwin/${{ matrix.arch }} -upx -obfuscated
 
