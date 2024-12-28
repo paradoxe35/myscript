@@ -2,52 +2,30 @@ package local_whisper
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"sync"
 	"time"
 
-	whisper_model "myscript/internal/transcribe/whisper"
-
 	"github.com/go-audio/wav"
 	whisper "github.com/kardianos/whisper.cpp/stt"
+
+	whisper_model "myscript/internal/transcribe/whisper"
 )
 
-// Config holds configuration options for LocalWhisperTranscriber
-type Config struct {
-	CloseTimeout time.Duration
-	BufferSize   int
-}
-
-// DefaultConfig returns the default configuration
-func DefaultConfig() *Config {
-	return &Config{
-		CloseTimeout: 10 * time.Minute,
-		BufferSize:   44, // Minimum WAV header size
-	}
-}
-
-// LocalWhisperTranscriber handles local speech-to-text transcription using Whisper
 type LocalWhisperTranscriber struct {
 	model        whisper.Model
 	transcribing bool
 	closing      bool
-	mutex        sync.RWMutex
-	config       *Config
+	mutex        sync.Mutex
 }
 
-// NewLocalWhisperTranscriber creates a new transcriber with the given configuration
-func NewLocalWhisperTranscriber(config *Config) *LocalWhisperTranscriber {
-	if config == nil {
-		config = DefaultConfig()
-	}
-	return &LocalWhisperTranscriber{
-		config: config,
-	}
+func NewLocalWhisperTranscriber() *LocalWhisperTranscriber {
+	return &LocalWhisperTranscriber{}
 }
 
-// getBestModelPath determines the most appropriate model path based on language
-func (l *LocalWhisperTranscriber) getBestModelPath(modelName, language string) (string, error) {
+// If the language is English, we use the English-only model if it is already downloaded
+// Otherwise, we use the multilingual model
+func (l *LocalWhisperTranscriber) getBestModelPath(modelName string, language string) (string, error) {
 	if modelName == "" || language == "" {
 		return "", fmt.Errorf("modelName and language cannot be empty")
 	}
@@ -73,37 +51,38 @@ func (l *LocalWhisperTranscriber) getBestModelPath(modelName, language string) (
 		return getModelPath(localWhisperModel)
 	}
 
-	return "", fmt.Errorf("no model found for %s (language: %s)", modelName, language)
+	return "", fmt.Errorf("no model found for %s. Please ensure you have downloaded it.", modelName)
 }
 
-// LoadModel loads the specified model for transcription
-func (l *LocalWhisperTranscriber) LoadModel(modelName, language string) error {
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
-
+func (l *LocalWhisperTranscriber) LoadModel(modelName string, language string) error {
 	if l.transcribing && l.model != nil {
-		return fmt.Errorf("transcription in progress; please wait")
+		return fmt.Errorf("another transcription is in progress; please wait.")
 	}
 
-	if err := l.unloadCurrentModel(); err != nil {
-		return fmt.Errorf("failed to unload current model: %w", err)
+	// Unload model if it is already loaded
+	if l.model != nil {
+		l.model.Close()
+		l.model = nil
 	}
 
 	modelPath, err := l.getBestModelPath(modelName, language)
 	if err != nil {
-		return fmt.Errorf("failed to get model path: %w", err)
+		return err
 	}
 
+	// Load model
 	model, err := whisper.New(modelPath)
 	if err != nil {
-		return fmt.Errorf("failed to create new whisper model: %w", err)
+		return err
 	}
 
 	l.model = model
+
+	fmt.Printf("Loaded local whisper model: %s\n", modelPath)
+
 	return nil
 }
 
-// Transcribe performs the audio transcription
 func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (string, error) {
 	if err := l.validateTranscribeInput(buffer, language); err != nil {
 		return "", err
@@ -116,92 +95,60 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 		return "", fmt.Errorf("no model loaded")
 	}
 
-	l.setTranscribing(true)
-	defer l.setTranscribing(false)
+	l.transcribing = true
+	l.closing = false
+	defer func() {
+		l.transcribing = false
+	}()
 
-	return l.performTranscription(buffer, language)
-}
-
-func (l *LocalWhisperTranscriber) performTranscription(buffer []byte, language string) (string, error) {
+	// Create processing context
 	context, err := l.model.NewContext()
 	if err != nil {
-		return "", fmt.Errorf("failed to create context: %w", err)
+		return "", err
 	}
 
 	context.SetLanguage(language)
 	context.ResetTimings()
 
-	samples, err := bytesToFloat32Buffer(buffer, l.config.BufferSize)
+	fmt.Printf("Local transcribing with language: %s\n", language)
+
+	samples, err := bytesToFloat32Buffer(buffer)
 	if err != nil {
-		return "", fmt.Errorf("failed to convert audio buffer: %w", err)
+		return "", err
 	}
 
 	if err := context.Process(samples, nil); err != nil {
-		return "", fmt.Errorf("failed to process audio: %w", err)
+		return "", err
 	}
 
-	return l.collectTranscription(context)
-}
+	// Get the result
+	text := ""
 
-func (l *LocalWhisperTranscriber) collectTranscription(context whisper.Context) (string, error) {
-	var text string
+	// Print out the results
 	for {
 		segment, err := context.NextSegment()
 		if err != nil {
 			break
 		}
+
 		text += segment.Text + " "
 	}
+
 	return text, nil
 }
 
-// Close safely closes the transcriber and releases resources
 func (l *LocalWhisperTranscriber) Close() error {
 	l.mutex.Lock()
 	l.closing = true
 	l.mutex.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), l.config.CloseTimeout)
-	defer cancel()
-
-	if err := l.waitForTranscriptionCompletion(ctx); err != nil {
-		return fmt.Errorf("failed to close transcriber: %w", err)
-	}
-
-	return l.unloadCurrentModel()
-}
-
-func (l *LocalWhisperTranscriber) waitForTranscriptionCompletion(ctx context.Context) error {
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("timeout waiting for transcription to complete")
-		case <-ticker.C:
-			l.mutex.RLock()
-			if !l.transcribing {
-				l.mutex.RUnlock()
-				return nil
-			}
-			l.mutex.RUnlock()
-		}
-	}
-}
-
-func (l *LocalWhisperTranscriber) unloadCurrentModel() error {
-	if l.model != nil {
+	if l.model != nil && l.canClose() {
+		fmt.Printf("Unloading local whisper model\n")
 		l.model.Close()
 		l.model = nil
 	}
-	return nil
-}
 
-func (l *LocalWhisperTranscriber) setTranscribing(state bool) {
-	l.mutex.Lock()
-	l.transcribing = state
-	l.mutex.Unlock()
+	return nil
 }
 
 func (l *LocalWhisperTranscriber) validateTranscribeInput(buffer []byte, language string) error {
@@ -214,21 +161,41 @@ func (l *LocalWhisperTranscriber) validateTranscribeInput(buffer []byte, languag
 	return nil
 }
 
-// bytesToFloat32Buffer converts WAV bytes to float32 samples
-func bytesToFloat32Buffer(b []byte, minSize int) ([]float32, error) {
-	if len(b) < minSize {
+func (l *LocalWhisperTranscriber) canClose() bool {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if !l.closing {
+				return false
+			}
+			if !l.transcribing {
+				return true
+			}
+		}
+	}
+}
+
+func bytesToFloat32Buffer(b []byte) ([]float32, error) {
+	// Validate minimum WAV file size
+	if len(b) < 44 { // 44 bytes is the minimum size for a valid WAV header
 		return nil, fmt.Errorf("invalid WAV file: too small (%d bytes)", len(b))
 	}
 
 	fh := bytes.NewReader(b)
+
+	// Decode the WAV file - load the full buffer
 	dec := wav.NewDecoder(fh)
 	buf, err := dec.FullPCMBuffer()
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode WAV file: %w", err)
+		return nil, err
 	}
 
 	if dec.SampleRate != whisper.SampleRate {
-		return nil, fmt.Errorf("unsupported sample rate: %d (expected %d)", dec.SampleRate, whisper.SampleRate)
+		return nil, fmt.Errorf("unsupported sample rate: %d", dec.SampleRate)
 	}
 
 	if dec.NumChans != 1 {
@@ -236,4 +203,5 @@ func bytesToFloat32Buffer(b []byte, minSize int) ([]float32, error) {
 	}
 
 	return buf.AsFloat32Buffer().Data, nil
+
 }

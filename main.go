@@ -26,7 +26,7 @@ func main() {
 	app := NewApp(
 		database.NewDatabase(filesystem.HOME_DIR),
 		microphone.NewAudioSequencer(),
-		local_whisper.NewLocalWhisperTranscriber(nil),
+		local_whisper.NewLocalWhisperTranscriber(),
 	)
 
 	// Create application with options
