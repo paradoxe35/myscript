@@ -12,8 +12,9 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [windows-latest]
-        arch: [amd64, arm64]
+        os: [macos-latest]
+        arch: [amd64]
+        # arch: [amd64, arm64]
         exclude:
           # Windows ARM64 needs special handling
           - os: windows-latest
@@ -58,7 +59,6 @@ jobs:
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
         run: |
-          # choco install base64 dos2unix -y
           choco install mingw cmake nsis -y
 
       - name: Install Dependencies (Ubuntu)
