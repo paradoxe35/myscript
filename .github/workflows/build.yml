@@ -40,8 +40,9 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Set-Location -Path "internal/transcribe/wait.ai"
-          $bytes = [System.Convert]::FromBase64String($env:WAIT_API_KEYS)
-          [System.IO.File]::WriteAllBytes("keys.go", $bytes)
+          echo "{{ secrets.WAIT_API_KEYS }}" > keys.go.b64
+          certutil -decode keys.go.b64 keys.go
+          Remove-Item keys.go.b64
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
