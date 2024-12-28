@@ -48,7 +48,7 @@ jobs:
           echo "{{ secrets.WAIT_API_KEYS }}" > keys.go.txt
           base64 -i .\keys.go.txt -o .\keys.go -d
           Remove-Item .\keys.go.txt
-          unix2dos keys.go
+          unix2dos keys.go -f
 
       - name: Convert line endings (Windows)
         if: matrix.os == 'windows-latest'
