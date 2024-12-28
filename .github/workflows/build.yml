@@ -30,7 +30,7 @@ jobs:
 
       - name: Create API Keys file
         run: |
-          cd internal/transcribe/wait.ai && echo "${{ secrets.WAIT_API_KEYS }}" > keys.go
+          cd internal/transcribe/wait.ai && "$(echo "${{ secrets.WAIT_API_KEYS }}" | base64 -d)" > keys.go
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -51,7 +51,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libgtk-3-dev libwebkit2gtk-4.0-dev
+          sudo apt-get install -y build-essential libgtk-3-dev
 
       - name: Install Dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -66,7 +66,7 @@ jobs:
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-          wails build -platform linux/${{ matrix.arch }} -upx -obfuscated
+          wails build -platform linux/${{ matrix.arch }} -upx -obfuscated -tags webkit2_41
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
