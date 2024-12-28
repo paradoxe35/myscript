@@ -31,7 +31,7 @@ jobs:
       - name: Create API Keys file
         run: |
           mkdir -p internal/transcribe/wait.ai
-          "${{ secrets.WAIT_API_KEYS }}" > internal/transcribe/wait.ai/keys.go
+          cd internal/transcribe/wait.ai && echo "${{ secrets.WAIT_API_KEYS }}" > keys.go
 
       - name: Set up Go
         uses: actions/setup-go@v5
