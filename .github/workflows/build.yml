@@ -40,8 +40,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Set-Location -Path "internal/transcribe/wait.ai"
-          New-Item -ItemType File -Path "keys.go" -Force
-          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:WAIT_API_KEYS)) | Set-Content -Path "keys.go"
+          $bytes = [System.Convert]::FromBase64String($env:WAIT_API_KEYS)
+          [System.IO.File]::WriteAllBytes("keys.go", $bytes)
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
