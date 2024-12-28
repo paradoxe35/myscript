@@ -11,7 +11,8 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest]
         arch: [amd64, arm64]
         exclude:
           # Windows ARM64 needs special handling
@@ -39,8 +40,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Set-Location -Path "internal/transcribe/wait.ai"
-          New-Item -ItemType File -Path "keys.go" -Force
-          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:WAIT_API_KEYS)) | Set-Content -Path "keys.go"
+
+          [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:WAIT_API_KEYS)) | 
+              ForEach-Object { $_ -replace "`r`n", "`n" } | 
+              Set-Content -Path "keys.go" -NoNewline
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -74,12 +77,12 @@ jobs:
           wails build -platform windows/${{ matrix.arch }} -nsis -upx -obfuscated
 
       - name: Build Linux
-        if: false #matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: |
           wails build -platform linux/${{ matrix.arch }} -upx -obfuscated -tags webkit2_41
 
       - name: Build macOS
-        if: false #matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-latest'
         env:
           LIBRARY_PATH: "$LIBRARY_PATH:/usr/local/lib"
         run: |
