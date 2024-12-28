@@ -70,9 +70,8 @@ jobs:
       - name: Install Dependencies (macOS)
         if: matrix.os == 'macos-latest'
         run: |
-          brew install gcc
-          sudo xcode-select --reset
-          sudo xcode-select --switch /Library/Developer/CommandLineTools
+          brew update
+          brew install sdl2 cmake gcc
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
@@ -86,8 +85,6 @@ jobs:
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
-        env:
-          LIBRARY_PATH: "/usr/local/lib:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
         run: |
           wails build -platform darwin/${{ matrix.arch }} -upx
 
