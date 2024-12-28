@@ -7,7 +7,7 @@
   "frontend:dev:watcher": "pnpm run dev --host",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "Paradoxe Ngwasi",
-    "email": "paradoxngwasi@gmail.com"
+    "name": "Paradoxe Ng",
+    "email": "contact@pngwasi.me"
   }
 }

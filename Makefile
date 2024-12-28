@@ -5,8 +5,8 @@ all: dev
 dev:
 	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails dev
 
-build:
-	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build
+build: clean
+	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build -upx -obfuscated -nsis
 
 clean:
 	rm -rf build/bin
