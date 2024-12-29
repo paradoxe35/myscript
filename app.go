@@ -39,6 +39,10 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }
 
+func (a *App) GetAppVersion() string {
+	return AppVersion
+}
+
 // --- Config ---
 
 func (a *App) GetConfig() *repository.Config {

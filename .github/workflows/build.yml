@@ -70,6 +70,10 @@ jobs:
           brew update
           brew install sdl2 cmake gcc
 
+      - name: Set App Version
+        run: |
+          echo "${{ github.ref_name }}" > version.txt
+
       - name: Build Windows
         if: matrix.os == 'windows-latest'
         run: |

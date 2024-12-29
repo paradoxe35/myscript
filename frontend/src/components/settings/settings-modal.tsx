@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect, useState } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
 import { TRANSCRIBER_SOURCES, useSettings, TranscriberSource } from "./context";
@@ -22,9 +22,15 @@ import {
   SelectValue,
 } from "../ui/select";
 import { LocalWhisperInputs } from "./settings-local-whisper";
+import { GetAppVersion } from "~wails/main/App";
 
 export function SettingsModal(props: PropsWithChildren) {
+  const [version, setVersion] = useState("");
   const { state, configModified, handleSave } = useSettings();
+
+  useEffect(() => {
+    GetAppVersion().then((v) => setVersion(v));
+  }, []);
 
   return (
     <Dialog>
@@ -33,7 +39,9 @@ export function SettingsModal(props: PropsWithChildren) {
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription></DialogDescription>
+          <DialogDescription className="text-xs text-white/50">
+            Version: {version}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <NotionInputs />

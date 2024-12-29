@@ -22,6 +22,10 @@ export function ExistsLocalWhisperModel(arg1) {
   return window['go']['main']['App']['ExistsLocalWhisperModel'](arg1);
 }
 
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+
 export function GetBestLocalWhisperModel() {
   return window['go']['main']['App']['GetBestLocalWhisperModel']();
 }

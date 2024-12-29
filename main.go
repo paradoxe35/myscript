@@ -15,6 +15,9 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed version.txt
+var AppVersion string
+
 const (
 	title  = "myscript"
 	width  = 1024

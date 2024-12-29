@@ -17,6 +17,8 @@ export function DownloadLocalWhisperModels(arg1:Array<local_whisper.LocalWhisper
 
 export function ExistsLocalWhisperModel(arg1:local_whisper.LocalWhisperModel):Promise<boolean>;
 
+export function GetAppVersion():Promise<string>;
+
 export function GetBestLocalWhisperModel():Promise<string>;
 
 export function GetCache(arg1:string):Promise<repository.CacheValue>;
