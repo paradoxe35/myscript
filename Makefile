@@ -6,7 +6,7 @@ dev:
 	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails dev
 
 build: clean
-	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build -upx -obfuscated -nsis
+	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build -nsis -webview2 embed
 
 clean:
 	rm -rf build/bin
