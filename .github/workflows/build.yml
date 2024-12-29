@@ -1,18 +1,16 @@
-name: Build Wails App
+name: Build and Release App
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
   build:
     strategy:
       matrix:
-        # os: [macos-latest, windows-latest, ubuntu-latest]
-        os: [ubuntu-latest]
+        os: [macos-latest, windows-latest, ubuntu-latest]
         arch: [amd64, arm64]
         exclude:
           # Windows ARM64 needs special handling
@@ -54,7 +52,6 @@ jobs:
       - name: Install Wails and garble
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
-          # go install mvdan.cc/garble@latest
 
       - name: Install Dependencies (Windows)
         if: matrix.os == 'windows-latest'
@@ -77,26 +74,50 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           wails build -platform windows/${{ matrix.arch }} -nsis -webview2 embed
+          mv build/bin/*-installer.exe build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           wails build -platform linux/${{ matrix.arch }} -tags webkit2_41 -webview2 embed
+          cd build/bin
+          tar czf ${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz *
 
       - name: Build macOS
         if: matrix.os == 'macos-latest'
         run: |
           wails build -platform darwin/${{ matrix.arch }} -webview2 embed
+          # Create zip archive
+          cd build/bin
+          zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
-      - name: Remove non-nsis files
-        if: matrix.os == 'windows-latest'
-        continue-on-error: true
-        run: |
-          rm build/bin/MyScript.exe
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }}-${{ matrix.arch }}-build
-          path: |
-            build/bin/*
+          path: build/bin/*
+          retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*-installer.exe
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
