@@ -11,8 +11,8 @@ jobs:
   build:
     strategy:
       matrix:
-        # os: [ubuntu-latest, windows-latest, macos-latest]
-        os: [windows-latest]
+        # os: [macos-latest, windows-latest, macos-latest]
+        os: [macos-latest]
         arch: [amd64, arm64]
         # arch: [amd64, arm64]
         exclude:

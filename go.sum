@@ -79,8 +79,8 @@ github.com/microsoft/go-mssqldb v1.7.2 h1:CHkFJiObW7ItKTJfHo1QX7QBBD1iV+mn1eOyRP
 github.com/microsoft/go-mssqldb v1.7.2/go.mod h1:kOvZKUdrhhFQmxLZqbwUV0rHkNkZpthMITIb2Ko1IoA=
 github.com/openai/openai-go v0.1.0-alpha.41 h1:OPRT5YfNKlENfipMtolMWnKbCR1iQDc9hCRsUkhMaK8=
 github.com/openai/openai-go v0.1.0-alpha.41/go.mod h1:3SdE6BffOX9HPEQv8IL/fi3LYZ5TUpRYaqGQZbyk11A=
-github.com/paradoxe35/whisper.cpp-go v1.1.6 h1:hQ/jj3ArMoLM2Fgx4UAvupOLYZK3yehoECiUp6CJvek=
-github.com/paradoxe35/whisper.cpp-go v1.1.6/go.mod h1:SJy5njRipDfLxiLBW1snTbnnv2HwV3Lf/P0xvLu9C4s=
+github.com/paradoxe35/whisper.cpp-go v1.1.7 h1:uO39M9Epx50Fw5F0I4wWrEs3/uqzw8sURK1mGyStSo8=
+github.com/paradoxe35/whisper.cpp-go v1.1.7/go.mod h1:SJy5njRipDfLxiLBW1snTbnnv2HwV3Lf/P0xvLu9C4s=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
