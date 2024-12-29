@@ -47,8 +47,6 @@ github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
 github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
 github.com/jomei/notionapi v1.13.2 h1:YpHKNpkoTMlUfWTlVIodOmQDgRKjfwmtSNVa6/6yC9E=
 github.com/jomei/notionapi v1.13.2/go.mod h1:BqzP6JBddpBnXvMSIxiR5dCoCjKngmz5QNl1ONDlDoM=
-github.com/kardianos/whisper.cpp v1.1.4 h1:QLX0AynVM6t5jmD+VRssKDA9ipKjk7MdwkrbqUQe62M=
-github.com/kardianos/whisper.cpp v1.1.4/go.mod h1:Tdb2p3ED92OM59LiUfXDhMDUQM53V9mZH2Nud3FpHG4=
 github.com/labstack/echo/v4 v4.10.2 h1:n1jAhnq/elIFTHr1EYpiYtyKgx4RW9ccVgkqByZaN2M=
 github.com/labstack/echo/v4 v4.10.2/go.mod h1:OEyqf2//K1DFdE57vw2DRgWY0M7s65IVQO2FzvI4J5k=
 github.com/labstack/gommon v0.4.0 h1:y7cvthEAEbU0yHOf4axH8ZG2NH8knB9iNSoTO8dyIk8=
@@ -81,6 +79,8 @@ github.com/microsoft/go-mssqldb v1.7.2 h1:CHkFJiObW7ItKTJfHo1QX7QBBD1iV+mn1eOyRP
 github.com/microsoft/go-mssqldb v1.7.2/go.mod h1:kOvZKUdrhhFQmxLZqbwUV0rHkNkZpthMITIb2Ko1IoA=
 github.com/openai/openai-go v0.1.0-alpha.41 h1:OPRT5YfNKlENfipMtolMWnKbCR1iQDc9hCRsUkhMaK8=
 github.com/openai/openai-go v0.1.0-alpha.41/go.mod h1:3SdE6BffOX9HPEQv8IL/fi3LYZ5TUpRYaqGQZbyk11A=
+github.com/paradoxe35/whisper.cpp-go v1.1.6 h1:hQ/jj3ArMoLM2Fgx4UAvupOLYZK3yehoECiUp6CJvek=
+github.com/paradoxe35/whisper.cpp-go v1.1.6/go.mod h1:SJy5njRipDfLxiLBW1snTbnnv2HwV3Lf/P0xvLu9C4s=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjLxUqIJNnCWiEdr3bn6IUYi15bNlnbCCU=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=

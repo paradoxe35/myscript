@@ -8,8 +8,8 @@ require (
 	github.com/gen2brain/malgo v0.11.23
 	github.com/go-audio/wav v1.1.0
 	github.com/jomei/notionapi v1.13.2
-	github.com/kardianos/whisper.cpp v1.1.4
 	github.com/openai/openai-go v0.1.0-alpha.41
+	github.com/paradoxe35/whisper.cpp-go v1.1.6
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/wailsapp/wails/v2 v2.9.2
 	gorm.io/datatypes v1.2.5

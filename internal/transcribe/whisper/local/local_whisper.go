@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/go-audio/wav"
-	whisper "github.com/kardianos/whisper.cpp/stt"
+	whisper "github.com/paradoxe35/whisper.cpp-go/stt"
 
 	whisper_model "myscript/internal/transcribe/whisper"
 )
