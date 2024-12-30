@@ -6,7 +6,7 @@ import (
 )
 
 /*
-#cgo LDFLAGS: -lwhisper -lm -lstdc++ -fopenmp
+#cgo LDFLAGS: -L. -lwhisper -lm -lstdc++ -fopenmp
 #cgo darwin LDFLAGS: -framework Accelerate -framework Metal -framework Foundation -framework CoreGraphics
 // set -x CGO_CFLAGS_ALLOW "-mfma|-mf16c"
 #cgo CFLAGS: -I. -O3 -std=c11 -fPIC -pthread -mfma -mf16c -mavx -msse3 -mavx2
