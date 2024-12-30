@@ -2,13 +2,11 @@
 ifeq ($(OS),Windows_NT)
     DETECTED_OS := Windows
     EXPORT_CMD := set
-    RM_CMD := rm -rf
     MAKE_CMD := mingw32-make.exe
     BUILD_FLAGS := -nsis -webview2 embed
 else
     DETECTED_OS := $(shell uname -s)
     EXPORT_CMD := export
-    RM_CMD := rm -rf
     MAKE_CMD := make
     ifeq ($(DETECTED_OS),Linux)
         BUILD_FLAGS := -tags webkit2_41 -webview2 embed
@@ -17,27 +15,23 @@ else
     endif
 endif
 
-.PHONY: dev build clean all lwhisper
+.PHONY: dev build all lwhisper
 
 all: build
 
-dev:
+dev: lwhisper
 ifeq ($(DETECTED_OS),Windows)
 	set CGO_CFLAGS_ALLOW="-mfma|-mf16c"; wails dev
 else
-	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails dev
+	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails dev -tags webkit2_41
 endif
 
 lwhisper:
 	@${MAKE_CMD} -C ./whisper libwhisper.a
 
-build: clean lwhisper
+build: lwhisper
 ifeq ($(DETECTED_OS),Windows)
-	set CGO_CFLAGS_ALLOW="-mfma|-mf16c"; wails build ${BUILD_FLAGS}
+	set CGO_CFLAGS_ALLOW="-mfma|-mf16c"; wails build -clean ${BUILD_FLAGS}
 else
-	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build ${BUILD_FLAGS}
+	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build -clean ${BUILD_FLAGS}
 endif
-
-clean:
-	${RM_CMD} build/bin
-	${RM_CMD} build/frontend/dist
