@@ -4,3 +4,9 @@ frontend/dist
 *.syso
 *.i.ts
 exp/
+libwhisper.a
+libwhisper.so
+
+*.o
+*.a
+*.d

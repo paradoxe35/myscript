@@ -1,11 +1,14 @@
-.PHONY: dev build clean all
+.PHONY: dev build clean all lwhisper
 
 all: dev
 
 dev:
 	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails dev
 
-build: clean
+lwhisper:
+	@${MAKE} -C ./whisper libwhisper.a
+
+build: clean lwhisper
 	export CGO_CFLAGS_ALLOW="-mfma|-mf16c" && wails build -nsis -webview2 embed
 
 clean:

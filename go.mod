@@ -9,8 +9,8 @@ require (
 	github.com/go-audio/wav v1.1.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/openai/openai-go v0.1.0-alpha.41
-	github.com/paradoxe35/whisper.cpp-go v1.0.3
 	github.com/shirou/gopsutil/v4 v4.24.11
+	github.com/stretchr/testify v1.10.0
 	github.com/wailsapp/wails/v2 v2.9.2
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/sqlite v1.5.7
@@ -20,6 +20,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/go-audio/audio v1.0.0 // indirect
 	github.com/go-audio/riff v1.0.0 // indirect
@@ -42,10 +43,10 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.38.1 // indirect
-	github.com/stretchr/testify v1.10.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -63,6 +64,7 @@ require (
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect
 )
 
