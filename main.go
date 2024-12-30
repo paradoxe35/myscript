@@ -2,9 +2,11 @@ package main
 
 import (
 	"embed"
+	"log"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
 	local_whisper "myscript/internal/transcribe/whisper/local"
+	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
 
 	"github.com/wailsapp/wails/v2"
@@ -25,6 +27,12 @@ const (
 )
 
 func main() {
+	logger, err := utils.NewFileLogger(filesystem.HOME_DIR)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer logger.Close()
+
 	// Create an instance of the app structure
 	app := NewApp(
 		database.NewDatabase(filesystem.HOME_DIR),
@@ -33,7 +41,7 @@ func main() {
 	)
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	iErr := wails.Run(&options.App{
 		Title:     title,
 		MinWidth:  width,
 		MinHeight: height,
@@ -43,12 +51,13 @@ func main() {
 		WindowStartState: options.Maximised,
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.startup,
+		Logger:           logger,
 		Bind: []interface{}{
 			app,
 		},
 	})
 
-	if err != nil {
+	if iErr != nil {
 		println("Error:", err.Error())
 	}
 }
