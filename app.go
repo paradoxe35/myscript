@@ -256,6 +256,10 @@ func (a *App) initLocalWhisperTranscriber(language string) error {
 }
 
 func (a *App) StartRecording(language string) error {
+	if config := a.GetConfig(); config.TranscriberSource == "" {
+		return fmt.Errorf("No transcription source has been configured.")
+	}
+
 	// If transcriber source is set to local, load the model
 	if err := a.initLocalWhisperTranscriber(language); err != nil {
 		return err
