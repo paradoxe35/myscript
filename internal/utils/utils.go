@@ -2,7 +2,9 @@ package utils
 
 import (
 	"encoding/binary"
+	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/shirou/gopsutil/v4/mem"
 )
@@ -26,4 +28,12 @@ func TwoByteDataToIntSlice(audioData []byte) []int {
 		intData[i/2] = value
 	}
 	return intData
+}
+
+func MeasureExec(name string) func() {
+	start := time.Now()
+
+	return func() {
+		fmt.Printf("%s took %v\n", name, time.Since(start))
+	}
 }

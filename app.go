@@ -74,7 +74,7 @@ func (a *App) GetNotionPages() ([]notionapi.Object, error) {
 	return client.GetPages()
 }
 
-func (a *App) GetNotionPageBlocks(pageID string) ([]notion.NotionBlock, error) {
+func (a *App) GetNotionPageBlocks(pageID string) ([]*notion.NotionBlock, error) {
 	client := a.getNotionClient()
 
 	return client.GetPageBlocks(pageID)

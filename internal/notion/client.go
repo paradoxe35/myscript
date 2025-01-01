@@ -3,6 +3,7 @@ package notion
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/jomei/notionapi"
 )
@@ -14,7 +15,7 @@ type NotionClient struct {
 
 type NotionBlock struct {
 	Block    notionapi.Block
-	Children []NotionBlock
+	Children []*NotionBlock
 }
 
 func NewClient(token string) *NotionClient {
@@ -40,8 +41,8 @@ func (nc *NotionClient) GetPages() ([]notionapi.Object, error) {
 	return result.Results, nil
 }
 
-func (nc *NotionClient) fetchBlocks(pageID string) ([]NotionBlock, error) {
-	blocks := []NotionBlock{}
+func (nc *NotionClient) fetchBlocks(pageID string) ([]*NotionBlock, error) {
+	blocks := []*NotionBlock{}
 	result, err := nc.Client.Block.GetChildren(
 		nc.ctx,
 		notionapi.BlockID(pageID),
@@ -53,19 +54,27 @@ func (nc *NotionClient) fetchBlocks(pageID string) ([]NotionBlock, error) {
 		return blocks, err
 	}
 
+	var wg sync.WaitGroup
+
 	for _, block := range result.Results {
-		newBlock := &NotionBlock{Block: block, Children: []NotionBlock{}}
+		newBlock := &NotionBlock{Block: block, Children: []*NotionBlock{}}
 
 		if block.GetHasChildren() {
-			newBlock.Children, _ = nc.fetchBlocks(string(block.GetID().String()))
+			wg.Add(1)
+			go func(blockID string) {
+				defer wg.Done()
+				newBlock.Children, _ = nc.fetchBlocks(blockID)
+			}(block.GetID().String())
 		}
 
-		blocks = append(blocks, *newBlock)
+		blocks = append(blocks, newBlock)
 	}
+
+	wg.Wait()
 
 	return blocks, nil
 }
 
-func (nc *NotionClient) GetPageBlocks(pageID string) ([]NotionBlock, error) {
+func (nc *NotionClient) GetPageBlocks(pageID string) ([]*NotionBlock, error) {
 	return nc.fetchBlocks(pageID)
 }
