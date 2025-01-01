@@ -27,23 +27,21 @@ export function useContentReadMarker() {
     if (!containerRef.current) return;
 
     let position = 0;
-    let chunks = text.trim().split(/[\s-]/);
 
+    let chunks = text.trim().split(/[\s-]/);
     let splitter = text.trim().replace(/[^\s-]/g, "").length;
 
+    let iteration = 0;
     let minChunksIteration = chunks.length - Math.floor(splitter / 2);
     let maxChunksIteration = chunks.length + Math.floor(splitter / 2);
 
-    let iteration = 0;
-
-    let matchedNodes: { node: Node; start: number; end: number }[] = [];
-
-    const treeWalker = createTreeTextWalker(containerRef.current);
-
     let startMatched = false;
     let endMatched = false;
+    let matchedNodes: { node: Node; start: number; end: number }[] = [];
 
     const nNodes: Node[] = [];
+
+    const treeWalker = createTreeTextWalker(containerRef.current);
 
     while (treeWalker.nextNode() && chunks.length > 0) {
       const node = treeWalker.currentNode;
@@ -115,20 +113,21 @@ export function useContentReadMarker() {
         end: matchEndPosition,
       });
 
-      if (iteration > maxChunksIteration) {
-        iteration = 0;
-        startMatched = false;
-        endMatched = false;
-      }
-
       position += matchEndPosition;
 
       if (startMatched && endMatched) {
         break;
       }
+
+      if (iteration > maxChunksIteration) {
+        iteration = 0;
+        startMatched = false;
+        endMatched = false;
+      }
     }
 
-    console.log("matchedNodes: ", nNodes);
+    console.log("Position: ", lastMarkerPosition.current, position);
+    console.log("matchedNodes: ", matchedNodes, nNodes);
 
     if (startMatched && endMatched) {
       lastMarkerPosition.current = position;
