@@ -11,13 +11,6 @@ export function TranscriberInit() {
     transcriberStore.getRecordingStatus();
   }, []);
 
-  useEffect(() => {
-    return transcriberStore.onTranscribedText((text) => {
-      console.log("Transcribed text:", text);
-      // toast.success("Transcription saved successfully!");
-    });
-  }, []);
-
   // Stop recording when page changes
   useEffect(() => {
     transcriberStore.stopRecording();

@@ -6,7 +6,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Content } from "@/components/content";
+import { Content } from "@/components/content/content";
 import { AppHeaderBreadcrumb } from "@/components/app-header/app-header-breadcrumb";
 import { RightButtonsHeader } from "@/components/app-header/right-buttons-header";
 

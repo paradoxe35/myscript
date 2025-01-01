@@ -3,6 +3,7 @@ import { convertNotionToHtml, wrapLists } from "@/lib/notion-to-html";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useMemo } from "react";
+import { useContentReadMarker } from "./use-content-read-marker";
 
 const edjsParser = edjsHTML();
 
@@ -24,12 +25,15 @@ export function ContentRead() {
     return "";
   }, [activePage]);
 
+  const containerRef = useContentReadMarker();
+
   return (
     <div
       className={cn(
         "w-full block mx-auto",
         "prose max-w-[650px] dark:prose-invert"
       )}
+      ref={containerRef}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
