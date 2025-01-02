@@ -241,12 +241,12 @@ func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 func (a *App) initLocalWhisperTranscriber(language string) error {
 	config := a.GetConfig()
 
-	if config != nil && config.TranscriberSource != "local" {
+	if config.TranscriberSource != "local" {
 		return nil
 	}
 
 	var configuredModel string
-	if config == nil || config.LocalWhisperModel == nil {
+	if config.LocalWhisperModel == nil {
 		configuredModel = a.GetBestLocalWhisperModel()
 	} else {
 		configuredModel = *config.LocalWhisperModel
