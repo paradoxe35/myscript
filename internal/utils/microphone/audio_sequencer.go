@@ -3,6 +3,7 @@ package microphone
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -41,6 +42,7 @@ type AudioSequencer struct {
 	config        NoiseConfig
 	lastNoiseTime time.Time
 	isRecording   bool
+	inSpeechModal bool
 	mu            sync.Mutex
 }
 
@@ -97,10 +99,8 @@ func (ar *AudioSequencer) Start() error {
 	ar.ctx = ctx
 
 	var currentBuffer []byte
-	// Set this to true to start recording, to prevent unnecessary OnSequential calls on Start
-	var triggered = true
-
 	ar.lastNoiseTime = time.Now()
+	ar.inSpeechModal = false
 
 	onRecvFrames := func(pSample2, pSample []byte, framecount uint32) {
 		ar.mu.Lock()
@@ -114,16 +114,17 @@ func (ar *AudioSequencer) Start() error {
 		hasNoise, db := ar.detectNoise(pSample)
 
 		if hasNoise {
-			if triggered && db >= ar.config.TriggerDecibels {
-				triggered = false
+			if !ar.inSpeechModal && db >= ar.config.TriggerDecibels {
+				ar.inSpeechModal = true
 			}
 
 			currentBuffer = append(currentBuffer, pSample...)
 			ar.lastNoiseTime = time.Now()
 		} else {
 			// Check if silence duration exceeds MaxBlankTime
-			if !triggered && time.Since(ar.lastNoiseTime).Milliseconds() > ar.config.MaxBlankTime && len(currentBuffer) > 0 {
-				triggered = true
+			if ar.inSpeechModal && time.Since(ar.lastNoiseTime).Milliseconds() > ar.config.MaxBlankTime && len(currentBuffer) > 0 {
+				ar.inSpeechModal = false
+
 				// Call the callback with the recorded buffer
 				if ar.config.OnSequential != nil {
 					// Make a copy of the buffer
@@ -136,12 +137,6 @@ func (ar *AudioSequencer) Start() error {
 			} else {
 				currentBuffer = append(currentBuffer, pSample...)
 			}
-		}
-
-		// if silence duration exceeds MaxSilenceTime
-		// we stop recording
-		if triggered && time.Since(ar.lastNoiseTime).Milliseconds() > MAX_SILENCE_TIME {
-			ar.Stop(true)
 		}
 	}
 
@@ -156,7 +151,25 @@ func (ar *AudioSequencer) Start() error {
 	ar.device = device
 	ar.isRecording = true
 
+	// Start auto stop
+	go ar.autoStop()
+
 	return device.Start()
+}
+
+func (ar *AudioSequencer) autoStop() {
+	// if silence duration exceeds MaxSilenceTime
+	// we stop recording
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if !ar.inSpeechModal && time.Since(ar.lastNoiseTime).Milliseconds() > MAX_SILENCE_TIME {
+			ar.Stop(true)
+			log.Printf("Auto stop recording after %d ms", MAX_SILENCE_TIME)
+			break
+		}
+	}
 }
 
 func (ar *AudioSequencer) Stop(autoStopped bool) {

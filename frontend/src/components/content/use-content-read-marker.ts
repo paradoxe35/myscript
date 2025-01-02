@@ -1,7 +1,7 @@
 import { createTreeTextWalker, surroundContentsTag } from "@/lib/dom";
 import { useActivePageStore } from "@/store/active-page";
 import { useTranscriberStore } from "@/store/transcriber";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
 
@@ -15,6 +15,10 @@ const similar = (v: string, w: string) => {
 
 function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "");
+}
+
+export function strNormalize(str: string) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 const queue = new Queue(1);
@@ -80,9 +84,7 @@ export function useContentReadMarker() {
         }
 
         if (!startMatched) {
-          const isSimilar = similar(chunks[0], chunk);
-
-          if (isSimilar) {
+          if (similar(chunks[0], chunk) || similar(chunks[1], chunk)) {
             startMatched = true;
             nNodes.push(node);
           }
@@ -135,6 +137,7 @@ export function useContentReadMarker() {
 
     if (startMatched && endMatched) {
       lastMarkerPosition.current = position;
+
       matchedNodes.forEach((node) => {
         surroundContentsTag(node.node, node.start, node.end);
       });

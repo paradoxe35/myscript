@@ -16,7 +16,7 @@ type LocalWhisperTranscriber struct {
 	model        whisper.Model
 	transcribing bool
 	closing      bool
-	mutex        sync.Mutex
+	mu           sync.Mutex
 }
 
 func NewLocalWhisperTranscriber() *LocalWhisperTranscriber {
@@ -92,8 +92,8 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 		return "", err
 	}
 
-	l.mutex.Lock()
-	defer l.mutex.Unlock()
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	if l.model == nil {
 		return "", fmt.Errorf("no model loaded")
@@ -142,9 +142,9 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 }
 
 func (l *LocalWhisperTranscriber) Close() error {
-	l.mutex.Lock()
+	l.mu.Lock()
 	l.closing = true
-	l.mutex.Unlock()
+	l.mu.Unlock()
 
 	if l.model != nil && l.canClose() {
 		fmt.Printf("Unloading local whisper model\n")

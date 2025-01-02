@@ -242,7 +242,10 @@ function DeletePageButton({ page }: { page: repository.Page }) {
         <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
           Delete
         </DropdownMenuItem>
-        <DropdownMenuItem>Cancel</DropdownMenuItem>
+
+        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+          Cancel
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
