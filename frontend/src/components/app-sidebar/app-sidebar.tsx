@@ -15,6 +15,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -31,6 +32,8 @@ import { repository } from "~wails/models";
 import { NotionSimplePage } from "@/types";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { setOpenMobile } = useSidebar();
+
   const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
   const notionPagesStore = useNotionPagesStore();
@@ -53,6 +56,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       page: newPage,
       viewOnly: false,
     });
+
+    setOpenMobile(false);
   };
 
   const onLocalPageClick = (page: repository.Page) => {
@@ -63,6 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
 
     activePageStore.fetchPageBlocks();
+    setOpenMobile(false);
   };
 
   const onNotionPageClick = (page: NotionSimplePage) => {
@@ -73,6 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
 
     activePageStore.fetchPageBlocks();
+    setOpenMobile(false);
   };
 
   const refreshNotionPages = () => {

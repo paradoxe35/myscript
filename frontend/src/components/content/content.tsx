@@ -60,6 +60,7 @@ function ContentEditor() {
       savePageBlocks(output.blocks, activePage.page).then((newPage) => {
         activePageStore.setActivePage({
           ...activePage,
+          page: newPage,
           blocks: output.blocks,
         });
       });

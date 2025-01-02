@@ -13,6 +13,10 @@ const similar = (v: string, w: string) => {
   );
 };
 
+function cleanUp(str: string) {
+  return str.replace(/\[.*?\]/g, "");
+}
+
 const queue = new Queue(1);
 
 export function useContentReadMarker() {
@@ -139,6 +143,8 @@ export function useContentReadMarker() {
 
   useEffect(() => {
     return transcriberStore.onTranscribedText((text) => {
+      text = cleanUp(text);
+
       queue.task(onTranscribedText2, text);
       console.log("Transcribed text:", text);
     });

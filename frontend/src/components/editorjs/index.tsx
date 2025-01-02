@@ -98,7 +98,9 @@ export const EditorJS = forwardRef<Ejs, EditorJSProps>(
       initialized.current = true;
 
       const ejs = createEditorJs(editorEl.current, {
-        onChange: $onChange.current,
+        onChange(api, event) {
+          $onChange.current?.(api, event);
+        },
       });
 
       ejs.isReady.then(() => {
