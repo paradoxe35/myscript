@@ -13,6 +13,9 @@ const similar = (v: string, w: string) => {
   );
 };
 
+const chunkSplitter = /[\s-']/;
+const iChunkSplitter = /[^\s-']/g;
+
 function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "");
 }
@@ -36,8 +39,8 @@ export function useContentReadMarker() {
 
     let position = 0;
 
-    let chunks = text.trim().split(/[\s-]/);
-    let splitter = text.trim().replace(/[^\s-]/g, "").length;
+    let chunks = text.trim().split(chunkSplitter);
+    let splitter = text.trim().replace(iChunkSplitter, "").length;
 
     let iteration = 0;
     let minChunksIteration = chunks.length - Math.floor(splitter / 2);
@@ -46,8 +49,6 @@ export function useContentReadMarker() {
     let startMatched = false;
     let endMatched = false;
     let matchedNodes: { node: Node; start: number; end: number }[] = [];
-
-    const nNodes: Node[] = [];
 
     const treeWalker = createTreeTextWalker(containerRef.current);
 
@@ -60,6 +61,8 @@ export function useContentReadMarker() {
 
       if (lastMarkerPosition.current >= position + nodeValueLength) {
         position += nodeValueLength;
+
+        console.log("Skipping node:", node);
         continue;
       } else if (
         lastMarkerPosition.current < position + nodeValueLength &&
@@ -69,19 +72,17 @@ export function useContentReadMarker() {
       }
 
       const nodeValue = node.nodeValue?.slice(matchStartPosition);
-      const nodeValueChunks = nodeValue?.split(/[\s-]/) || [];
+      const nodeValueChunks = nodeValue?.split(chunkSplitter) || [];
 
-      if (!nodeValueChunks.every((chunk) => /\w/gi.test(chunk))) {
+      if (nodeValue?.trim() === "") {
         position += nodeValueLength;
         continue;
       }
 
-      nodeValueChunks.forEach((chunk, i, arr) => {
+      const arr = nodeValueChunks;
+      for (let i = 0; i < arr.length; i++) {
         iteration++;
-
-        if (startMatched && endMatched) {
-          return;
-        }
+        const chunk = arr[i];
 
         if (!startMatched) {
           if (
@@ -89,14 +90,13 @@ export function useContentReadMarker() {
             (chunks[1] && similar(chunks[1], chunk))
           ) {
             startMatched = true;
-            nNodes.push(node);
           }
         }
 
         if (
           startMatched &&
-          iteration >= minChunksIteration &&
-          iteration <= maxChunksIteration
+          iteration > minChunksIteration &&
+          iteration < maxChunksIteration
         ) {
           const isSimilar = similar(chunks[chunks.length - 1], chunk);
 
@@ -110,11 +110,13 @@ export function useContentReadMarker() {
 
             matchEndPosition = step + chunk.length;
             endMatched = true;
-
-            nNodes.push(node);
           }
         }
-      });
+
+        if (startMatched && endMatched) {
+          break;
+        }
+      }
 
       matchedNodes.push({
         node,
@@ -136,7 +138,7 @@ export function useContentReadMarker() {
     }
 
     console.log("Position: ", lastMarkerPosition.current, position);
-    console.log("matchedNodes: ", matchedNodes, nNodes);
+    console.log("matchedNodes: ", matchedNodes);
 
     if (startMatched && endMatched) {
       lastMarkerPosition.current = position;
