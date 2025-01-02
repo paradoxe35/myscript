@@ -84,7 +84,10 @@ export function useContentReadMarker() {
         }
 
         if (!startMatched) {
-          if (similar(chunks[0], chunk) || similar(chunks[1], chunk)) {
+          if (
+            similar(chunks[0], chunk) ||
+            (chunks[1] && similar(chunks[1], chunk))
+          ) {
             startMatched = true;
             nNodes.push(node);
           }

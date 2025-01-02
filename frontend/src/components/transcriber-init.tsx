@@ -25,10 +25,11 @@ export function TranscriberInit() {
 
   useEffect(() => {
     return transcriberStore.onRecordingStopped((autoStopped) => {
+      transcriberStore.getRecordingStatus();
       console.log("Recording stopped:", autoStopped);
 
       if (autoStopped) {
-        toast.success("10 seconds of silence detected, stopping the read mode");
+        toast.info("10 seconds of silence detected, stopping the read mode");
       }
     });
   }, []);

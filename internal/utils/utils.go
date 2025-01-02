@@ -2,7 +2,7 @@ package utils
 
 import (
 	"encoding/binary"
-	"fmt"
+	"log"
 	"runtime"
 	"time"
 
@@ -34,6 +34,6 @@ func MeasureExec(name string) func() {
 	start := time.Now()
 
 	return func() {
-		fmt.Printf("%s took %v\n", name, time.Since(start))
+		log.Printf("%s took %v\n", name, time.Since(start))
 	}
 }
