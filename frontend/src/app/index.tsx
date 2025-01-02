@@ -9,6 +9,8 @@ import {
 import { Content } from "@/components/content/content";
 import { AppHeaderBreadcrumb } from "@/components/app-header/app-header-breadcrumb";
 import { RightButtonsHeader } from "@/components/app-header/right-buttons-header";
+
+// Init components
 import { TranscriberInit } from "@/components/transcriber-init";
 import { LocalWhisperInit } from "@/components/local-whisper-init";
 

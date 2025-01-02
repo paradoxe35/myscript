@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	// If 10 seconds of silence is detected, we go stop recording
-	MAX_SILENCE_TIME = 1000 * 20 // 20 seconds
+	// If silence is exceeded MAX_SILENCE_TIME, we go stop recording
+	MAX_SILENCE_TIME = 1000 * 30 // 30 seconds
 
 	DEFAULT_SAMPLE_RATE = 16000
 
@@ -134,6 +134,8 @@ func (ar *AudioSequencer) Start() error {
 				}
 				// Clear the buffer
 				currentBuffer = currentBuffer[:0]
+
+				ar.lastNoiseTime = time.Now()
 			} else {
 				currentBuffer = append(currentBuffer, pSample...)
 			}
