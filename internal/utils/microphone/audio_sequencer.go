@@ -170,6 +170,8 @@ func (ar *AudioSequencer) autoStop() {
 			ar.Stop(true)
 			log.Printf("Auto stop recording after %d ms", MAX_SILENCE_TIME)
 			break
+		} else if !ar.isRecording {
+			break
 		}
 	}
 }
