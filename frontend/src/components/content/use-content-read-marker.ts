@@ -6,10 +6,12 @@ import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
 
 const minSimilarity = 0.8;
-const similar = (v: string, w: string) => {
+const fullStringMinSimilarity = 0.5;
+
+const similar = (v: string, w: string, similarity: number = minSimilarity) => {
   return (
     levenshtein(v.trim().toLowerCase(), w.trim().toLowerCase()).similarity >=
-    minSimilarity
+    similarity
   );
 };
 
@@ -43,6 +45,7 @@ export function useContentReadMarker() {
     let splitter = text.trim().replace(iChunkSplitter, "").length;
 
     let iteration = 0;
+    let matchedString = "";
     let minChunksIteration = chunks.length - Math.floor(splitter / 2);
     let maxChunksIteration = chunks.length + Math.floor(splitter / 2);
 
@@ -61,8 +64,6 @@ export function useContentReadMarker() {
 
       if (lastMarkerPosition.current >= position + nodeValueLength) {
         position += nodeValueLength;
-
-        console.log("Skipping node:", node);
         continue;
       } else if (
         lastMarkerPosition.current < position + nodeValueLength &&
@@ -93,6 +94,10 @@ export function useContentReadMarker() {
           }
         }
 
+        if (startMatched) {
+          matchedString += chunk;
+        }
+
         if (
           startMatched &&
           iteration > minChunksIteration &&
@@ -101,15 +106,43 @@ export function useContentReadMarker() {
           const isSimilar = similar(chunks[chunks.length - 1], chunk);
 
           if (isSimilar) {
-            const step = arr.reduce((acc, v, ii) => {
-              if (ii < i) {
-                acc += v.length + 1;
-              }
-              return acc;
-            }, 0);
+            matchedString += chunk;
 
-            matchEndPosition = step + chunk.length;
-            endMatched = true;
+            const fullStringSimilarity = similar(
+              matchedString,
+              text,
+              fullStringMinSimilarity
+            );
+
+            console.log(
+              "Match and End: ",
+              matchedString,
+              text,
+
+              "minChunksIteration: ",
+              minChunksIteration,
+              "maxChunksIteration: ",
+              maxChunksIteration,
+              "fullStringSimilarity: ",
+              fullStringSimilarity
+            );
+
+            if (fullStringSimilarity) {
+              const step = arr.reduce((acc, v, ii) => {
+                if (ii < i) {
+                  acc += v.length + 1;
+                }
+                return acc;
+              }, 0);
+
+              matchEndPosition = step + chunk.length;
+              endMatched = true;
+            } else {
+              iteration = 0;
+              matchedString = "";
+              startMatched = false;
+              endMatched = false;
+            }
           }
         }
 
