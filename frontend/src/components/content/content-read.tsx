@@ -8,6 +8,7 @@ import { useContentReadMarker } from "./use-content-read-marker";
 const edjsParser = edjsHTML();
 
 export function ContentRead() {
+  const containerRef = useContentReadMarker();
   const activePage = useActivePageStore((state) => state.page);
 
   const html = useMemo(() => {
@@ -24,8 +25,6 @@ export function ContentRead() {
 
     return "";
   }, [activePage]);
-
-  const containerRef = useContentReadMarker();
 
   return (
     <div

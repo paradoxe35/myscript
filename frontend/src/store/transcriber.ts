@@ -1,21 +1,24 @@
 import { create } from "zustand";
 import {
   GetLanguages,
+  GetMicInputDevices,
   IsRecording,
   StartRecording,
   StopRecording,
 } from "~wails/main/App";
-import { structs } from "~wails/models";
+import { microphone, structs } from "~wails/models";
 import { EventsOn } from "~wails-runtime";
 import { EventClear } from "@/types";
 
 type TranscriberState = {
   isRecording: boolean;
   languages: Array<structs.Language>;
+  micInputDevices: Array<microphone.MicInputDevice>;
 
   startRecording: (languageCode: string) => Promise<void>;
   stopRecording: () => Promise<void>;
   getRecordingStatus: () => void;
+  getMicInputDevices: () => Promise<Array<microphone.MicInputDevice>>;
   getLanguages: () => void;
 
   onTranscribedText: (callback: (text: string) => void) => EventClear;
@@ -30,6 +33,7 @@ const ON_RECORDING_STOPPED = "on-recording-stopped";
 export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   isRecording: false,
   languages: [],
+  micInputDevices: [],
 
   async startRecording(languageCode) {
     if (!get().isRecording) {
@@ -52,6 +56,14 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
       set({ isRecording });
 
       return isRecording;
+    });
+  },
+
+  getMicInputDevices: () => {
+    return GetMicInputDevices().then((micInputDevices) => {
+      set({ micInputDevices });
+
+      return micInputDevices;
     });
   },
 

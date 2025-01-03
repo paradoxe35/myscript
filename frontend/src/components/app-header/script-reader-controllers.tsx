@@ -3,7 +3,7 @@ import { useActivePageStore } from "@/store/active-page";
 import { Button } from "../ui/button";
 import { BookOpenText, Play } from "lucide-react";
 import { useTranscriberStore } from "@/store/transcriber";
-import { SRLanguagesModal } from "../sr-languages-modal";
+import SRInputsModal from "../script-reader-inputs-modal";
 import { toast } from "sonner";
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
@@ -45,7 +45,7 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
       {readMode ? (
         button
       ) : (
-        <SRLanguagesModal
+        <SRInputsModal
           trigger={button}
           onLanguageSelected={handleLanguageSelected}
         />
