@@ -4,6 +4,7 @@ import { useTranscriberStore } from "@/store/transcriber";
 import { useCallback, useEffect, useRef } from "react";
 import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
+import { splitWithDelimiters } from "@/lib/utils";
 
 const minSimilarity = 0.8;
 const fullStringMinSimilarity = 0.5;
@@ -46,8 +47,17 @@ export function useContentReadMarker() {
 
     let iteration = 0;
     let matchedString = "";
-    let minChunksIteration = chunks.length - Math.floor(splitter / 2);
-    let maxChunksIteration = chunks.length + Math.floor(splitter / 2);
+    let minChunksIteration = chunks.length - Math.round(splitter / 2);
+    let maxChunksIteration = chunks.length + Math.round(splitter / 2);
+
+    console.log(
+      "splitter",
+      splitter,
+      "min",
+      minChunksIteration,
+      "max",
+      maxChunksIteration
+    );
 
     let startMatched = false;
     let endMatched = false;
@@ -73,7 +83,8 @@ export function useContentReadMarker() {
       }
 
       const nodeValue = node.nodeValue?.slice(matchStartPosition);
-      const nodeValueChunks = nodeValue?.split(chunkSplitter) || [];
+      const nodeValueChunks =
+        splitWithDelimiters(nodeValue || "", chunkSplitter) || [];
 
       if (nodeValue?.trim() === "") {
         position += nodeValueLength;
@@ -84,18 +95,19 @@ export function useContentReadMarker() {
       for (let i = 0; i < arr.length; i++) {
         iteration++;
         const chunk = arr[i];
+        const chunkDelimiter = chunk.delimiter || "";
 
         if (!startMatched) {
           if (
-            similar(chunks[0], chunk) ||
-            (chunks[1] && similar(chunks[1], chunk))
+            similar(chunks[0], chunk.text) ||
+            (chunks[1] && similar(chunks[1], chunk.text))
           ) {
             startMatched = true;
           }
         }
 
         if (startMatched) {
-          matchedString += chunk;
+          matchedString += chunk.text + chunkDelimiter;
         }
 
         if (
@@ -103,10 +115,10 @@ export function useContentReadMarker() {
           iteration > minChunksIteration &&
           iteration < maxChunksIteration
         ) {
-          const isSimilar = similar(chunks[chunks.length - 1], chunk);
+          const isSimilar = similar(chunks[chunks.length - 1], chunk.text);
 
           if (isSimilar) {
-            matchedString += chunk;
+            matchedString += chunk + chunkDelimiter;
 
             const fullStringSimilarity = similar(
               matchedString,
@@ -119,10 +131,6 @@ export function useContentReadMarker() {
               matchedString,
               text,
 
-              "minChunksIteration: ",
-              minChunksIteration,
-              "maxChunksIteration: ",
-              maxChunksIteration,
               "fullStringSimilarity: ",
               fullStringSimilarity
             );
@@ -130,12 +138,12 @@ export function useContentReadMarker() {
             if (fullStringSimilarity) {
               const step = arr.reduce((acc, v, ii) => {
                 if (ii < i) {
-                  acc += v.length + 1;
+                  acc += v.text.length + chunkDelimiter.length;
                 }
                 return acc;
               }, 0);
 
-              matchEndPosition = step + chunk.length;
+              matchEndPosition = step + chunk.text.length;
               endMatched = true;
             } else {
               iteration = 0;
