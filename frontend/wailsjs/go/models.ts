@@ -33,6 +33,27 @@ export namespace local_whisper {
 
 }
 
+export namespace microphone {
+	
+	export class MicInputDevice {
+	    Name: string;
+	    IsDefault: number;
+	    ID: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new MicInputDevice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.IsDefault = source["IsDefault"];
+	        this.ID = source["ID"];
+	    }
+	}
+
+}
+
 export namespace notion {
 	
 	export class NotionBlock {

@@ -306,3 +306,7 @@ func (a *App) StopRecording() {
 func (a *App) IsRecording() bool {
 	return a.audioSequencer.Recording()
 }
+
+func (a *App) GetMicInputDevices() ([]microphone.MicInputDevice, error) {
+	return a.audioSequencer.GetMicInputDevices()
+}

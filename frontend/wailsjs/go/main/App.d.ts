@@ -4,6 +4,7 @@ import {local_whisper} from '../models';
 import {repository} from '../models';
 import {structs} from '../models';
 import {whisper} from '../models';
+import {microphone} from '../models';
 import {notion} from '../models';
 import {notionapi} from '../models';
 
@@ -34,6 +35,8 @@ export function GetLocalPages():Promise<Array<repository.Page>>;
 export function GetLocalWhisperDownloadProgress():Promise<local_whisper.DownloadProgress>;
 
 export function GetLocalWhisperModels():Promise<Array<whisper.WhisperModel>>;
+
+export function GetMicInputDevices():Promise<Array<microphone.MicInputDevice>>;
 
 export function GetNotionPageBlocks(arg1:string):Promise<Array<notion.NotionBlock>>;
 

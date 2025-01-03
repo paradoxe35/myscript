@@ -46,6 +46,12 @@ type AudioSequencer struct {
 	mu            sync.Mutex
 }
 
+type MicInputDevice struct {
+	Name      string
+	IsDefault uint32
+	ID        interface{}
+}
+
 func NewAudioSequencer() *AudioSequencer {
 	config := NoiseConfig{
 		MinDecibels:     -100,
@@ -83,6 +89,34 @@ func (ar *AudioSequencer) GetDeviceConfig() malgo.DeviceConfig {
 
 func (ar *AudioSequencer) GetNoiseConfig() NoiseConfig {
 	return ar.config
+}
+
+func (ar *AudioSequencer) GetMicInputDevices() ([]MicInputDevice, error) {
+	ctx, err := malgo.InitContext(nil, malgo.ContextConfig{}, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	defer ctx.Free()
+
+	devices, err := ctx.Devices(malgo.Capture)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var micInputDevices []MicInputDevice
+
+	for _, device := range devices {
+		micInputDevices = append(micInputDevices, MicInputDevice{
+			ID:        device.ID,
+			Name:      device.Name(),
+			IsDefault: device.IsDefault,
+		})
+	}
+
+	return micInputDevices, nil
+
 }
 
 // This function will block until the recording is stopped

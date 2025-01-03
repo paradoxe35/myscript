@@ -58,6 +58,10 @@ export function GetLocalWhisperModels() {
   return window['go']['main']['App']['GetLocalWhisperModels']();
 }
 
+export function GetMicInputDevices() {
+  return window['go']['main']['App']['GetMicInputDevices']();
+}
+
 export function GetNotionPageBlocks(arg1) {
   return window['go']['main']['App']['GetNotionPageBlocks'](arg1);
 }
