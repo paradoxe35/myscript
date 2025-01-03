@@ -255,7 +255,7 @@ func (a *App) initLocalWhisperTranscriber(language string) error {
 	return a.lwt.LoadModel(configuredModel, language)
 }
 
-func (a *App) StartRecording(language string) error {
+func (a *App) StartRecording(language string, micInputDeviceID interface{}) error {
 	if config := a.GetConfig(); config.TranscriberSource == "" {
 		return fmt.Errorf("No transcription source has been configured.")
 	}
@@ -291,7 +291,7 @@ func (a *App) StartRecording(language string) error {
 		go a.lwt.Close()
 	})
 
-	return a.audioSequencer.Start()
+	return a.audioSequencer.Start(micInputDeviceID)
 }
 
 func (a *App) StopRecording() {

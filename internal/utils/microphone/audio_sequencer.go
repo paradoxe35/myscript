@@ -3,10 +3,12 @@ package microphone
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"log"
 	"math"
 	"sync"
 	"time"
+	"unsafe"
 
 	"github.com/gen2brain/malgo"
 )
@@ -49,7 +51,7 @@ type AudioSequencer struct {
 type MicInputDevice struct {
 	Name      string
 	IsDefault uint32
-	ID        interface{}
+	ID        malgo.DeviceID
 }
 
 func NewAudioSequencer() *AudioSequencer {
@@ -120,9 +122,14 @@ func (ar *AudioSequencer) GetMicInputDevices() ([]MicInputDevice, error) {
 }
 
 // This function will block until the recording is stopped
-func (ar *AudioSequencer) Start() error {
+func (ar *AudioSequencer) Start(micInputDeviceID interface{}) error {
 	if ar.isRecording {
 		return nil
+	}
+
+	micInputDeviceIDValue, ok := micInputDeviceID.(malgo.DeviceID)
+	if !ok {
+		return fmt.Errorf("invalid micInputDeviceID type: %T", micInputDeviceID)
 	}
 
 	ctx, err := malgo.InitContext(nil, malgo.ContextConfig{}, nil)
@@ -177,6 +184,8 @@ func (ar *AudioSequencer) Start() error {
 	}
 
 	deviceConfig := ar.GetDeviceConfig()
+	deviceConfig.Capture.DeviceID = unsafe.Pointer(&micInputDeviceIDValue)
+
 	deviceCallbacks := malgo.DeviceCallbacks{Data: onRecvFrames}
 
 	device, err := malgo.InitDevice(ctx.Context, deviceConfig, deviceCallbacks)

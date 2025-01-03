@@ -13,11 +13,16 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const activePage = activePageStore.page;
   const readMode = activePageStore.readMode;
 
-  const handleLanguageSelected = (languageCode: string) => {
-    transcriberStore.startRecording(languageCode).catch((err) => {
-      console.error("Error starting recording:", err);
-      toast.error(err || "Error starting recording");
-    });
+  const handleLanguageSelected = (
+    languageCode: string,
+    micInputDeviceID: number[]
+  ) => {
+    transcriberStore
+      .startRecording(languageCode, micInputDeviceID)
+      .catch((err) => {
+        console.error("Error starting recording:", err);
+        toast.error(err || "Error starting recording");
+      });
   };
 
   if (!activePage) return null;

@@ -106,8 +106,8 @@ export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
 }
 
-export function StartRecording(arg1) {
-  return window['go']['main']['App']['StartRecording'](arg1);
+export function StartRecording(arg1, arg2) {
+  return window['go']['main']['App']['StartRecording'](arg1, arg2);
 }
 
 export function StopRecording() {

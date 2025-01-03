@@ -15,7 +15,10 @@ type TranscriberState = {
   languages: Array<structs.Language>;
   micInputDevices: Array<microphone.MicInputDevice>;
 
-  startRecording: (languageCode: string) => Promise<void>;
+  startRecording: (
+    languageCode: string,
+    micInputDeviceID: number[]
+  ) => Promise<void>;
   stopRecording: () => Promise<void>;
   getRecordingStatus: () => void;
   getMicInputDevices: () => Promise<Array<microphone.MicInputDevice>>;
@@ -35,9 +38,9 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
   languages: [],
   micInputDevices: [],
 
-  async startRecording(languageCode) {
+  async startRecording(languageCode, micInputDeviceID) {
     if (!get().isRecording) {
-      return StartRecording(languageCode).finally(() => {
+      return StartRecording(languageCode, micInputDeviceID).finally(() => {
         get().getRecordingStatus();
       });
     }

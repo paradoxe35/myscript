@@ -38,7 +38,7 @@ export namespace microphone {
 	export class MicInputDevice {
 	    Name: string;
 	    IsDefault: number;
-	    ID: any;
+	    ID: number[];
 	
 	    static createFrom(source: any = {}) {
 	        return new MicInputDevice(source);

@@ -28,7 +28,10 @@ import { microphone } from "~wails/models";
 
 type Props = {
   trigger: React.ReactNode | null;
-  onLanguageSelected: (languageCode: string) => void;
+  onLanguageSelected: (
+    languageCode: string,
+    micInputDeviceID: number[]
+  ) => void;
 };
 
 const SRInputsContext = createContext<ReturnType<typeof useSRInputs>>(
@@ -42,13 +45,18 @@ function useSRInputs(props: Props) {
   const languages = transcriberStore.languages;
   const micInputDevices = transcriberStore.micInputDevices;
 
-  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+  const [selectedLanguageCode, setSelectedLanguageCode] = useState<
+    string | null
+  >(null);
+
   const [micInputDevice, setMicInputDevice] =
     useState<microphone.MicInputDevice | null>(null);
 
   const handleLanguageSelected = () => {
     requestAnimationFrame(() => {
-      selectedLanguage && props.onLanguageSelected(selectedLanguage);
+      if (selectedLanguageCode && micInputDevice) {
+        props.onLanguageSelected(selectedLanguageCode, micInputDevice.ID);
+      }
     });
   };
 
@@ -68,11 +76,11 @@ function useSRInputs(props: Props) {
     });
   }, []);
 
-  const canSubmit = selectedLanguage && micInputDevice;
+  const canSubmit = selectedLanguageCode && micInputDevice;
 
   return {
-    selectedLanguage,
-    setSelectedLanguage,
+    selectedLanguageCode,
+    setSelectedLanguageCode,
     handleLanguageSelected,
     languages,
     canSubmit,
@@ -84,7 +92,7 @@ function useSRInputs(props: Props) {
 }
 
 function LanguageCommands() {
-  const { languages, setSelectedLanguage, selectedLanguage } =
+  const { languages, setSelectedLanguageCode, selectedLanguageCode } =
     useContext(SRInputsContext);
 
   return (
@@ -98,14 +106,14 @@ function LanguageCommands() {
               key={language.Code}
               value={language.Name}
               onSelect={() => {
-                setSelectedLanguage(language.Code);
+                setSelectedLanguageCode(language.Code);
               }}
             >
               {language.Name}
               <Check
                 className={cn(
                   "ml-auto",
-                  selectedLanguage === language.Code
+                  selectedLanguageCode === language.Code
                     ? "opacity-100"
                     : "opacity-0"
                 )}

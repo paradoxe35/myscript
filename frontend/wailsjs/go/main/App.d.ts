@@ -60,7 +60,7 @@ export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
 
 export function SaveLocalPage(arg1:repository.Page):Promise<repository.Page>;
 
-export function StartRecording(arg1:string):Promise<void>;
+export function StartRecording(arg1:string,arg2:any):Promise<void>;
 
 export function StopRecording():Promise<void>;
 
