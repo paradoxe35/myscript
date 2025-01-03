@@ -125,7 +125,7 @@ func (ar *AudioSequencer) Start(micInputDeviceID []byte) error {
 		return nil
 	}
 
-	micDevice, err := ar.convertToDeviceID(micInputDeviceID)
+	micDeviceID, err := ar.convertToDeviceID(micInputDeviceID)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func (ar *AudioSequencer) Start(micInputDeviceID []byte) error {
 	}
 
 	deviceConfig := ar.GetDeviceConfig()
-	deviceConfig.Capture.DeviceID = micDevice.Pointer()
+	deviceConfig.Capture.DeviceID = micDeviceID.Pointer()
 
 	deviceCallbacks := malgo.DeviceCallbacks{Data: onRecvFrames}
 
