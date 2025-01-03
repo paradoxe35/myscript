@@ -6,7 +6,7 @@ import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
 import { splitWithDelimiters } from "@/lib/utils";
 
-const minSimilarity = 0.8;
+const minSimilarity = 0.7;
 const fullStringMinSimilarity = 0.5;
 
 const similar = (v: string, w: string, similarity: number = minSimilarity) => {
@@ -16,8 +16,8 @@ const similar = (v: string, w: string, similarity: number = minSimilarity) => {
   );
 };
 
-const chunkSplitter = /[\s-']/;
-const iChunkSplitter = /[^\s-']/g;
+const chunkSplitter = /[^\p{L}\p{M}]+/u;
+const iChunkSplitter = /[\p{L}\p{M}]+/gu;
 
 function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "");
@@ -45,8 +45,11 @@ export function useContentReadMarker() {
     let chunks = text.trim().split(chunkSplitter);
     let splitter = text.trim().replace(iChunkSplitter, "").length;
 
-    let iteration = 0;
     let matchedString = "";
+    let matchingTreeNodeIteration = 0;
+    let ignoreIteration = 0;
+
+    let iteration = 0;
     let minChunksIteration = chunks.length - Math.round(splitter / 2);
     let maxChunksIteration = chunks.length + Math.round(splitter / 2);
 
@@ -97,11 +100,12 @@ export function useContentReadMarker() {
         const chunk = arr[i];
         const chunkDelimiter = chunk.delimiter || "";
 
-        if (!startMatched) {
+        if (!startMatched && iteration <= minChunksIteration) {
           if (
             similar(chunks[0], chunk.text) ||
             (chunks[1] && similar(chunks[1], chunk.text))
           ) {
+            console.log("Start matched", chunk.text);
             startMatched = true;
           }
         }
@@ -112,14 +116,12 @@ export function useContentReadMarker() {
 
         if (
           startMatched &&
-          iteration > minChunksIteration &&
-          iteration < maxChunksIteration
+          iteration >= minChunksIteration &&
+          iteration <= maxChunksIteration
         ) {
           const isSimilar = similar(chunks[chunks.length - 1], chunk.text);
 
           if (isSimilar) {
-            matchedString += chunk + chunkDelimiter;
-
             const fullStringSimilarity = similar(
               matchedString,
               text,
@@ -127,9 +129,10 @@ export function useContentReadMarker() {
             );
 
             console.log(
-              "Match and End: ",
+              "Match End: ",
               matchedString,
-              text,
+              "lastChunk: ",
+              chunk.text,
 
               "fullStringSimilarity: ",
               fullStringSimilarity
@@ -138,18 +141,28 @@ export function useContentReadMarker() {
             if (fullStringSimilarity) {
               const step = arr.reduce((acc, v, ii) => {
                 if (ii < i) {
-                  acc += v.text.length + chunkDelimiter.length;
+                  acc += v.text.length + (v.delimiter?.length || 0);
                 }
                 return acc;
               }, 0);
 
-              matchEndPosition = step + chunk.text.length;
               endMatched = true;
+              matchingTreeNodeIteration = 0;
+              matchEndPosition = step + chunk.text.length;
             } else {
               iteration = 0;
               matchedString = "";
               startMatched = false;
               endMatched = false;
+
+              // Go back to the previous node
+              if (matchingTreeNodeIteration > 1) {
+                for (let k = 0; k < matchingTreeNodeIteration - 1; k++) {
+                  treeWalker.previousNode();
+                  ignoreIteration += 1;
+                }
+              }
+              matchingTreeNodeIteration = 0;
             }
           }
         }
@@ -159,23 +172,49 @@ export function useContentReadMarker() {
         }
       }
 
-      matchedNodes.push({
-        node,
-        start: matchStartPosition,
-        end: matchEndPosition,
-      });
+      if (startMatched) {
+        matchingTreeNodeIteration += 1;
+      }
 
-      position += matchEndPosition;
+      const existingNode = matchedNodes.find((n) => n.node === node);
+      if (existingNode) {
+        existingNode.start = matchStartPosition;
+        existingNode.end = matchEndPosition;
+      } else {
+        matchedNodes.push({
+          node,
+          start: matchStartPosition,
+          end: matchEndPosition,
+        });
+      }
+
+      if (ignoreIteration > 0) {
+        ignoreIteration -= 1;
+      } else {
+        position += matchEndPosition;
+      }
 
       if (startMatched && endMatched) {
         break;
       }
 
+      // This should come startMatched and endMatched condition (The one above)
       if (iteration > maxChunksIteration) {
         iteration = 0;
         startMatched = false;
         endMatched = false;
+
+        // Go back to the previous node
+        if (matchingTreeNodeIteration > 1) {
+          for (let k = 0; k < matchingTreeNodeIteration - 1; k++) {
+            treeWalker.previousNode();
+            ignoreIteration += 1;
+          }
+        }
+        matchingTreeNodeIteration = 0;
       }
+
+      console.log("iteration: ", iteration);
     }
 
     console.log("Position: ", lastMarkerPosition.current, position);
