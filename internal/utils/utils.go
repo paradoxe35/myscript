@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"log"
 	"runtime"
 	"time"
@@ -36,4 +37,15 @@ func MeasureExec(name string) func() {
 	return func() {
 		log.Printf("%s took %v\n", name, time.Since(start))
 	}
+}
+
+func B64toBytes(s string) ([]byte, error) {
+	var output []byte
+
+	err := json.Unmarshal([]byte(s), &output)
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
 }

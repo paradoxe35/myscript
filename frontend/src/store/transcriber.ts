@@ -40,7 +40,9 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
 
   async startRecording(languageCode, micInputDeviceID) {
     if (!get().isRecording) {
-      return StartRecording(languageCode, micInputDeviceID).finally(() => {
+      const micDeviceID = JSON.stringify(micInputDeviceID);
+
+      return StartRecording(languageCode, micDeviceID).finally(() => {
         get().getRecordingStatus();
       });
     }

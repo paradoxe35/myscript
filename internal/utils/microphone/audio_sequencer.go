@@ -3,12 +3,10 @@ package microphone
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"log"
 	"math"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/gen2brain/malgo"
 )
@@ -122,14 +120,14 @@ func (ar *AudioSequencer) GetMicInputDevices() ([]MicInputDevice, error) {
 }
 
 // This function will block until the recording is stopped
-func (ar *AudioSequencer) Start(micInputDeviceID interface{}) error {
+func (ar *AudioSequencer) Start(micInputDeviceID []byte) error {
 	if ar.isRecording {
 		return nil
 	}
 
-	micInputDeviceIDValue, ok := micInputDeviceID.(malgo.DeviceID)
-	if !ok {
-		return fmt.Errorf("invalid micInputDeviceID type: %T", micInputDeviceID)
+	micDevice, err := ar.convertToDeviceID(micInputDeviceID)
+	if err != nil {
+		return err
 	}
 
 	ctx, err := malgo.InitContext(nil, malgo.ContextConfig{}, nil)
@@ -184,7 +182,7 @@ func (ar *AudioSequencer) Start(micInputDeviceID interface{}) error {
 	}
 
 	deviceConfig := ar.GetDeviceConfig()
-	deviceConfig.Capture.DeviceID = unsafe.Pointer(&micInputDeviceIDValue)
+	deviceConfig.Capture.DeviceID = micDevice.Pointer()
 
 	deviceCallbacks := malgo.DeviceCallbacks{Data: onRecvFrames}
 
@@ -285,6 +283,14 @@ func (ar *AudioSequencer) detectNoise(samples []byte) (bool, float64) {
 
 	// Return true if the sound is above our noise threshold
 	return db > noiseThreshold, db
+}
+
+func (ar *AudioSequencer) convertToDeviceID(interfaceData []byte) (malgo.DeviceID, error) {
+	// Convert directly to malgo.DeviceID
+	var deviceID malgo.DeviceID
+	copy(deviceID[:], interfaceData)
+
+	return deviceID, nil
 }
 
 func (ar *AudioSequencer) RawBytesToWAV(audioData []byte) ([]byte, error) {

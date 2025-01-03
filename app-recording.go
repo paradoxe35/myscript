@@ -9,7 +9,12 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) StartRecording(language string, micInputDeviceID interface{}) error {
+func (a *App) StartRecording(language string, micInputDeviceID string) error {
+	micDeviceID, err := utils.B64toBytes(micInputDeviceID)
+	if err != nil {
+		return fmt.Errorf("Invalid mic device ID: %s", micInputDeviceID)
+	}
+
 	if config := a.GetConfig(); config.TranscriberSource == "" {
 		return fmt.Errorf("No transcription source has been configured.")
 	}
@@ -20,6 +25,7 @@ func (a *App) StartRecording(language string, micInputDeviceID interface{}) erro
 	}
 
 	log.Printf("Starting recording with language: %s", language)
+
 	pq := utils.NewProcessQueue("transcriber-queue")
 
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
@@ -45,7 +51,7 @@ func (a *App) StartRecording(language string, micInputDeviceID interface{}) erro
 		go a.lwt.Close()
 	})
 
-	return a.audioSequencer.Start(micInputDeviceID)
+	return a.audioSequencer.Start(micDeviceID)
 }
 
 func (a *App) StopRecording() {

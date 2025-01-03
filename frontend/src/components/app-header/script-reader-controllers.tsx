@@ -17,6 +17,8 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
     languageCode: string,
     micInputDeviceID: number[]
   ) => {
+    console.log("Mic input device ID:", micInputDeviceID);
+
     transcriberStore
       .startRecording(languageCode, micInputDeviceID)
       .catch((err) => {
