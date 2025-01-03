@@ -8,13 +8,11 @@ import (
 	"myscript/internal/transcribe/whisper/openai"
 )
 
-// --- WitAI ---
+// --- Languages ---
 
 func (a *App) GetWitAILanguages() []structs.Language {
 	return witai.GetSupportedLanguages()
 }
-
-// --- Languages ---
 
 func (a *App) GetLanguages() []structs.Language {
 	config := a.GetConfig()
