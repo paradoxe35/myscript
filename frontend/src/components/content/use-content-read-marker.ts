@@ -46,7 +46,6 @@ export function useContentReadMarker() {
     let splitter = text.trim().replace(iChunkSplitter, "").length;
 
     let matchedString = "";
-    let matchingTreeNodeIteration = 0;
     let ignoreIteration = 0;
 
     let iteration = 0;
@@ -147,22 +146,13 @@ export function useContentReadMarker() {
               }, 0);
 
               endMatched = true;
-              matchingTreeNodeIteration = 0;
-              matchEndPosition = step + chunk.text.length;
+              matchEndPosition =
+                step + chunk.text.length + (chunkDelimiter?.length || 0);
             } else {
               iteration = 0;
               matchedString = "";
               startMatched = false;
               endMatched = false;
-
-              // Go back to the previous node
-              if (matchingTreeNodeIteration > 1) {
-                for (let k = 0; k < matchingTreeNodeIteration - 1; k++) {
-                  treeWalker.previousNode();
-                  ignoreIteration += 1;
-                }
-              }
-              matchingTreeNodeIteration = 0;
             }
           }
         }
@@ -172,27 +162,13 @@ export function useContentReadMarker() {
         }
       }
 
-      if (startMatched) {
-        matchingTreeNodeIteration += 1;
-      }
+      matchedNodes.push({
+        node,
+        start: matchStartPosition,
+        end: matchEndPosition,
+      });
 
-      const existingNode = matchedNodes.find((n) => n.node === node);
-      if (existingNode) {
-        existingNode.start = matchStartPosition;
-        existingNode.end = matchEndPosition;
-      } else {
-        matchedNodes.push({
-          node,
-          start: matchStartPosition,
-          end: matchEndPosition,
-        });
-      }
-
-      if (ignoreIteration > 0) {
-        ignoreIteration -= 1;
-      } else {
-        position += matchEndPosition;
-      }
+      position += matchEndPosition;
 
       if (startMatched && endMatched) {
         break;
@@ -203,18 +179,7 @@ export function useContentReadMarker() {
         iteration = 0;
         startMatched = false;
         endMatched = false;
-
-        // Go back to the previous node
-        if (matchingTreeNodeIteration > 1) {
-          for (let k = 0; k < matchingTreeNodeIteration - 1; k++) {
-            treeWalker.previousNode();
-            ignoreIteration += 1;
-          }
-        }
-        matchingTreeNodeIteration = 0;
       }
-
-      console.log("iteration: ", iteration);
     }
 
     console.log("Position: ", lastMarkerPosition.current, position);
