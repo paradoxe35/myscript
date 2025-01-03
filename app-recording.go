@@ -12,7 +12,7 @@ import (
 func (a *App) StartRecording(language string, micInputDeviceID string) error {
 	micDeviceID, err := utils.B64toBytes(micInputDeviceID)
 	if err != nil {
-		return fmt.Errorf("Invalid mic device ID: %s", micInputDeviceID)
+		return fmt.Errorf("Invalid microphone input device")
 	}
 
 	if config := a.GetConfig(); config.TranscriberSource == "" {
