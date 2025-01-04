@@ -47,7 +47,7 @@ function useSRInputs(props: Props) {
 
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<
     string | null
-  >(null);
+  >("en");
 
   const [micInputDevice, setMicInputDevice] =
     useState<microphone.MicInputDevice | null>(null);
