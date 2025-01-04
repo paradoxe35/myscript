@@ -277,7 +277,7 @@ export function useContentReadMarker() {
 
       queue.task(() => {
         requestAnimationFrame(() => {
-          console.group("New transcription...");
+          console.groupCollapsed("New transcription...");
           onTranscribedText2(text);
           console.groupEnd();
         });
