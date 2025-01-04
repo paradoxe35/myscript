@@ -20,7 +20,7 @@ const chunkSplitter = /[^\p{L}\p{M}]+/gu;
 const iChunkSplitter = /[\p{L}\p{M}]+/gu;
 
 function cleanUp(str: string) {
-  return str.replace(/\[.*?\]/g, "");
+  return str.replace(/\[.*?\]/g, "").trim();
 }
 
 export function strNormalize(str: string) {
@@ -271,12 +271,7 @@ export function useContentReadMarker() {
   useEffect(() => {
     return transcriberStore.onTranscribedText((text) => {
       text = cleanUp(text);
-
-      queue.task(() => {
-        console.profile("onTranscribedText");
-        onTranscribedText2(text);
-        console.profileEnd("onTranscribedText");
-      });
+      queue.task(onTranscribedText2, text);
     });
   }, [onTranscribedText2]);
 
