@@ -9,6 +9,45 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      keyframes: {
+        fillLeft: {
+          from: {
+            width: "0%",
+          },
+          to: {
+            width: "100%",
+          },
+        },
+
+        bgSlide: {
+          "0%": {
+            backgroundPosition: "100% 0",
+          },
+          "100%": {
+            backgroundPosition: "0 0",
+          },
+        },
+      },
+
+      backgroundSize: {
+        double: "200% 100%",
+      },
+
+      animation: {
+        "fill-left": "fillLeft 0.5s ease-out forwards",
+        "bg-slide": "bgSlide 0.5s ease-out forwards",
+      },
+
+      backgroundImage: {
+        "slide-primary":
+          "linear-gradient(to right, #1d4fdaaf 50%, transparent 50%)",
+
+        "slide-blue": "linear-gradient(to right, #3B82F6 50%, transparent 50%)",
+        "slide-red": "linear-gradient(to right, #EF4444 50%, transparent 50%)",
+        "slide-green":
+          "linear-gradient(to right, #10B981 50%, transparent 50%)",
+      },
+
       colors: {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",

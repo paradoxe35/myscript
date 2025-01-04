@@ -106,12 +106,12 @@ export function useContentReadMarker() {
       const node = treeWalker.currentNode;
       const nodeValueLength = node.nodeValue?.length || 0;
 
+      let matchStartPosition = 0;
+      let matchEndPosition = nodeValueLength;
+
       // If the was not ignored from the previous iteration,
       // we need to reset it
       ignoreCurrentNodeIteration = false;
-
-      let matchStartPosition = 0;
-      let matchEndPosition = nodeValueLength;
 
       if (lastMarkerPosition.current >= position + nodeValueLength) {
         position += nodeValueLength;
@@ -147,20 +147,25 @@ export function useContentReadMarker() {
         };
 
         // This should be before the start matched check
-        if (startMatched && !lastMatchedNode) {
-          if (isSimilar()) {
-            lastMatchedNode = {
-              node,
-              position,
-              chunkIndex: i,
-              matchedChunk: chunk.text,
-            };
-          }
-        }
+        // if (startMatched && !lastMatchedNode) {
+        //   if (isSimilar()) {
+        //     lastMatchedNode = {
+        //       node,
+        //       position,
+        //       chunkIndex: i,
+        //       matchedChunk: chunk.text,
+        //     };
+        //   }
+        // }
 
         if (!startMatched && matchingIteration <= minChunksIteration) {
           if (isSimilar()) {
-            console.log("%cStart matched", "color: green", chunk.text, node);
+            console.log("%cStart matched", "color: green");
+            console.table({
+              chunk: chunk.text,
+              maxChunksIteration,
+            });
+
             startMatched = true;
           }
         }
@@ -184,14 +189,12 @@ export function useContentReadMarker() {
               fullStringMinSimilarity
             );
 
-            console.group("Match End");
             console.log("%cEnd matched", "color: blue");
             console.table({
               matchedString,
               chunk: chunk.text,
               fullStringSimilarity,
             });
-            console.groupEnd();
 
             if (fullStringSimilarity) {
               const step = arr.reduce((acc, v, ii) => {
@@ -210,7 +213,7 @@ export function useContentReadMarker() {
               startMatched = false;
               endMatched = false;
               // When there is no match, we need to move back to the last matched node
-              moveBackToLastMatchedNode();
+              // moveBackToLastMatchedNode();
             }
           }
         }
@@ -220,10 +223,10 @@ export function useContentReadMarker() {
         }
       }
 
-      if (ignoreCurrentNodeIteration) {
-        ignoreCurrentNodeIteration = false;
-        continue;
-      }
+      // if (ignoreCurrentNodeIteration) {
+      //   ignoreCurrentNodeIteration = false;
+      //   continue;
+      // }
 
       const existsNode = matchedNodes.find((n) => n.node === node);
 
@@ -249,15 +252,15 @@ export function useContentReadMarker() {
         matchingIteration = 0;
         startMatched = false;
         endMatched = false;
+
         // When there is no match, we need to move back to the last matched node
-        moveBackToLastMatchedNode();
+        // moveBackToLastMatchedNode();
       }
 
-      console.log("####### While loop iteration ############");
+      console.log("Iteration: ", matchingIteration);
     }
 
     console.log("Position: ", lastMarkerPosition.current, position);
-    console.log("matchedNodes: ", matchedNodes);
 
     if (startMatched && endMatched) {
       lastMarkerPosition.current = position;
@@ -271,7 +274,14 @@ export function useContentReadMarker() {
   useEffect(() => {
     return transcriberStore.onTranscribedText((text) => {
       text = cleanUp(text);
-      queue.task(onTranscribedText2, text);
+
+      queue.task(() => {
+        requestAnimationFrame(() => {
+          console.group("New transcription...");
+          onTranscribedText2(text);
+          console.groupEnd();
+        });
+      });
     });
   }, [onTranscribedText2]);
 
