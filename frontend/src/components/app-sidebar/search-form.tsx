@@ -7,9 +7,15 @@ import {
   SidebarInput,
 } from "@/components/ui/sidebar";
 
-export function SearchForm({ ...props }: React.ComponentProps<"form">) {
+type Props = React.ComponentProps<"form"> & {
+  inputProps?: React.ComponentProps<"input">;
+};
+
+export function SearchForm(props: Props) {
+  const { inputProps, ...rest } = props;
+
   return (
-    <form {...props}>
+    <form {...rest}>
       <SidebarGroup className="py-0">
         <SidebarGroupContent className="relative">
           <Label htmlFor="search" className="sr-only">
@@ -17,8 +23,10 @@ export function SearchForm({ ...props }: React.ComponentProps<"form">) {
           </Label>
           <SidebarInput
             id="search"
+            name="search"
             placeholder="Search the pages..."
             className="pl-8"
+            {...inputProps}
           />
           <Search className="pointer-events-none absolute left-2 top-1/2 size-4 -translate-y-1/2 select-none opacity-50" />
         </SidebarGroupContent>

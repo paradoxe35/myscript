@@ -15,7 +15,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -23,80 +22,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNotionPagesStore } from "@/store/notion-pages";
 import { cn } from "@/lib/utils";
 import { Separator } from "../ui/separator";
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useActivePageStore } from "@/store/active-page";
 import { repository } from "~wails/models";
-import { NotionSimplePage } from "@/types";
+import { useSidebarItems } from "./use-sidebar-items";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { setOpenMobile } = useSidebar();
+  const {
+    search,
+    setSearch,
 
-  const activePageStore = useActivePageStore();
-  const localPagesStore = useLocalPagesStore();
-  const notionPagesStore = useNotionPagesStore();
-
-  const activePage = activePageStore.page;
-
-  React.useEffect(() => {
-    localPagesStore.getPages();
-  }, []);
-
-  const notionPages = React.useMemo(() => {
-    return notionPagesStore.getSimplifiedPages();
-  }, [notionPagesStore.pages]);
-
-  const createNewPage = async () => {
-    const newPage = await localPagesStore.newPage();
-
-    activePageStore.setActivePage({
-      __typename: "local_page",
-      page: newPage,
-      viewOnly: false,
-    });
-
-    setOpenMobile(false);
-  };
-
-  const onLocalPageClick = (page: repository.Page) => {
-    activePageStore.setActivePage({
-      __typename: "local_page",
-      viewOnly: false,
-      page,
-    });
-
-    activePageStore.fetchPageBlocks();
-    setOpenMobile(false);
-  };
-
-  const onNotionPageClick = (page: NotionSimplePage) => {
-    activePageStore.setActivePage({
-      __typename: "notion_page",
-      viewOnly: true,
-      page,
-    });
-
-    activePageStore.fetchPageBlocks();
-    setOpenMobile(false);
-  };
-
-  const refreshNotionPages = () => {
-    notionPagesStore.getPages();
-    if (activePage?.__typename === "notion_page") {
-      activePageStore.fetchPageBlocks();
-    }
-  };
-
-  // Refresh notion pages when the user is online
-  React.useEffect(() => {
-    addEventListener("online", refreshNotionPages);
-
-    return () => {
-      removeEventListener("online", refreshNotionPages);
-    };
-  }, []);
+    createNewPage,
+    localPages,
+    notionPages,
+    activePage,
+    onLocalPageClick,
+    refreshNotionPages,
+    onNotionPageClick,
+  } = useSidebarItems();
 
   return (
     <Sidebar {...props}>
@@ -107,7 +52,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
 
-        <SearchForm />
+        <SearchForm
+          inputProps={{
+            value: search,
+            onChange: (e) => setSearch(e.target.value),
+          }}
+        />
       </SidebarHeader>
 
       <SidebarContent>
@@ -126,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {localPagesStore.pages.map((item) => {
+              {localPages.map((item) => {
                 const active =
                   activePage?.__typename === "local_page" &&
                   activePage.page.ID === item.ID;
