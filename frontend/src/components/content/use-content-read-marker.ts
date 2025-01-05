@@ -6,8 +6,10 @@ import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
 import { splitWithDelimiters } from "@/lib/utils";
 
+const queue = new Queue(1);
+
 const minSimilarity = 0.79;
-const fullStringMinSimilarity = 0.5;
+const fullStringMinSimilarity = 0.6;
 
 const similar = (v: string, w: string, similarity: number = minSimilarity) => {
   return (
@@ -23,11 +25,19 @@ function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "").trim();
 }
 
-export function strNormalize(str: string) {
+function strNormalize(str: string) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-const queue = new Queue(1);
+function scrollToLastMarker() {
+  const element = Array.from(
+    document.getElementsByClassName("screen-reader-marker")
+  ).pop();
+
+  if (element) {
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
 
 export function useContentReadMarker() {
   const transcriberStore = useTranscriberStore();
@@ -37,7 +47,7 @@ export function useContentReadMarker() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const onTranscribedText2 = useCallback((text: string) => {
+  const onTranscribedText = useCallback((text: string) => {
     if (!containerRef.current) return;
 
     let position = 0;
@@ -278,12 +288,13 @@ export function useContentReadMarker() {
       queue.task(() => {
         requestAnimationFrame(() => {
           console.groupCollapsed("New transcription...");
-          onTranscribedText2(text);
+          onTranscribedText(text);
+          scrollToLastMarker();
           console.groupEnd();
         });
       });
     });
-  }, [onTranscribedText2]);
+  }, [onTranscribedText]);
 
   return containerRef;
 }

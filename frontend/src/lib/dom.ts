@@ -33,7 +33,8 @@ export function surroundContentsTag(node: Node, start: number, end: number) {
 
   const tag = document.createElement("span");
 
-  const className = "bg-slide-primary bg-double animate-bg-slide";
+  const className =
+    "bg-slide-primary bg-double animate-bg-slide screen-reader-marker";
   tag.classList.add(...className.split(" "));
 
   range.setStart(node, start);
