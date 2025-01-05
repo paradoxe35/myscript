@@ -1,4 +1,4 @@
-import * as levenshtein from "damerau-levenshtein";
+import levenshtein from "damerau-levenshtein";
 import { createTreeTextWalker, surroundContentsTag } from "@/lib/dom";
 import { useActivePageStore } from "@/store/active-page";
 import { useTranscriberStore } from "@/store/transcriber";
