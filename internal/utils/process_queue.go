@@ -1,8 +1,7 @@
 package utils
 
 import (
-	"log"
-	"os"
+	"log/slog"
 	"sync"
 )
 
@@ -12,8 +11,7 @@ type ProcessQueue struct {
 	processing     bool
 	lock           sync.Mutex
 	executionId    BookID
-
-	logger *log.Logger
+	name           string
 }
 
 type process struct {
@@ -23,13 +21,17 @@ type process struct {
 
 type BookID uint
 
+func (b BookID) String() string {
+	return string(rune(b))
+}
+
 func NewProcessQueue(name string) *ProcessQueue {
 	return &ProcessQueue{
 		processCounter: 0,
 		processes:      make(map[BookID]*process),
 		processing:     false,
 		lock:           sync.Mutex{},
-		logger:         log.New(os.Stdout, name+" - ", log.LstdFlags),
+		name:           name,
 	}
 }
 
@@ -51,7 +53,7 @@ func (pq *ProcessQueue) Book() BookID {
 
 func (pq *ProcessQueue) Add(id BookID, callback func()) {
 	if _, ok := pq.processes[id]; !ok {
-		log.Printf("ProcessQueue: process %d not found", id)
+		slog.Debug("%s | ProcessQueue: process %d not found\n", pq.name, id)
 		return
 	}
 
@@ -84,7 +86,7 @@ func (pq *ProcessQueue) worker() {
 	// Wait for the process to be ready
 	<-proc.ready
 
-	pq.logger.Printf("ProcessQueue: executing process %d\n", pq.executionId)
+	slog.Debug("%s | ProcessQueue: executing process %d\n", pq.name, pq.executionId)
 
 	if proc.callback != nil {
 		proc.callback()

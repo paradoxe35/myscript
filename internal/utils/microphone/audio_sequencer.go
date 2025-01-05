@@ -3,7 +3,7 @@ package microphone
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
+	"log/slog"
 	"math"
 	"sync"
 	"time"
@@ -209,7 +209,7 @@ func (ar *AudioSequencer) autoStop() {
 	for range ticker.C {
 		if !ar.inSpeechModal && time.Since(ar.lastNoiseTime).Milliseconds() > MAX_SILENCE_TIME {
 			ar.Stop(true)
-			log.Printf("Auto stop recording after %d ms", MAX_SILENCE_TIME)
+			slog.Debug("Auto stop recording after silence", "duration_ms", MAX_SILENCE_TIME)
 			break
 		} else if !ar.isRecording {
 			break

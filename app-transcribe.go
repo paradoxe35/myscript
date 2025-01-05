@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"myscript/internal/transcribe/structs"
 	witai "myscript/internal/transcribe/wait.ai"
 	"myscript/internal/transcribe/whisper/openai"
@@ -75,7 +75,7 @@ func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
 func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
 
-	log.Printf("Transcribing with language: %s, source: %s", language, config.TranscriberSource)
+	slog.Debug("Transcribing with language: %s, source: %s", language, config.TranscriberSource)
 
 	switch config.TranscriberSource {
 	case "witai":

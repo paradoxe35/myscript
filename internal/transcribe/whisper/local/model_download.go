@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"myscript/internal/filesystem"
 	"myscript/internal/utils"
 	"net"
@@ -141,7 +141,7 @@ func downloadModel(ctx context.Context, modelUrl string, modelPath string, progr
 
 	modelName := filepath.Base(modelPath)
 
-	log.Printf("Downloading model: %s\n", modelName)
+	slog.Debug("Downloading model: %s\n", modelName)
 
 	// Initiate the download
 	req, err := http.NewRequest("GET", modelUrl, nil)
@@ -184,7 +184,7 @@ func downloadModel(ctx context.Context, modelUrl string, modelPath string, progr
 
 	// If output file exists and is the same size as the model, skip
 	if info, err := os.Stat(modelPath); err == nil && info.Size() == resp.ContentLength {
-		log.Println("Skipping", modelName, "as it already exists")
+		slog.Debug("Skipping", modelName, "as it already exists")
 		return nil
 	}
 
@@ -196,7 +196,7 @@ func downloadModel(ctx context.Context, modelUrl string, modelPath string, progr
 	defer w.Close()
 
 	// Report
-	log.Println("Downloading", modelName, "to", modelPath)
+	slog.Debug("Downloading", modelName, "to", modelPath)
 
 	// Progressively download the model
 	data := make([]byte, bufSize)

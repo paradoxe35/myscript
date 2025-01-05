@@ -2,9 +2,11 @@ package main
 
 import (
 	"embed"
+	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
 	local_whisper "myscript/internal/transcribe/whisper/local"
+	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
 
 	"github.com/wailsapp/wails/v2"
@@ -25,6 +27,14 @@ const (
 )
 
 func main() {
+	logger, err := utils.NewFileLogger(filesystem.HOME_DIR)
+	if err != nil {
+		panic(err)
+	}
+
+	// Set Slog as the default logger
+	slog.SetDefault(logger.Slog)
+
 	// Create an instance of the app structure
 	app := NewApp(
 		database.NewDatabase(filesystem.HOME_DIR),
@@ -33,10 +43,11 @@ func main() {
 	)
 
 	// Create application with options
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:     title,
 		MinWidth:  width,
 		MinHeight: height,
+		Logger:    logger.Logger,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

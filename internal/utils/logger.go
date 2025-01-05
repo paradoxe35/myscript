@@ -1,9 +1,10 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,11 +12,18 @@ import (
 )
 
 type FileLogger struct {
-	logger *log.Logger
+	logger *slog.Logger
 	file   *os.File
 }
 
-func NewFileLogger(logDir string) (*FileLogger, error) {
+type CustomLogger struct {
+	Slog   *slog.Logger
+	Logger *FileLogger
+}
+
+func NewFileLogger(homeDir string) (*CustomLogger, error) {
+	logDir := filepath.Join(homeDir, "logs")
+
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %w", err)
 	}
@@ -29,45 +37,60 @@ func NewFileLogger(logDir string) (*FileLogger, error) {
 	}
 
 	multiWriter := io.MultiWriter(file, os.Stdout)
-	logger := log.New(multiWriter, "", log.Ldate|log.Ltime)
+	opts := &slog.HandlerOptions{
+		Level:     slog.LevelDebug,
+		AddSource: false,
+	}
+	handler := slog.NewTextHandler(multiWriter, opts)
+	logger := slog.New(handler)
 
-	return &FileLogger{
+	fileLogger := &FileLogger{
 		logger: logger,
 		file:   file,
+	}
+
+	return &CustomLogger{
+		Slog:   logger,
+		Logger: fileLogger,
 	}, nil
 }
 
-func (l *FileLogger) log(level, message string) {
+func (l *FileLogger) log(level slog.Level, message string) {
 	_, file, line, _ := runtime.Caller(2)
-	l.logger.Printf("[%s] %s:%d: %s", level, filepath.Base(file), line, message)
+	attrs := []slog.Attr{
+		slog.String("file", filepath.Base(file)),
+		slog.Int("line", line),
+	}
+
+	l.logger.LogAttrs(context.TODO(), level, message, attrs...)
 }
 
 func (l *FileLogger) Print(message string) {
-	l.log("PRINT", message)
+	l.log(slog.LevelInfo, message)
 }
 
 func (l *FileLogger) Trace(message string) {
-	l.log("TRACE", message)
+	l.log(slog.LevelDebug-1, message) // Trace is typically lower than Debug
 }
 
 func (l *FileLogger) Debug(message string) {
-	l.log("DEBUG", message)
+	l.log(slog.LevelDebug, message)
 }
 
 func (l *FileLogger) Info(message string) {
-	l.log("INFO", message)
+	l.log(slog.LevelInfo, message)
 }
 
 func (l *FileLogger) Warning(message string) {
-	l.log("WARNING", message)
+	l.log(slog.LevelWarn, message)
 }
 
 func (l *FileLogger) Error(message string) {
-	l.log("ERROR", message)
+	l.log(slog.LevelError, message)
 }
 
 func (l *FileLogger) Fatal(message string) {
-	l.log("FATAL", message)
+	l.log(slog.LevelError, message) // Using Error level before exiting
 	os.Exit(1)
 }
 

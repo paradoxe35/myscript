@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"myscript/internal/transcribe/structs"
 	"myscript/internal/transcribe/whisper"
 	local_whisper "myscript/internal/transcribe/whisper/local"
@@ -40,7 +40,7 @@ func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperMode
 
 	go func() {
 		if err := local_whisper.DownloadModels(models, downloadProgress); err != nil {
-			log.Printf("Error downloading models: %s", err.Error())
+			slog.Error("Error downloading models: %s", err.Error())
 			runtime.EventsEmit(a.ctx, "on-whisper-model-download-error", err.Error())
 		} else {
 			runtime.EventsEmit(a.ctx, "on-whisper-model-download-success")
@@ -48,7 +48,7 @@ func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperMode
 	}()
 
 	for progress := range downloadProgress {
-		log.Printf("Downloading model progress: %s (%d%%)", progress.Name, progress.Size)
+		slog.Info("Downloading model progress: %s (%d%%)", progress.Name, progress.Size)
 		runtime.EventsEmit(a.ctx, "on-whisper-model-download-progress", progress)
 	}
 

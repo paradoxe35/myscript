@@ -2,7 +2,7 @@ package notion
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/jomei/notionapi"
@@ -34,7 +34,7 @@ func (nc *NotionClient) GetPages() ([]notionapi.Object, error) {
 	})
 
 	if err != nil {
-		log.Printf("Error getting Notion pages: %s", err)
+		slog.Error("Error getting Notion pages", "error", err)
 		return []notionapi.Object{}, err
 	}
 
@@ -50,7 +50,7 @@ func (nc *NotionClient) fetchBlocks(pageID string) ([]*NotionBlock, error) {
 	)
 
 	if err != nil {
-		log.Printf("Error getting Notion page blocks: %s", err)
+		slog.Error("Error getting Notion page blocks", "error", err)
 		return blocks, err
 	}
 

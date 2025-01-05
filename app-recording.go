@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
 
@@ -24,7 +24,7 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		return err
 	}
 
-	log.Printf("Starting recording with language: %s", language)
+	slog.Debug("Starting recording with language: %s", language)
 
 	pq := utils.NewProcessQueue("transcriber-queue")
 
@@ -35,7 +35,7 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		transcribed, err := a.Transcribe(waveBuffer, language)
 
 		if err != nil {
-			log.Printf("Transcription error: %s\n", err.Error())
+			slog.Error("Transcription error: %s\n", err.Error())
 			runtime.EventsEmit(a.ctx, "on-transcribe-error", err.Error())
 			return
 		}
@@ -55,7 +55,7 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 }
 
 func (a *App) StopRecording() {
-	log.Println("Stopping recording")
+	slog.Debug("Stopping recording")
 
 	a.audioSequencer.Stop(false)
 	// Should be called after Stop()

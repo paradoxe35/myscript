@@ -3,7 +3,7 @@ package local_whisper
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -83,7 +83,7 @@ func (l *LocalWhisperTranscriber) LoadModel(modelName string, language string) e
 
 	l.model = model
 
-	log.Printf("Loaded local whisper model: %s\n", modelPath)
+	slog.Debug("Loaded local whisper model: %s\n", modelPath)
 
 	return nil
 }
@@ -115,7 +115,7 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 	context.SetLanguage(language)
 	context.ResetTimings()
 
-	log.Printf("Local transcribing with language: %s\n", language)
+	slog.Debug("Local transcribing with language: %s\n", language)
 
 	samples, err := bytesToFloat32Buffer(buffer)
 	if err != nil {
@@ -148,7 +148,7 @@ func (l *LocalWhisperTranscriber) Close() error {
 	l.mu.Unlock()
 
 	if l.model != nil && l.canClose() {
-		log.Printf("Unloading local whisper model\n")
+		slog.Debug("Unloading local whisper model\n")
 		l.model.Close()
 		l.model = nil
 	}

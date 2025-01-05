@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -20,8 +20,6 @@ const (
 	BytesPerSample       = 2
 	ChunkDurationSeconds = 20
 )
-
-var logger = log.New(log.Writer(), "speech: ", log.LstdFlags)
 
 type WitTranscriber struct {
 	speechURL string
@@ -49,7 +47,7 @@ type WitResponse struct {
 func (w *WitTranscriber) Transcribe(chunk []byte) string {
 	req, err := http.NewRequest("POST", w.speechURL, bytes.NewReader(chunk))
 	if err != nil {
-		logger.Printf("Error creating request: %v", err)
+		slog.Error("SPEECH | Error creating request", "error", err)
 		return ""
 	}
 
@@ -65,20 +63,20 @@ func (w *WitTranscriber) Transcribe(chunk []byte) string {
 
 	resp, err := w.client.Do(req)
 	if err != nil {
-		logger.Printf("Error making request: %v", err)
+		slog.Error("SPEECH | Error making request", "error", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		logger.Printf("Error reading response body: %v", err)
+		slog.Error("SPEECH | Error reading response body", "error", err)
 		return ""
 	}
 
 	var witResp WitResponse
 	if err := json.Unmarshal(body, &witResp); err != nil {
-		logger.Printf("Error unmarshaling response: %v", err)
+		slog.Error("SPEECH | Error unmarshaling response", "error", err)
 		return ""
 	}
 
@@ -183,7 +181,7 @@ func witAITranscribe(r io.ReadSeeker, apiKey string) (chan string, error) {
 
 		processedAudio, err := preprocessAudio(r)
 		if err != nil {
-			logger.Printf("Error preprocessing audio: %v", err)
+			slog.Error("SPEECH | Error preprocessing audio", "error", err)
 			return
 		}
 
