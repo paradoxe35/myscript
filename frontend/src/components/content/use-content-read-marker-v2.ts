@@ -200,6 +200,7 @@ export function useContentReadMarker() {
                 chunk: chunk.text,
               });
             } else {
+              matchedChunks = [];
               matchingIteration = 0;
               matchedString = "";
               startMatched = false;
@@ -227,6 +228,7 @@ export function useContentReadMarker() {
 
       // This should come startMatched and endMatched condition (The one above)
       if (matchingIteration > maxChunksIteration) {
+        matchedChunks = [];
         matchingIteration = 0;
         startMatched = false;
         endMatched = false;
@@ -235,15 +237,13 @@ export function useContentReadMarker() {
       console.log("Iteration: ", matchingIteration);
     }
 
-    if (startMatched && endMatched) {
+    if (matchedChunks.length > 0) {
       const bestChunk = matchedChunks.reduce((acc, v) => {
         if (acc.similarity < v.similarity) {
           return v;
         }
         return acc;
       });
-
-      if (!bestChunk) return;
 
       const nodes: MatchedNode[] = [];
 
