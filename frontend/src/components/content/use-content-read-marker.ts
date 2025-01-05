@@ -268,11 +268,6 @@ export function useContentReadMarker() {
 
       lastMarkerPosition.current = bestChunk.position;
 
-      console.table({
-        bestChunk,
-        lastMarkerPosition: lastMarkerPosition.current,
-      });
-
       nodes.forEach((node) => {
         surroundContentsTag(node.node, node.start, node.end);
       });
