@@ -9,7 +9,10 @@ const edjsParser = edjsHTML();
 
 export function ContentRead() {
   const containerRef = useContentReadMarker();
-  const activePage = useActivePageStore((state) => state.page);
+  const activePageStore = useActivePageStore();
+
+  const activePage = activePageStore.page;
+  const readMode = activePageStore.readMode;
 
   const html = useMemo(() => {
     const blocks = activePage?.blocks || [];
@@ -28,6 +31,7 @@ export function ContentRead() {
 
   return (
     <div
+      key={String(readMode)}
       className={cn(
         "w-full block mx-auto",
         "prose max-w-[650px] dark:prose-invert"

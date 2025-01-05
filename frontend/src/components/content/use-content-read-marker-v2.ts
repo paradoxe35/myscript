@@ -1,10 +1,12 @@
+import * as levenshtein from "damerau-levenshtein";
 import { createTreeTextWalker, surroundContentsTag } from "@/lib/dom";
 import { useActivePageStore } from "@/store/active-page";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useCallback, useEffect, useRef } from "react";
-import * as levenshtein from "damerau-levenshtein";
 import { Queue } from "@/lib/queue";
 import { splitWithDelimiters } from "@/lib/utils";
+import { useContentReadStore } from "@/store/content-read";
+import { toast } from "sonner";
 
 const queue = new Queue(1);
 
@@ -53,10 +55,23 @@ function scrollToLastMarker() {
   }
 }
 
+type MatchedNode = { node: Node; start: number; end: number };
+
+type MatchedChunk = {
+  node: Node;
+  similarity: number;
+  matchedString: string;
+  matchStartPosition: number;
+  matchEndPosition: number;
+  position: number;
+};
+
 export function useContentReadMarker() {
   const transcriberStore = useTranscriberStore();
   const activePageStore = useActivePageStore();
+  const contentReadStore = useContentReadStore();
 
+  const totalContentLength = useRef<number>(0);
   const lastMarkerPosition = useRef<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,17 +99,7 @@ export function useContentReadMarker() {
     let startMatched = false;
     let endMatched = false;
 
-    type MatchedNode = { node: Node; start: number; end: number };
     let matchedNodes: MatchedNode[] = [];
-
-    type MatchedChunk = {
-      node: Node;
-      similarity: number;
-      matchedString: string;
-      matchStartPosition: number;
-      matchEndPosition: number;
-      position: number;
-    };
     let matchedChunks: MatchedChunk[] = [];
 
     const treeWalker = createTreeTextWalker(containerRef.current);
@@ -233,8 +238,6 @@ export function useContentReadMarker() {
         startMatched = false;
         endMatched = false;
       }
-
-      console.log("Iteration: ", matchingIteration);
     }
 
     if (matchedChunks.length > 0) {
@@ -271,6 +274,110 @@ export function useContentReadMarker() {
     }
   }, []);
 
+  const setTotalContentLength = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const treeWalker = createTreeTextWalker(containerRef.current);
+
+    let length = 0;
+    while (treeWalker.nextNode()) {
+      const node = treeWalker.currentNode;
+      length += node.nodeValue?.length || 0;
+    }
+
+    totalContentLength.current = length;
+  }, [containerRef]);
+
+  const moveMarkerToLastPosition = useCallback(() => {
+    if (!containerRef.current || lastMarkerPosition.current === 0) return;
+
+    const treeWalker = createTreeTextWalker(containerRef.current);
+    const nodes: MatchedNode[] = [];
+
+    let position = 0;
+    while (treeWalker.nextNode()) {
+      const node = treeWalker.currentNode;
+      const nodeValueLength = node.nodeValue?.length || 0;
+
+      let matchStartPosition = 0;
+      let matchEndPosition = nodeValueLength;
+
+      if (position >= lastMarkerPosition.current) {
+        break;
+      } else if (
+        lastMarkerPosition.current < position + nodeValueLength &&
+        lastMarkerPosition.current > position
+      ) {
+        matchEndPosition = lastMarkerPosition.current - position;
+      } else if (node.nodeValue?.trim() === "") {
+        position += nodeValueLength;
+        continue;
+      }
+
+      nodes.push({
+        node,
+        start: matchStartPosition,
+        end: matchEndPosition,
+      });
+
+      position += nodeValueLength;
+    }
+
+    nodes.forEach((node) => {
+      surroundContentsTag(node.node, node.start, node.end);
+    });
+  }, []);
+
+  const onTranscriptionProgress = useCallback(() => {
+    const pageId = activePageStore.getPageId();
+
+    // Set content read progress
+    if (pageId) {
+      const progress = {
+        progress: lastMarkerPosition.current,
+        total: totalContentLength.current,
+      };
+
+      console.log("Progress: %d%", (progress.progress / progress.total) * 100);
+
+      if (progress.progress >= progress.total && progress.total > 0) {
+        progress.total = 0;
+        progress.progress = 0;
+
+        // Stop recording
+        toast.info("Reached end of page");
+        transcriberStore.stopRecording();
+      }
+
+      contentReadStore.setContentReadProgress(
+        pageId,
+        progress.progress,
+        progress.total
+      );
+    }
+  }, []);
+
+  // Move marker to last position
+  useEffect(() => {
+    const pageId = activePageStore.getPageId();
+
+    if (activePageStore.readMode && pageId) {
+      contentReadStore.getContentReadProgress(pageId).then((progress) => {
+        if (!progress || progress.progress === 0) {
+          return;
+        }
+        lastMarkerPosition.current = progress.progress;
+        moveMarkerToLastPosition();
+      });
+    }
+  }, [activePageStore.readMode]);
+
+  useEffect(() => {
+    if (activePageStore.readMode) {
+      setTotalContentLength();
+    }
+  }, [activePageStore.readMode]);
+
   useEffect(() => {
     return transcriberStore.onTranscribedText((text) => {
       text = cleanUp(text);
@@ -278,8 +385,11 @@ export function useContentReadMarker() {
       queue.task(() => {
         requestAnimationFrame(() => {
           console.groupCollapsed("New transcription...");
+
           onTranscribedText(text);
           scrollToLastMarker();
+          onTranscriptionProgress();
+
           console.groupEnd();
         });
       });
