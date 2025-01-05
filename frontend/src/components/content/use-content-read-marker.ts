@@ -286,13 +286,20 @@ export function useContentReadMarker() {
 
     let length = 0;
     let node: Node | null = null;
+    let ignoredLines = 0;
 
     while (treeWalker.nextNode()) {
       node = treeWalker.currentNode;
       length += node.nodeValue?.length || 0;
+
+      if (node.nodeValue === "\n") {
+        ignoredLines += 1;
+      } else {
+        ignoredLines = 0;
+      }
     }
 
-    totalContentLength.current = length;
+    totalContentLength.current = length - ignoredLines;
   }, [containerRef]);
 
   const moveMarkerToLastPosition = useCallback(() => {
