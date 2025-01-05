@@ -139,15 +139,16 @@ export function useContentReadMarker() {
         const chunk = arr[i];
         const chunkDelimiter = chunk.delimiter || "";
 
-        const isSimilar = () => {
-          const i1 = similar(chunks[0], chunk.text).isSimilar;
-
-          return (
-            i1 || (!!chunks[1] && similar(chunks[1], chunk.text).isSimilar)
-          );
-        };
-
+        // Try to find a start match so we can start similarity calculation
         if (!startMatched && matchingIteration <= minChunksIteration) {
+          const isSimilar = () => {
+            const i1 = similar(chunks[0], chunk.text).isSimilar;
+
+            return (
+              i1 || (!!chunks[1] && similar(chunks[1], chunk.text).isSimilar)
+            );
+          };
+
           if (isSimilar()) {
             // Reset matched chunks on start matched
             matchedChunks = [];
@@ -284,8 +285,10 @@ export function useContentReadMarker() {
     const treeWalker = createTreeTextWalker(containerRef.current);
 
     let length = 0;
+    let node: Node | null = null;
+
     while (treeWalker.nextNode()) {
-      const node = treeWalker.currentNode;
+      node = treeWalker.currentNode;
       length += node.nodeValue?.length || 0;
     }
 
@@ -364,6 +367,11 @@ export function useContentReadMarker() {
   // Move marker to last position
   useEffect(() => {
     const pageId = activePageStore.getPageId();
+
+    if (!contentReadStore.resume) {
+      lastMarkerPosition.current = 0;
+      return;
+    }
 
     if (activePageStore.readMode && pageId) {
       contentReadStore.getContentReadProgress(pageId).then((progress) => {

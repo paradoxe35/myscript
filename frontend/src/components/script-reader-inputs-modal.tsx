@@ -33,6 +33,8 @@ import { useConfigStore } from "@/store/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { microphone } from "~wails/models";
 import { useActivePageStore } from "@/store/active-page";
+import { Checkbox } from "./ui/checkbox";
+import { useContentReadStore } from "@/store/content-read";
 
 type Props = {
   trigger: React.ReactNode | null;
@@ -214,6 +216,41 @@ function MicInputDevices() {
   );
 }
 
+function ResumeRead() {
+  const activePageStore = useActivePageStore();
+  const contentReadStore = useContentReadStore();
+
+  useEffect(() => {
+    contentReadStore.setResume(true);
+  }, [activePageStore.getPageId()]);
+
+  useEffect(() => {
+    // Reset resume when read mode is off
+    if (!activePageStore.readMode) {
+      contentReadStore.setResume(true);
+    }
+  }, [activePageStore.readMode]);
+
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        checked={contentReadStore.resume}
+        onCheckedChange={(checked) => {
+          contentReadStore.setResume(Boolean(checked));
+        }}
+        id="resume-read-position"
+      />
+
+      <label
+        htmlFor="resume-read-position"
+        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+      >
+        Resume reading position
+      </label>
+    </div>
+  );
+}
+
 export default function SRInputsModal(props: Props) {
   const ctx = useSRInputs(props);
 
@@ -247,6 +284,8 @@ export default function SRInputsModal(props: Props) {
             </TabsContent>
           </Tabs>
         </SRInputsContext.Provider>
+
+        <ResumeRead />
 
         <DialogFooter className="justify-between sm:justify-between">
           <DialogClose asChild>

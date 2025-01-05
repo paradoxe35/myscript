@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { GetCache, SaveCache } from "~wails/main/App";
 
 type ContentReadState = {
+  resume: boolean;
+
+  setResume: (resume: boolean) => void;
+
   setContentReadProgress: (
     pageId: string | number,
     progress: number,
@@ -14,6 +18,12 @@ type ContentReadState = {
 };
 
 export const useContentReadStore = create<ContentReadState>((set) => ({
+  resume: true,
+
+  setResume: async (resume) => {
+    set({ resume });
+  },
+
   setContentReadProgress: async (pageId, progress, total) => {
     await SaveCache(`page-${pageId}-read-progress`, { progress, total });
   },
