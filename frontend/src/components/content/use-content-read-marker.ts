@@ -77,7 +77,7 @@ export function useContentReadMarker() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   /**
-   * This function will try to match the text with the current page content using levenshtein distance
+   * This function will try to match the transcribed text with the current page content using levenshtein distance
    * If a match is found, it will surround the matched content with a span element (a marker)
    */
   const onTranscribedText = useCallback((text: string) => {
