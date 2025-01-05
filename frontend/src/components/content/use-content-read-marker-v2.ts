@@ -11,6 +11,9 @@ const queue = new Queue(1);
 const minSimilarity = 0.79;
 const fullStringMinSimilarity = 0.6;
 
+const chunkSplitter = /[^\p{L}\p{M}]+/gu;
+const iChunkSplitter = /[\p{L}\p{M}]+/gu;
+
 const similar = (v: string, w: string, similarity: number = minSimilarity) => {
   const lev = levenshtein(v.trim().toLowerCase(), w.trim().toLowerCase());
 
@@ -20,8 +23,17 @@ const similar = (v: string, w: string, similarity: number = minSimilarity) => {
   };
 };
 
-const chunkSplitter = /[^\p{L}\p{M}]+/gu;
-const iChunkSplitter = /[\p{L}\p{M}]+/gu;
+const fullStringSimilar = (v: string, w: string) => {
+  v = v.replace(chunkSplitter, "").trim().toLowerCase();
+  w = w.replace(chunkSplitter, "").trim().toLowerCase();
+
+  const lev = levenshtein(v, w);
+
+  return {
+    isSimilar: lev.similarity >= fullStringMinSimilarity,
+    levenshtein: lev,
+  };
+};
 
 function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "").trim();
@@ -151,10 +163,9 @@ export function useContentReadMarker() {
           matchingIteration >= minChunksIteration &&
           matchingIteration <= maxChunksIteration
         ) {
-          const { isSimilar, levenshtein } = similar(
+          const { isSimilar, levenshtein } = fullStringSimilar(
             matchedString,
-            text,
-            fullStringMinSimilarity
+            text
           );
 
           if (isSimilar) {
