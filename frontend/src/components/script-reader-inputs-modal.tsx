@@ -21,10 +21,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useTranscriberStore } from "@/store/transcriber";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useConfigStore } from "@/store/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { microphone } from "~wails/models";
+import { useActivePageStore } from "@/store/active-page";
 
 type Props = {
   trigger: React.ReactNode | null;
@@ -39,18 +47,14 @@ const SRInputsContext = createContext<ReturnType<typeof useSRInputs>>(
 );
 
 function useSRInputs(props: Props) {
-  const config = useConfigStore((state) => state.config);
-
   const transcriberStore = useTranscriberStore();
-  const languages = transcriberStore.languages;
-  const micInputDevices = transcriberStore.micInputDevices;
-
-  const [selectedLanguageCode, setSelectedLanguageCode] = useState<
-    string | null
-  >("en");
+  const { languages, selectedLanguageCode, setSelectedLanguageCode } =
+    useLanguages();
 
   const [micInputDevice, setMicInputDevice] =
     useState<microphone.MicInputDevice | null>(null);
+
+  const micInputDevices = transcriberStore.micInputDevices;
 
   const handleLanguageSelected = () => {
     requestAnimationFrame(() => {
@@ -59,10 +63,6 @@ function useSRInputs(props: Props) {
       }
     });
   };
-
-  useEffect(() => {
-    transcriberStore.getLanguages();
-  }, [config?.TranscriberSource]);
 
   useEffect(() => {
     transcriberStore.getMicInputDevices().then((micInputDevices) => {
@@ -79,15 +79,71 @@ function useSRInputs(props: Props) {
   const canSubmit = selectedLanguageCode && micInputDevice;
 
   return {
+    languages,
     selectedLanguageCode,
     setSelectedLanguageCode,
     handleLanguageSelected,
-    languages,
     canSubmit,
 
     micInputDevice,
     micInputDevices,
     setMicInputDevice,
+  };
+}
+
+function useLanguages() {
+  const transcriberStore = useTranscriberStore();
+  const activePageStore = useActivePageStore();
+  const config = useConfigStore((state) => state.config);
+
+  const [selectedLanguageCode, setSelectedLanguageCode] = useState<
+    string | null
+  >();
+
+  const [languages, setLanguages] = useState(transcriberStore.languages);
+
+  const activePageID = activePageStore.getPageId();
+
+  useEffect(() => {
+    setLanguages(transcriberStore.languages);
+  }, [transcriberStore.languages]);
+
+  // Set page language
+  useEffect(() => {
+    if (activePageID && selectedLanguageCode) {
+      transcriberStore.setPageLanguage(activePageID, selectedLanguageCode);
+    }
+  }, [activePageID, selectedLanguageCode]);
+
+  useEffect(() => {
+    transcriberStore.getLanguages();
+  }, [config?.TranscriberSource]);
+
+  // Get page language
+  useEffect(() => {
+    if (activePageID) {
+      transcriberStore.getPageLanguage(activePageID).then((language) => {
+        const lan = language || "en";
+        setSelectedLanguageCode(lan);
+
+        // Sort languages, so the selected language is at the top
+        setTimeout(() => {
+          setLanguages((prev) => {
+            return prev.slice().sort((a, b) => {
+              if (a.Code === lan) return -1;
+              if (b.Code === lan) return 1;
+              return 0;
+            });
+          });
+        }, 1000);
+      });
+    }
+  }, [activePageID]);
+
+  return {
+    languages,
+    setSelectedLanguageCode,
+    selectedLanguageCode,
   };
 }
 
@@ -105,6 +161,7 @@ function LanguageCommands() {
             <CommandItem
               key={language.Code}
               value={language.Name}
+              className={`command-language-${language.Code}`}
               onSelect={() => {
                 setSelectedLanguageCode(language.Code);
               }}

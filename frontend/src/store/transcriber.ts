@@ -1,8 +1,10 @@
 import { create } from "zustand";
 import {
+  GetCache,
   GetLanguages,
   GetMicInputDevices,
   IsRecording,
+  SaveCache,
   StartRecording,
   StopRecording,
 } from "~wails/main/App";
@@ -23,6 +25,10 @@ type TranscriberState = {
   getRecordingStatus: () => void;
   getMicInputDevices: () => Promise<Array<microphone.MicInputDevice>>;
   getLanguages: () => void;
+
+  // Page language
+  getPageLanguage: (pageId: string | number) => Promise<string | null>;
+  setPageLanguage: (pageId: string | number, language: string) => Promise<void>;
 
   onTranscribedText: (callback: (text: string) => void) => EventClear;
   onTranscribeError: (callback: (error: string) => void) => EventClear;
@@ -76,6 +82,15 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
     GetLanguages().then((languages) => {
       set({ languages });
     });
+  },
+
+  getPageLanguage: async (pageId) => {
+    const language = await GetCache(`page-${pageId}-language`);
+    return language?.value;
+  },
+
+  setPageLanguage: async (pageId, language) => {
+    SaveCache(`page-${pageId}-language`, language);
   },
 
   onRecordingStopped(callback) {
