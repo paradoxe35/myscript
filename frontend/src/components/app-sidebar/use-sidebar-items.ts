@@ -2,9 +2,10 @@ import { useActivePageStore } from "@/store/active-page";
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useNotionPagesStore } from "@/store/notion-pages";
 import { NotionSimplePage } from "@/types";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { repository } from "~wails/models";
 import { useSidebar } from "../ui/sidebar";
+import { strNormalize } from "@/lib/string";
 
 export function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
@@ -71,6 +72,10 @@ export function useSidebarItems() {
     };
   }, []);
 
+  const cls = useCallback((text: string) => {
+    return strNormalize(text).toLowerCase();
+  }, []);
+
   const notionPages = useMemo(() => {
     const pages = notionPagesStore.getSimplifiedPages();
     const searchValue = search.trim();
@@ -82,7 +87,7 @@ export function useSidebarItems() {
     return pages.filter((page) => {
       const words = searchValue.split(" ");
       return words.every((word) => {
-        return page.title.toLowerCase().includes(word.toLowerCase());
+        return cls(page.title).includes(cls(word));
       });
     });
   }, [notionPagesStore.pages, search]);
@@ -98,7 +103,7 @@ export function useSidebarItems() {
     return pages.filter((page) => {
       const words = searchValue.split(" ");
       return words.every((word) => {
-        return page.title.toLowerCase().includes(word.toLowerCase());
+        return cls(page.title).includes(cls(word));
       });
     });
   }, [localPagesStore.pages, search]);

@@ -41,10 +41,6 @@ function cleanUp(str: string) {
   return str.replace(/\[.*?\]/g, "").trim();
 }
 
-function strNormalize(str: string) {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-}
-
 function scrollToLastMarker() {
   const element = Array.from(
     document.getElementsByClassName("screen-reader-marker")
