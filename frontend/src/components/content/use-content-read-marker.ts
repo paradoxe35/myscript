@@ -358,9 +358,12 @@ export function useContentReadMarker() {
         progress.total = 0;
         progress.progress = 0;
 
-        // Stop recording
-        toast.info("Reached end of page");
-        transcriberStore.stopRecording();
+        // After reaching the end of the page,
+        // stop recording
+        setTimeout(() => {
+          toast.info("Reached end of page");
+          transcriberStore.stopRecording();
+        }, 3000);
       }
 
       contentReadStore.setContentReadProgress(
