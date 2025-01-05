@@ -3,7 +3,7 @@ import { convertNotionToHtml, wrapLists } from "@/lib/notion-to-html";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useMemo } from "react";
-import { useContentReadMarker } from "./use-content-read-marker";
+import { useContentReadMarker } from "./use-content-read-marker-v2";
 
 const edjsParser = edjsHTML();
 
