@@ -56,7 +56,7 @@ function useSRInputs(props: Props) {
 
   const micInputDevices = transcriberStore.micInputDevices;
 
-  const handleLanguageSelected = () => {
+  const onStartReading = () => {
     requestAnimationFrame(() => {
       if (selectedLanguageCode && micInputDevice) {
         props.onLanguageSelected(selectedLanguageCode, micInputDevice.ID);
@@ -82,7 +82,7 @@ function useSRInputs(props: Props) {
     languages,
     selectedLanguageCode,
     setSelectedLanguageCode,
-    handleLanguageSelected,
+    onStartReading,
     canSubmit,
 
     micInputDevice,
@@ -259,7 +259,7 @@ export default function SRInputsModal(props: Props) {
             <Button
               type="button"
               disabled={!ctx.canSubmit}
-              onClick={ctx.handleLanguageSelected}
+              onClick={ctx.onStartReading}
             >
               Start Reading
             </Button>
