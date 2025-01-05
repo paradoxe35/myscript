@@ -363,7 +363,7 @@ export function useContentReadMarker() {
         setTimeout(() => {
           toast.info("Reached end of page");
           transcriberStore.stopRecording();
-        }, 3000);
+        }, 5 * 1000);
       }
 
       contentReadStore.setContentReadProgress(

@@ -18,7 +18,7 @@ type ContentReadState = {
 };
 
 export const useContentReadStore = create<ContentReadState>((set) => ({
-  resume: true,
+  resume: false,
 
   setResume: async (resume) => {
     set({ resume });

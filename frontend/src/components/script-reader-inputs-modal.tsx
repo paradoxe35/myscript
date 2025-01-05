@@ -221,13 +221,13 @@ function ResumeRead() {
   const contentReadStore = useContentReadStore();
 
   useEffect(() => {
-    contentReadStore.setResume(true);
+    contentReadStore.setResume(false);
   }, [activePageStore.getPageId()]);
 
   useEffect(() => {
     // Reset resume when read mode is off
     if (!activePageStore.readMode) {
-      contentReadStore.setResume(true);
+      contentReadStore.setResume(false);
     }
   }, [activePageStore.readMode]);
 
