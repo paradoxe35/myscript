@@ -75,7 +75,7 @@ func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
 func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
 
-	slog.Debug("Transcribing with language: %s, source: %s", language, config.TranscriberSource)
+	slog.Debug("Transcribing with language", "language", language, "source", config.TranscriberSource)
 
 	switch config.TranscriberSource {
 	case "witai":

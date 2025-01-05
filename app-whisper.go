@@ -40,7 +40,7 @@ func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperMode
 
 	go func() {
 		if err := local_whisper.DownloadModels(models, downloadProgress); err != nil {
-			slog.Error("Error downloading models: %s", err.Error())
+			slog.Error("Error downloading models", "error", err)
 			runtime.EventsEmit(a.ctx, "on-whisper-model-download-error", err.Error())
 		} else {
 			runtime.EventsEmit(a.ctx, "on-whisper-model-download-success")

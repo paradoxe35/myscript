@@ -83,7 +83,7 @@ func (l *LocalWhisperTranscriber) LoadModel(modelName string, language string) e
 
 	l.model = model
 
-	slog.Debug("Loaded local whisper model: %s\n", modelPath)
+	slog.Debug("Loaded local whisper model", "model", modelPath)
 
 	return nil
 }
@@ -115,7 +115,7 @@ func (l *LocalWhisperTranscriber) Transcribe(buffer []byte, language string) (st
 	context.SetLanguage(language)
 	context.ResetTimings()
 
-	slog.Debug("Local transcribing with language: %s\n", language)
+	slog.Debug("Local transcribing with language", "language", language)
 
 	samples, err := bytesToFloat32Buffer(buffer)
 	if err != nil {
@@ -148,7 +148,7 @@ func (l *LocalWhisperTranscriber) Close() error {
 	l.mu.Unlock()
 
 	if l.model != nil && l.canClose() {
-		slog.Debug("Unloading local whisper model\n")
+		slog.Debug("Unloading local whisper model")
 		l.model.Close()
 		l.model = nil
 	}

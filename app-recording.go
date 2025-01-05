@@ -24,7 +24,7 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		return err
 	}
 
-	slog.Debug("Starting recording with language: %s", language)
+	slog.Debug("Starting recording with language", "language", language)
 
 	pq := utils.NewProcessQueue("transcriber-queue")
 
@@ -35,7 +35,7 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		transcribed, err := a.Transcribe(waveBuffer, language)
 
 		if err != nil {
-			slog.Error("Transcription error: %s\n", err.Error())
+			slog.Error("Transcription error", "error", err)
 			runtime.EventsEmit(a.ctx, "on-transcribe-error", err.Error())
 			return
 		}
