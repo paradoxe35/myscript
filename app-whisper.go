@@ -48,7 +48,7 @@ func (a *App) DownloadLocalWhisperModels(models []local_whisper.LocalWhisperMode
 	}()
 
 	for progress := range downloadProgress {
-		slog.Info("Downloading model progress: %s (%d%%)", progress.Name, progress.Size)
+		slog.Info("Downloading model progress", "name", progress.Name, "size", progress.Size)
 		runtime.EventsEmit(a.ctx, "on-whisper-model-download-progress", progress)
 	}
 

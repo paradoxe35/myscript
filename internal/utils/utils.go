@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"runtime"
 	"time"
@@ -35,7 +36,7 @@ func MeasureExec(name string) func() {
 	start := time.Now()
 
 	return func() {
-		slog.Info("%s took %v\n", name, time.Since(start))
+		slog.Info(fmt.Sprintf("%s took %v", name, time.Since(start)))
 	}
 }
 
