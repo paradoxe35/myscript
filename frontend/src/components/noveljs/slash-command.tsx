@@ -7,7 +7,6 @@ import {
   ImageIcon,
   List,
   ListOrdered,
-  MessageSquarePlus,
   Text,
   TextQuote,
   Twitter,
@@ -16,6 +15,8 @@ import {
 import { createSuggestionItems } from "novel/extensions";
 import { Command, renderItems } from "novel/extensions";
 import { uploadFn } from "./image-upload";
+import { useAsyncPromptModal } from "../async-prompt-modal";
+import { toast } from "sonner";
 
 export const suggestionItems = createSuggestionItems([
   {
@@ -149,8 +150,16 @@ export const suggestionItems = createSuggestionItems([
     description: "Embed a Youtube video.",
     searchTerms: ["video", "youtube", "embed"],
     icon: <Youtube size={18} />,
-    command: ({ editor, range }) => {
-      const videoLink = prompt("Please enter Youtube Video Link") || "";
+    command: async ({ editor, range }) => {
+      const videoLink = await useAsyncPromptModal.prompt({
+        title: "Youtube Video Link",
+        placeholder: "Please enter Youtube Video Link",
+      });
+
+      if (!videoLink) {
+        return;
+      }
+
       //From https://regexr.com/3dj5t
       const ytregex = new RegExp(
         /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
@@ -167,7 +176,7 @@ export const suggestionItems = createSuggestionItems([
           .run();
       } else {
         if (videoLink !== null) {
-          alert("Please enter a correct Youtube Video Link");
+          toast.error("Please enter a correct Youtube Video Link");
         }
       }
     },
@@ -177,8 +186,16 @@ export const suggestionItems = createSuggestionItems([
     description: "Embed a Tweet.",
     searchTerms: ["twitter", "embed"],
     icon: <Twitter size={18} />,
-    command: ({ editor, range }) => {
-      const tweetLink = prompt("Please enter Twitter Link");
+    command: async ({ editor, range }) => {
+      const tweetLink = await useAsyncPromptModal.prompt({
+        title: "Twitter Link",
+        placeholder: "Please enter Twitter Link",
+      });
+
+      if (!tweetLink) {
+        return;
+      }
+
       const tweetRegex = new RegExp(
         /^https?:\/\/(www\.)?x\.com\/([a-zA-Z0-9_]{1,15})(\/status\/(\d+))?(\/\S*)?$/
       );
@@ -194,7 +211,7 @@ export const suggestionItems = createSuggestionItems([
           .run();
       } else {
         if (tweetLink !== null) {
-          alert("Please enter a correct Twitter Link");
+          toast.error("Please enter a correct Twitter Link");
         }
       }
     },
