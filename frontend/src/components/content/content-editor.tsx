@@ -11,13 +11,14 @@ export function ContentEditor() {
 
   //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
-    const doc = new DOMParser().parseFromString(content, "text/html");
-    doc.querySelectorAll("pre code").forEach((el) => {
+    const fragment = document.createRange().createContextualFragment(content);
+    fragment.querySelectorAll("pre code").forEach((el) => {
       // @ts-ignore
       // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
       hljs.highlightElement(el);
     });
-    return new XMLSerializer().serializeToString(doc);
+
+    return new XMLSerializer().serializeToString(fragment);
   };
 
   const debouncedUpdates = useDebouncedCallback(
@@ -45,7 +46,7 @@ export function ContentEditor() {
       key={activePageStore.version}
       initialContent={activePageStore.page?.blocks}
       onUpdate={debouncedUpdates}
-      className="w-full block mx-auto max-w-[850px]"
+      className="w-full block mx-auto max-w-[846px]"
     />
   );
 }
