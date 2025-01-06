@@ -22,8 +22,6 @@ export function ContentEditor() {
 
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
-      console.log("update.....", editor.schema);
-
       const activePage = activePageStore.page;
       if (activePage?.__typename !== "local_page" || activePage?.viewOnly)
         return;

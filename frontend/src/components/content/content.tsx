@@ -1,24 +1,15 @@
 import debounce from "lodash/debounce";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
-import { useContentZoomStore } from "@/store/content-zoom";
 import { ContentRead } from "./content-read";
 import { ContentEditor } from "./content-editor";
+import { useContentZoomStore } from "@/store/content-zoom";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
-  const zoomStore = useContentZoomStore();
-
-  useLayoutEffect(() => {
-    if ($content.current) {
-      // @ts-ignore
-      $content.current.style.zoom = `${zoomStore.zoom / 100}`;
-    }
-  }, [zoomStore.zoom]);
-
   const canEdit = activePageStore.canEdit();
 
   return (
@@ -46,6 +37,8 @@ function ResetScroll() {
 }
 
 function ContentTitle() {
+  const zoomStore = useContentZoomStore();
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const savePageTitle = useLocalPagesStore((state) => state.savePageTitle);
@@ -131,7 +124,13 @@ function ContentTitle() {
         className={cn(
           "font-bold text-3xl bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
           "max-w-[750px] mb-2 justify-self-center outline-none border-none w-full block",
-          "resize-none overflow-hidden"
+          "resize-none overflow-hidden",
+
+          // zoomStore.zoom === 80 && "text-xl",
+          // zoomStore.zoom === 90 && "text-2xl",
+          zoomStore.zoom === 100 && "text-3xl",
+          zoomStore.zoom === 200 && "text-4xl",
+          zoomStore.zoom === 300 && "text-5xl"
         )}
       />
     </div>

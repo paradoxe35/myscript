@@ -24,6 +24,7 @@ import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
 
 import { cn } from "@/lib/utils";
+import { useContentZoomStore } from "@/store/content-zoom";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -38,6 +39,18 @@ const NovelEditor = (props: EditorProps) => {
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
+
+  const zoomStore = useContentZoomStore();
+
+  const className = cn(
+    "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full",
+
+    // zoomStore.zoom === 80 && "prose-sm",
+    // zoomStore.zoom === 90 && "prose-base",
+    zoomStore.zoom === 100 && "prose-lg",
+    zoomStore.zoom === 200 && "prose-xl",
+    zoomStore.zoom === 300 && "prose-2xl"
+  );
 
   return (
     <div className={cn("relative w-full max-w-screen-md", props.className)}>
@@ -55,8 +68,7 @@ const NovelEditor = (props: EditorProps) => {
             handleDrop: (view, event, _slice, moved) =>
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
-              class:
-                "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full",
+              class: className,
             },
           }}
           onUpdate={({ editor }) => props.onUpdate?.(editor)}
