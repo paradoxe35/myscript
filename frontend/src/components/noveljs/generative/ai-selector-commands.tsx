@@ -1,6 +1,7 @@
 import {
   ArrowDownWideNarrow,
   CheckCheck,
+  LucideProps,
   RefreshCcwDot,
   StepForward,
   WrapText,
@@ -14,7 +15,23 @@ import {
   CommandSeparator,
 } from "../ui/command";
 
-const options = [
+export type Option =
+  | "continue"
+  | "improve"
+  | "shorter"
+  | "longer"
+  | "fix"
+  | "zap";
+
+type OptionItem = {
+  value: Option;
+  label: string;
+  icon: React.ForwardRefExoticComponent<
+    Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>
+  >;
+};
+
+const options: OptionItem[] = [
   {
     value: "improve",
     label: "Improve writing",
@@ -39,7 +56,7 @@ const options = [
 ];
 
 interface AISelectorCommandsProps {
-  onSelect: (value: string, option: string) => void;
+  onSelect: (value: string, option: Option) => void;
 }
 
 const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
@@ -55,7 +72,7 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
               const text = editor?.storage.markdown.serializer.serialize(
                 slice?.content
               );
-              onSelect(text, value);
+              onSelect(text, value as Option);
             }}
             className="flex gap-2 px-4"
             key={option.value}

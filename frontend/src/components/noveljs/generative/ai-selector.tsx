@@ -1,11 +1,9 @@
 import { Command, CommandInput } from "@/components/noveljs/ui/command";
 
-import ai from "ai";
-import { useCompletion } from "ai/react";
 import { ArrowUp } from "lucide-react";
 import { useEditor } from "novel";
 import { addAIHighlight } from "novel/extensions";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -14,6 +12,7 @@ import Magic from "../ui/icons/magic";
 import { ScrollArea } from "../ui/scroll-area";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
+import { useOpenAICompletion } from "./use-openai-completion";
 //TODO: I think it makes more sense to create a custom Tiptap extension for this functionality https://tiptap.dev/docs/editor/ai/introduction
 
 interface AISelectorProps {
@@ -26,33 +25,16 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
   const { editor } = useEditor();
   const [inputValue, setInputValue] = useState("");
 
-  const { completion, complete, isLoading } = useCompletion({
-    api: "https://api.openai.com/v1/completions",
-    headers: {
-      Authorization: `Bearer ${openAIApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: {
-      model: "GPT-4o-mini",
-      max_tokens: 1024 * 2,
-      temperature: 0.7,
-    },
-    onResponse: (response) => {
-      if (response.status === 429) {
-        toast.error("You have reached your request limit for the day.");
-        return;
-      }
-    },
-    onError: (e) => {
-      toast.error(e.message);
-    },
-  });
+  const { completion, generateCompletion, isLoading, error } =
+    useOpenAICompletion(openAIApiKey);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message);
+    }
+  }, [error]);
 
   const hasCompletion = completion.length > 0;
-
-  console.log(hasCompletion, isLoading);
-
-  // return <div> AI is not available</div>;
 
   return (
     <Command className="w-[350px]">
@@ -94,19 +76,20 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
               size="icon"
               className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-purple-500 hover:bg-purple-900"
               onClick={() => {
-                if (completion)
-                  return complete(completion, {
-                    body: { option: "zap", command: inputValue },
-                  }).then(() => setInputValue(""));
+                if (completion) {
+                  return generateCompletion(completion, "zap", inputValue).then(
+                    () => setInputValue("")
+                  );
+                }
 
                 const slice = editor?.state.selection.content();
                 const text = editor?.storage.markdown.serializer.serialize(
                   slice?.content
                 );
 
-                complete(text, {
-                  body: { option: "zap", command: inputValue },
-                }).then(() => setInputValue(""));
+                generateCompletion(text, "zap", inputValue).then(() =>
+                  setInputValue("")
+                );
               }}
             >
               <ArrowUp className="h-4 w-4" />
@@ -124,7 +107,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
           ) : (
             <AISelectorCommands
               onSelect={(value, option) => {
-                complete(value, { body: { option } });
+                generateCompletion(value, option);
               }}
             />
           )}
