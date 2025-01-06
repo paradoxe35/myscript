@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, forwardRef } from "react";
 import CodeTool from "@editorjs/code";
 import Delimiter from "@editorjs/delimiter";
 import Ejs, { EditorConfig, API } from "@editorjs/editorjs";
+// @ts-ignore
 import Embed from "@editorjs/embed";
 import Header from "@editorjs/header";
 import InlineCode from "@editorjs/inline-code";
@@ -118,7 +119,7 @@ export const EditorJS = forwardRef<Ejs, EditorJSProps>(
 
     return (
       <div
-        className="prose max-w-[650px] dark:prose-invert w-full block mx-auto"
+        className="prose prose-lg max-w-[750px] dark:prose-invert w-full block mx-auto"
         ref={editorEl}
       />
     );

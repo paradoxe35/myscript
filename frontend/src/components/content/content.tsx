@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
 import { useContentZoomStore } from "@/store/content-zoom";
 import { ContentRead } from "./content-read";
+import TailwindAdvancedEditor from "../noveljs/advanced-editor";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
@@ -67,13 +68,15 @@ function ContentEditor() {
     }, 500);
   }, [activePage]);
 
-  return (
-    <EditorJS
-      key={activePageStore.version}
-      defaultBlocks={activePage?.blocks || []}
-      onChange={setBlocksCallback}
-    />
-  );
+  return <TailwindAdvancedEditor />;
+
+  // return (
+  //   <EditorJS
+  //     key={activePageStore.version}
+  //     defaultBlocks={activePage?.blocks || []}
+  //     onChange={setBlocksCallback}
+  //   />
+  // );
 }
 
 function ContentTitle() {
@@ -161,7 +164,7 @@ function ContentTitle() {
         rows={1}
         className={cn(
           "font-bold text-3xl bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
-          "max-w-[650px] mb-2 justify-self-center outline-none border-none w-full block",
+          "max-w-[750px] mb-2 justify-self-center outline-none border-none w-full block",
           "resize-none overflow-hidden"
         )}
       />

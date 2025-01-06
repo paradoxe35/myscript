@@ -34,7 +34,7 @@ export function ContentRead() {
       key={String(readMode)}
       className={cn(
         "w-full block mx-auto",
-        "prose max-w-[650px] dark:prose-invert"
+        "prose prose-lg max-w-[750px] dark:prose-invert"
       )}
       ref={containerRef}
       dangerouslySetInnerHTML={{ __html: html }}
