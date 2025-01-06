@@ -1,4 +1,4 @@
-import { Command, CommandInput } from "@/components/noveljs/ui/command";
+import { Command, CommandInput } from "@/components/ui/command";
 
 import { ArrowUp } from "lucide-react";
 import { useEditor } from "novel";
@@ -41,7 +41,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
       {hasCompletion && (
         <div className="flex max-h-[400px]">
           <ScrollArea>
-            <div className="prose p-2 px-4 prose-sm">
+            <div className="prose p-2 px-4 prose-sm dark:prose-invert">
               <Markdown>{completion}</Markdown>
             </div>
           </ScrollArea>
