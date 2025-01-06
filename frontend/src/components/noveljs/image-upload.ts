@@ -4,13 +4,8 @@ import { toast } from "sonner";
 
 const onUpload = (file: File) => {
   return new Promise(async (resolve) => {
-    const blobUrl = URL.createObjectURL(file);
-
-    await wait(100);
-    resolve(blobUrl);
-
-    await wait(1000);
-    URL.revokeObjectURL(blobUrl);
+    await wait(500);
+    resolve(file);
   });
 };
 

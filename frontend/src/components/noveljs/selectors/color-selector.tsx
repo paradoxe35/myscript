@@ -57,8 +57,8 @@ const HIGHLIGHT_COLORS: BubbleColorMenuItem[] = [
     color: "var(--novel-highlight-default)",
   },
   {
-    name: "blue",
-    color: "var(--novel-highlight-blue)",
+    name: "purple",
+    color: "var(--novel-highlight-purple)",
   },
   {
     name: "Red",
