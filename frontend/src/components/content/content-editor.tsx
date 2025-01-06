@@ -1,17 +1,11 @@
+import { EditorInstance } from "novel";
 import { useActivePageStore } from "@/store/active-page";
 import { useLocalPagesStore } from "@/store/local-pages";
 import NovelEditor from "../noveljs/advanced-editor";
 import { useDebouncedCallback } from "use-debounce";
-
 import hljs from "highlight.js";
-import { EditorInstance, JSONContent } from "novel";
-import { useEffect, useState } from "react";
 
 export function ContentEditor() {
-  const [initialContent, setInitialContent] = useState<
-    undefined | JSONContent
-  >();
-
   const activePageStore = useActivePageStore();
   const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
 
@@ -28,6 +22,8 @@ export function ContentEditor() {
 
   const debouncedUpdates = useDebouncedCallback(
     async (editor: EditorInstance) => {
+      console.log("update.....", editor.schema);
+
       const activePage = activePageStore.page;
       if (activePage?.__typename !== "local_page" || activePage?.viewOnly)
         return;
@@ -46,13 +42,10 @@ export function ContentEditor() {
     500
   );
 
-  useEffect(() => {
-    // activePageStore
-  }, [activePageStore.getPageId()]);
-
   return (
     <NovelEditor
-      initialContent={initialContent}
+      key={activePageStore.version}
+      initialContent={activePageStore.page?.blocks}
       onUpdate={debouncedUpdates}
       className="w-full block mx-auto max-w-[850px]"
     />
