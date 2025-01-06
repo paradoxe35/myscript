@@ -29,6 +29,7 @@ import { useContentZoomStore } from "@/store/content-zoom";
 const extensions = [...defaultExtensions, slashCommand];
 
 type EditorProps = {
+  openAIApiKey?: string;
   className?: string;
   initialContent?: JSONContent;
   onUpdate?: (editor: EditorInstance) => void;
@@ -100,7 +101,11 @@ const NovelEditor = (props: EditorProps) => {
             </EditorCommandList>
           </EditorCommand>
 
-          <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
+          <GenerativeMenuSwitch
+            openAIApiKey={props.openAIApiKey}
+            open={openAI}
+            onOpenChange={setOpenAI}
+          >
             <Separator orientation="vertical" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
             <Separator orientation="vertical" />

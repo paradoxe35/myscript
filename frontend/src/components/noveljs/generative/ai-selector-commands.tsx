@@ -7,7 +7,12 @@ import {
 } from "lucide-react";
 import { useEditor } from "novel";
 import { getPrevText } from "novel/utils";
-import { CommandGroup, CommandItem, CommandSeparator } from "../ui/command";
+import {
+  CommandGroup,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "../ui/command";
 
 const options = [
   {
@@ -41,7 +46,7 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
   const { editor } = useEditor();
 
   return (
-    <>
+    <CommandList>
       <CommandGroup heading="Edit or review selection">
         {options.map((option) => (
           <CommandItem
@@ -78,7 +83,7 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
           Continue writing
         </CommandItem>
       </CommandGroup>
-    </>
+    </CommandList>
   );
 };
 

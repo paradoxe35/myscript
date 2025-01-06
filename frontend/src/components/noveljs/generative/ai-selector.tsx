@@ -1,5 +1,6 @@
 import { Command, CommandInput } from "@/components/noveljs/ui/command";
 
+import ai from "ai";
 import { useCompletion } from "ai/react";
 import { ArrowUp } from "lucide-react";
 import { useEditor } from "novel";
@@ -16,17 +17,26 @@ import AISelectorCommands from "./ai-selector-commands";
 //TODO: I think it makes more sense to create a custom Tiptap extension for this functionality https://tiptap.dev/docs/editor/ai/introduction
 
 interface AISelectorProps {
+  openAIApiKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AISelector({ onOpenChange }: AISelectorProps) {
+export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
   const { editor } = useEditor();
   const [inputValue, setInputValue] = useState("");
 
   const { completion, complete, isLoading } = useCompletion({
-    // id: "novel",
-    api: "/api/generate",
+    api: "https://api.openai.com/v1/completions",
+    headers: {
+      Authorization: `Bearer ${openAIApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: {
+      model: "GPT-4o-mini",
+      max_tokens: 1024 * 2,
+      temperature: 0.7,
+    },
     onResponse: (response) => {
       if (response.status === 429) {
         toast.error("You have reached your request limit for the day.");
@@ -39,6 +49,10 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
   });
 
   const hasCompletion = completion.length > 0;
+
+  console.log(hasCompletion, isLoading);
+
+  // return <div> AI is not available</div>;
 
   return (
     <Command className="w-[350px]">
@@ -61,6 +75,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
           </div>
         </div>
       )}
+
       {!isLoading && (
         <>
           <div className="relative">
@@ -97,6 +112,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
               <ArrowUp className="h-4 w-4" />
             </Button>
           </div>
+
           {hasCompletion ? (
             <AICompletionCommands
               onDiscard={() => {
@@ -107,9 +123,9 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
             />
           ) : (
             <AISelectorCommands
-              onSelect={(value, option) =>
-                complete(value, { body: { option } })
-              }
+              onSelect={(value, option) => {
+                complete(value, { body: { option } });
+              }}
             />
           )}
         </>
