@@ -9,11 +9,10 @@ import { toast } from "sonner";
 import { Button } from "../ui/button";
 import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
-import { ScrollArea } from "../ui/scroll-area";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
 import { useOpenAICompletion } from "./use-openai-completion";
-//TODO: I think it makes more sense to create a custom Tiptap extension for this functionality https://tiptap.dev/docs/editor/ai/introduction
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AISelectorProps {
   openAIApiKey: string;
@@ -49,7 +48,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
       )}
 
       {isLoading && (
-        <div className="flex h-12 w-full items-center px-4 text-sm font-medium text-muted-foreground text-purple-500">
+        <div className="flex h-12 w-full items-center px-4 text-sm font-medium text-muted-foreground text-blue-500">
           <Magic className="mr-2 h-4 w-4 shrink-0  " />
           AI is thinking
           <div className="ml-2 mt-1">
@@ -74,7 +73,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
             />
             <Button
               size="icon"
-              className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-purple-500 hover:bg-purple-900"
+              className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-blue-500 hover:bg-blue-900"
               onClick={() => {
                 if (completion) {
                   return generateCompletion(completion, "zap", inputValue).then(

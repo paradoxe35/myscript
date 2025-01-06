@@ -7,7 +7,7 @@ interface Messages {
   content: string;
 }
 
-const OPENAI_MODEL = "gpt-4o";
+const OPENAI_MODEL = "gpt-4o-mini";
 
 const generateMessage = (
   option: Option,
