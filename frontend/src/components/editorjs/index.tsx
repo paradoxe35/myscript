@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, forwardRef } from "react";
+import { useEffect, useRef, forwardRef } from "react";
 import CodeTool from "@editorjs/code";
 import Delimiter from "@editorjs/delimiter";
 import Ejs, { EditorConfig, API } from "@editorjs/editorjs";

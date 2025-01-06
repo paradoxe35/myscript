@@ -1,4 +1,4 @@
-import { Settings as SettingsIcon, FileMinus2 } from "lucide-react";
+import { Settings as SettingsIcon } from "lucide-react";
 
 import { APP_NAME } from "@/lib/constants";
 import { Button } from "../ui/button";

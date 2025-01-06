@@ -21,14 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useTranscriberStore } from "@/store/transcriber";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useConfigStore } from "@/store/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { microphone } from "~wails/models";

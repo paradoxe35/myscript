@@ -1,5 +1,5 @@
 import debounce from "lodash/debounce";
-import { EditorJS, type API } from "@/components/editorjs";
+import { type API } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -114,7 +114,7 @@ function ContentTitle() {
     setTimeout(() => {
       const noValue = textareaRef.current?.value.trim() === "";
       if (noValue) {
-        textareaRef.current.focus();
+        textareaRef.current?.focus();
       }
     }, 100);
   }, [pageId]);
