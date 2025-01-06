@@ -57,6 +57,7 @@ const NovelEditor = (props: EditorProps) => {
     <div className={cn("relative w-full max-w-screen-md", props.className)}>
       <EditorRoot>
         <EditorContent
+          autofocus
           className="relative min-h-[500px] w-full max-w-screen-lg bg-background"
           initialContent={props.initialContent}
           extensions={extensions}
