@@ -1,3 +1,4 @@
+import { WithoutRepositoryBaseFields } from "@/types";
 import { create } from "zustand";
 import { DeleteLocalPage, GetLocalPages, SaveLocalPage } from "~wails/main/App";
 import { repository } from "~wails/models";
@@ -11,11 +12,14 @@ type LocalPagesStore = {
     page: repository.Page
   ) => Promise<repository.Page>;
   savePageBlocks: (
-    blocks: Array<any>,
-    page: repository.Page
+    page: repository.Page,
+    blocks: any,
+    htmlContent: string
   ) => Promise<repository.Page>;
   deletePage: (id: number) => Promise<void>;
 };
+
+type TPage = WithoutRepositoryBaseFields<repository.Page>;
 
 export const DEFAULT_PAGE_TITLE = "New Page";
 
@@ -28,12 +32,13 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
   },
 
   newPage: async () => {
-    const newPage = await SaveLocalPage(
-      repository.Page.createFrom({
-        title: DEFAULT_PAGE_TITLE,
-        blocks: [],
-      })
-    );
+    const body: TPage = {
+      title: DEFAULT_PAGE_TITLE,
+      html_content: "",
+      blocks: [],
+    };
+
+    const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
     const pages = await GetLocalPages();
     set({ pages });
@@ -42,12 +47,12 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
   },
 
   savePageTitle: async (title, page) => {
-    const newPage = await SaveLocalPage(
-      repository.Page.createFrom({
-        ...page,
-        title,
-      })
-    );
+    const body: TPage = {
+      ...page,
+      title,
+    };
+
+    const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
     const pages = await GetLocalPages();
     set({ pages });
@@ -55,13 +60,14 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
     return newPage;
   },
 
-  savePageBlocks: async (blocks, page) => {
-    const newPage = await SaveLocalPage(
-      repository.Page.createFrom({
-        ...page,
-        blocks,
-      })
-    );
+  savePageBlocks: async (page, blocks, htmlContent) => {
+    const body: TPage = {
+      ...page,
+      blocks,
+      html_content: htmlContent,
+    };
+
+    const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
     const pages = await GetLocalPages();
     set({ pages });

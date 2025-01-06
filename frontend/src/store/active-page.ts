@@ -13,14 +13,14 @@ type NotionActivePage = {
   __typename: "notion_page";
   page: NotionSimplePage;
   viewOnly: true;
-  blocks?: Array<any>;
+  blocks?: any;
 };
 
 type LocalActivePage = {
   __typename: "local_page";
   page: repository.Page;
   viewOnly: false;
-  blocks?: Array<any>;
+  blocks?: any;
 };
 
 type ActivePage = NotionActivePage | LocalActivePage;

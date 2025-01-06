@@ -7,8 +7,9 @@ import (
 
 type Page struct {
 	gorm.Model
-	Title  string         `json:"title"`
-	Blocks datatypes.JSON `json:"blocks"`
+	Title       string         `json:"title"`
+	HtmlContent string         `json:"html_content"`
+	Blocks      datatypes.JSON `json:"blocks"`
 }
 
 func GetPages(db *gorm.DB) []Page {

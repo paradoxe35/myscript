@@ -1,11 +1,8 @@
-import edjsHTML from "editorjs-html";
 import { convertNotionToHtml, wrapLists } from "@/lib/notion-to-html";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useMemo } from "react";
 import { useContentReadMarker } from "./use-content-read-marker";
-
-const edjsParser = edjsHTML();
 
 export function ContentRead() {
   const containerRef = useContentReadMarker();
@@ -22,8 +19,7 @@ export function ContentRead() {
         return wrapLists(convertNotionToHtml(blocks));
 
       case "local_page":
-        const result = edjsParser.parseStrict({ blocks });
-        return Array.isArray(result) ? result.join("\n") : result.message;
+        return activePage.page.html_content;
     }
 
     return "";

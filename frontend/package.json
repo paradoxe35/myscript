@@ -41,7 +41,6 @@
     "cmdk": "1.0.0",
     "damerau-levenshtein": "^1.0.8",
     "editorjs-drag-drop": "^1.1.16",
-    "editorjs-html": "^3.4.3",
     "extendable-media-recorder": "^9.2.18",
     "extendable-media-recorder-wav-encoder": "^7.0.122",
     "highlight.js": "^11.11.1",

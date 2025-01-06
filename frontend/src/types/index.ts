@@ -57,3 +57,7 @@ export type RepositoryBaseFields =
 export type WithoutRepositoryBaseFields<T> = Omit<T, RepositoryBaseFields>;
 
 export type EventClear = () => void;
+
+export type ExtractProperties<T, K extends keyof T> = {
+  [P in K]: T[P];
+};

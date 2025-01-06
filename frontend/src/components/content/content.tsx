@@ -1,12 +1,11 @@
 import debounce from "lodash/debounce";
-import { type API } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
 import { useContentZoomStore } from "@/store/content-zoom";
 import { ContentRead } from "./content-read";
-import TailwindAdvancedEditor from "../noveljs/advanced-editor";
+import { ContentEditor } from "./content-editor";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
@@ -44,39 +43,6 @@ function ResetScroll() {
   }, [activePageStore.getPageId()]);
 
   return null;
-}
-
-function ContentEditor() {
-  const activePageStore = useActivePageStore();
-  const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
-
-  const activePage = activePageStore.page;
-
-  const setBlocksCallback = useMemo(() => {
-    if (activePage?.__typename !== "local_page" || activePage?.viewOnly) return;
-
-    return debounce(async (editorAPI: API) => {
-      const output = await editorAPI.saver.save().catch(() => ({ blocks: [] }));
-
-      savePageBlocks(output.blocks, activePage.page).then((newPage) => {
-        activePageStore.setActivePage({
-          ...activePage,
-          page: newPage,
-          blocks: output.blocks,
-        });
-      });
-    }, 500);
-  }, [activePage]);
-
-  return <TailwindAdvancedEditor />;
-
-  // return (
-  //   <EditorJS
-  //     key={activePageStore.version}
-  //     defaultBlocks={activePage?.blocks || []}
-  //     onChange={setBlocksCallback}
-  //   />
-  // );
 }
 
 function ContentTitle() {
