@@ -2,9 +2,9 @@ import { EditorBubble, useEditor } from "novel";
 import { removeAIHighlight } from "novel/extensions";
 import {} from "novel/plugins";
 import { Fragment, type ReactNode, useEffect } from "react";
-import { Button } from "../ui/button";
 import Magic from "../ui/icons/magic";
 import { AISelector } from "./ai-selector";
+import { Button } from "@/components/ui/button";
 
 interface GenerativeMenuSwitchProps {
   openAIApiKey?: string;

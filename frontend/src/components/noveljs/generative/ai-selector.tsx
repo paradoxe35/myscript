@@ -6,13 +6,13 @@ import { addAIHighlight } from "novel/extensions";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { toast } from "sonner";
-import { Button } from "../ui/button";
 import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
 import { useOpenAICompletion } from "./use-openai-completion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 
 interface AISelectorProps {
   openAIApiKey: string;

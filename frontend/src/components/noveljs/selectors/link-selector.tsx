@@ -1,4 +1,4 @@
-import { Button } from "@/components/noveljs/ui/button";
+import { Button } from "@/components/ui/button";
 import { PopoverContent } from "@/components/noveljs/ui/popover";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger } from "@radix-ui/react-popover";
