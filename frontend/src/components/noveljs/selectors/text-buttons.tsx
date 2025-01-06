@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/noveljs/ui/button";
 import { cn } from "@/lib/utils";
 import {
   BoldIcon,

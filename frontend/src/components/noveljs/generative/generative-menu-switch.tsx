@@ -4,7 +4,7 @@ import {} from "novel/plugins";
 import { Fragment, type ReactNode, useEffect } from "react";
 import Magic from "../ui/icons/magic";
 import { AISelector } from "./ai-selector";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/noveljs/ui/button";
 
 interface GenerativeMenuSwitchProps {
   openAIApiKey?: string;

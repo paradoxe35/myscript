@@ -12,7 +12,7 @@ import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
 import { useOpenAICompletion } from "./use-openai-completion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/noveljs/ui/button";
 
 interface AISelectorProps {
   openAIApiKey: string;
