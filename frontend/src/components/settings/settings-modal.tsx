@@ -44,16 +44,19 @@ export function SettingsModal(props: PropsWithChildren) {
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          {/* Notion API Key */}
           <NotionInputs />
-
           <Separator />
 
+          {/* OpenAI API Key */}
+          <OpenAIApiKey />
+          <Separator />
+
+          {/* Speech Recognition */}
           <div className="flex flex-col gap-4 relative">
             <Label>Speech Recognition (Whisper, Wit.ai)</Label>
             <SelectSpeechSource />
           </div>
-
-          <Separator />
 
           {state.TranscriberSource === "local" && <LocalWhisperInputs />}
           {state.TranscriberSource === "openai" && <OpenAIApiKeyInput />}
@@ -91,7 +94,7 @@ function WitAIHint() {
     <>
       <p className="text-xs text-white/50">
         <b>Wit.ai</b> doesn't require any extra configuration. However, it may
-        not be as accurate as OpenAI Whisper.
+        not be as accurate as OpenAI.
       </p>
 
       <p className="text-xs text-white/50">
@@ -101,22 +104,30 @@ function WitAIHint() {
   );
 }
 
-function OpenAIApiKeyInput() {
+function OpenAIApiKey() {
   const { state, dispatch } = useSettings();
 
   return (
+    <div className="flex flex-col gap-3 relative">
+      <Label className="text-xs">OpenAI API Key</Label>
+
+      <ApiKeyInput
+        className="col-span-3"
+        tabIndex={-1}
+        value={state.OpenAIApiKey}
+        onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
+      />
+
+      <p className="text-xs text-white/50">
+        <em>For speech recognition and text generation.</em>
+      </p>
+    </div>
+  );
+}
+
+function OpenAIApiKeyInput() {
+  return (
     <>
-      <div className="flex flex-col gap-3 relative">
-        <Label className="text-xs text-white/50">OpenAI API Key</Label>
-
-        <ApiKeyInput
-          className="col-span-3"
-          tabIndex={-1}
-          value={state.OpenAIApiKey}
-          onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
-        />
-      </div>
-
       <p className="text-xs text-white/50">
         <em>Internet connection is required</em>
       </p>
@@ -140,7 +151,7 @@ function SelectSpeechSource() {
         <SelectValue placeholder="Select a source" />
       </SelectTrigger>
 
-      <SelectContent>
+      <SelectContent className="z-[10002]">
         <SelectGroup>
           {items.map((item) => {
             return (
