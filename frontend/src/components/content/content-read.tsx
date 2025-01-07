@@ -1,13 +1,13 @@
-import edjsHTML from "editorjs-html";
 import { convertNotionToHtml, wrapLists } from "@/lib/notion-to-html";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useMemo } from "react";
 import { useContentReadMarker } from "./use-content-read-marker";
-
-const edjsParser = edjsHTML();
+import { useContentZoomStore } from "@/store/content-zoom";
 
 export function ContentRead() {
+  const zoomStore = useContentZoomStore();
+
   const containerRef = useContentReadMarker();
   const activePageStore = useActivePageStore();
 
@@ -22,8 +22,7 @@ export function ContentRead() {
         return wrapLists(convertNotionToHtml(blocks));
 
       case "local_page":
-        const result = edjsParser.parseStrict({ blocks });
-        return Array.isArray(result) ? result.join("\n") : result.message;
+        return activePage.page.html_content;
     }
 
     return "";
@@ -34,7 +33,13 @@ export function ContentRead() {
       key={String(readMode)}
       className={cn(
         "w-full block mx-auto",
-        "prose max-w-[650px] dark:prose-invert"
+        "prose prose-lg max-w-[750px] dark:prose-invert",
+
+        // zoomStore.zoom === 80 && "prose-sm",
+        // zoomStore.zoom === 90 && "prose-base",
+        zoomStore.zoom === 100 && "prose-lg",
+        zoomStore.zoom === 200 && "prose-xl",
+        zoomStore.zoom === 300 && "prose-2xl"
       )}
       ref={containerRef}
       dangerouslySetInnerHTML={{ __html: html }}

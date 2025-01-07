@@ -1,24 +1,15 @@
 import debounce from "lodash/debounce";
-import { EditorJS, type API } from "@/components/editorjs";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
-import { useContentZoomStore } from "@/store/content-zoom";
 import { ContentRead } from "./content-read";
+import { ContentEditor } from "./content-editor";
+import { useContentZoomStore } from "@/store/content-zoom";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
-  const zoomStore = useContentZoomStore();
-
-  useLayoutEffect(() => {
-    if ($content.current) {
-      // @ts-ignore
-      $content.current.style.zoom = `${zoomStore.zoom / 100}`;
-    }
-  }, [zoomStore.zoom]);
-
   const canEdit = activePageStore.canEdit();
 
   return (
@@ -45,38 +36,9 @@ function ResetScroll() {
   return null;
 }
 
-function ContentEditor() {
-  const activePageStore = useActivePageStore();
-  const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
-
-  const activePage = activePageStore.page;
-
-  const setBlocksCallback = useMemo(() => {
-    if (activePage?.__typename !== "local_page" || activePage?.viewOnly) return;
-
-    return debounce(async (editorAPI: API) => {
-      const output = await editorAPI.saver.save().catch(() => ({ blocks: [] }));
-
-      savePageBlocks(output.blocks, activePage.page).then((newPage) => {
-        activePageStore.setActivePage({
-          ...activePage,
-          page: newPage,
-          blocks: output.blocks,
-        });
-      });
-    }, 500);
-  }, [activePage]);
-
-  return (
-    <EditorJS
-      key={activePageStore.version}
-      defaultBlocks={activePage?.blocks || []}
-      onChange={setBlocksCallback}
-    />
-  );
-}
-
 function ContentTitle() {
+  const zoomStore = useContentZoomStore();
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const savePageTitle = useLocalPagesStore((state) => state.savePageTitle);
@@ -111,7 +73,7 @@ function ContentTitle() {
     setTimeout(() => {
       const noValue = textareaRef.current?.value.trim() === "";
       if (noValue) {
-        textareaRef.current.focus();
+        textareaRef.current?.focus();
       }
     }, 100);
   }, [pageId]);
@@ -161,8 +123,14 @@ function ContentTitle() {
         rows={1}
         className={cn(
           "font-bold text-3xl bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
-          "max-w-[650px] mb-2 justify-self-center outline-none border-none w-full block",
-          "resize-none overflow-hidden"
+          "max-w-[750px] mb-2 justify-self-center outline-none border-none w-full block",
+          "resize-none overflow-hidden",
+
+          // zoomStore.zoom === 80 && "text-xl",
+          // zoomStore.zoom === 90 && "text-2xl",
+          zoomStore.zoom === 100 && "text-3xl",
+          zoomStore.zoom === 200 && "text-4xl",
+          zoomStore.zoom === 300 && "text-5xl"
         )}
       />
     </div>

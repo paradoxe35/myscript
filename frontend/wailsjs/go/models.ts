@@ -207,6 +207,7 @@ export namespace repository {
 	    // Go type: gorm
 	    DeletedAt: any;
 	    title: string;
+	    html_content: string;
 	    blocks: number[];
 	
 	    static createFrom(source: any = {}) {
@@ -220,6 +221,7 @@ export namespace repository {
 	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
 	        this.title = source["title"];
+	        this.html_content = source["html_content"];
 	        this.blocks = source["blocks"];
 	    }
 	

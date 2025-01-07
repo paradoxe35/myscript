@@ -13,14 +13,14 @@ type NotionActivePage = {
   __typename: "notion_page";
   page: NotionSimplePage;
   viewOnly: true;
-  blocks?: Array<any>;
+  blocks?: any;
 };
 
 type LocalActivePage = {
   __typename: "local_page";
   page: repository.Page;
   viewOnly: false;
-  blocks?: Array<any>;
+  blocks?: any;
 };
 
 type ActivePage = NotionActivePage | LocalActivePage;
@@ -99,6 +99,7 @@ export const useActivePageStore = create(
       fetchPageBlocks() {
         const activePage = get().page;
 
+        // Refresh local page blocks
         if (activePage?.__typename === "local_page") {
           GetLocalPage(activePage.page.ID).then((localPage) => {
             set({
@@ -109,7 +110,10 @@ export const useActivePageStore = create(
               },
             });
           });
-        } else if (activePage?.__typename === "notion_page") {
+        }
+
+        // Refresh notion page blocks
+        if (activePage?.__typename === "notion_page") {
           // use Cache for notion page blocks
           const cacheKey = `${activePage?.__typename}:${activePage?.page.id}`;
 

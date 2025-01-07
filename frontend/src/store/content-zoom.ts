@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-const ZOOM_ITERATIONS = [
-  25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400, 500,
-] as const;
+const ZOOM_ITERATIONS = [100, 200, 300] as const;
 
 const DEFAULT_ZOOM = 100;
 

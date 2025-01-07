@@ -345,7 +345,7 @@ export function useContentReadMarker() {
 
       console.log("Progress: %d%", (progress.progress / progress.total) * 100);
 
-      if (progress.progress >= progress.total && progress.total > 0) {
+      if (progress.progress >= progress.total - 1 && progress.total > 0) {
         progress.total = 0;
         progress.progress = 0;
 
