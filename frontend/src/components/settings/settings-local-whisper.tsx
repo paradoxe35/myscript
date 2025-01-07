@@ -49,7 +49,7 @@ export function LocalWhisperInputs() {
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
 
-          <SelectContent className="z-[10002]">
+          <SelectContent>
             <SelectGroup>
               {/* <SelectLabel>Models</SelectLabel> */}
               {whisperModels.map((item) => {
@@ -294,7 +294,7 @@ function ModelsRamRequirements() {
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-56 z-[10002]">
+          <DropdownMenuContent className="w-56">
             <Table>
               <TableHeader>
                 <TableRow className="text-xs text-white/50">

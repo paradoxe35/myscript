@@ -151,7 +151,7 @@ function SelectSpeechSource() {
         <SelectValue placeholder="Select a source" />
       </SelectTrigger>
 
-      <SelectContent className="z-[10002]">
+      <SelectContent>
         <SelectGroup>
           {items.map((item) => {
             return (
