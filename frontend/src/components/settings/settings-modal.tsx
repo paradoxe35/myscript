@@ -59,7 +59,7 @@ export function SettingsModal(props: PropsWithChildren) {
           </div>
 
           {state.TranscriberSource === "local" && <LocalWhisperInputs />}
-          {state.TranscriberSource === "openai" && <OpenAIApiKeyInput />}
+          {state.TranscriberSource === "openai" && <OpenAIApiKeyTranscriber />}
           {state.TranscriberSource === "witai" && <WitAIHint />}
         </div>
 
@@ -125,7 +125,7 @@ function OpenAIApiKey() {
   );
 }
 
-function OpenAIApiKeyInput() {
+function OpenAIApiKeyTranscriber() {
   return (
     <>
       <p className="text-xs text-white/50">
