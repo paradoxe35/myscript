@@ -60,11 +60,21 @@ function useSRInputs(props: Props) {
   };
 
   useEffect(() => {
-    transcriberStore.getMicInputDevices().then((micInputDevices) => {
-      const defaultDevice = micInputDevices.find(
-        (device) => device.IsDefault === 1
-      );
+    if (micInputDevice) {
+      transcriberStore.setDefaultMicInput(micInputDevice);
+    }
+  }, [micInputDevice]);
 
+  useEffect(() => {
+    transcriberStore.getMicInputDevices().then(async (micInputDevices) => {
+      let defaultDevice = await transcriberStore.getDefaultMicInput();
+
+      if (defaultDevice) {
+        setMicInputDevice(defaultDevice);
+        return;
+      }
+
+      defaultDevice = micInputDevices.find((device) => device.IsDefault === 1);
       if (defaultDevice) {
         setMicInputDevice(defaultDevice);
       }

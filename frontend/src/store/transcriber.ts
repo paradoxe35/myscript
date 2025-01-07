@@ -30,6 +30,10 @@ type TranscriberState = {
   getPageLanguage: (pageId: string | number) => Promise<string | null>;
   setPageLanguage: (pageId: string | number, language: string) => Promise<void>;
 
+  // Default mic input device
+  setDefaultMicInput: (micInputDevice: microphone.MicInputDevice) => void;
+  getDefaultMicInput: () => Promise<microphone.MicInputDevice | undefined>;
+
   onTranscribedText: (callback: (text: string) => void) => EventClear;
   onTranscribeError: (callback: (error: string) => void) => EventClear;
   onRecordingStopped: (callback: (autoStopped: boolean) => void) => EventClear;
@@ -91,6 +95,20 @@ export const useTranscriberStore = create<TranscriberState>((set, get) => ({
 
   setPageLanguage: async (pageId, language) => {
     SaveCache(`page-${pageId}-language`, language);
+  },
+
+  setDefaultMicInput: (micInputDevice) => {
+    SaveCache("mic-input-device", micInputDevice.Name);
+  },
+
+  getDefaultMicInput: async () => {
+    const micInputs = get().micInputDevices;
+    const micInput = await GetCache("mic-input-device");
+
+    if (micInput?.value) {
+      return micInputs.find((device) => device.Name === micInput.value);
+    }
+    return;
   },
 
   onRecordingStopped(callback) {
