@@ -1,11 +1,11 @@
-import debounce from "lodash/debounce";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEFAULT_PAGE_TITLE, useLocalPagesStore } from "@/store/local-pages";
 import { ContentRead } from "./content-read";
 import { ContentEditor } from "./content-editor";
 import { useContentZoomStore } from "@/store/content-zoom";
+import { useDebouncedCallback } from "use-debounce";
 
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
@@ -88,21 +88,20 @@ function ContentTitle() {
   }, [title]);
 
   // Save page title when input change
-  const setTitleCallback = useMemo(() => {
+  const setTitleCallback = useDebouncedCallback((title: string) => {
+    const activePage = activePageStore.page;
+
     if (activePage?.__typename !== "local_page" || activePage?.viewOnly) return;
+    title = title.trim() === "" ? DEFAULT_PAGE_TITLE : title;
 
-    return debounce((title: string) => {
-      title = title.trim() === "" ? DEFAULT_PAGE_TITLE : title;
-
-      savePageTitle(title, activePage.page).then((newPage) => {
-        // Update active page
-        activePageStore.setActivePage({
-          ...activePage,
-          page: newPage,
-        });
+    savePageTitle(title, activePage.page).then((newPage) => {
+      // Update active page
+      activePageStore.setActivePage({
+        ...activePage,
+        page: newPage,
       });
-    }, 500);
-  }, [activePage]);
+    });
+  }, 500);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (activePage?.viewOnly) return;

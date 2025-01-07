@@ -106,6 +106,7 @@ export const useActivePageStore = create(
               version: Date.now(),
               page: {
                 ...activePage,
+                page: localPage,
                 blocks: localPage.blocks,
               },
             });
