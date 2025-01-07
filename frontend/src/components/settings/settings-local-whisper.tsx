@@ -49,7 +49,7 @@ export function LocalWhisperInputs() {
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
 
-          <SelectContent>
+          <SelectContent className="z-[10002]">
             <SelectGroup>
               {/* <SelectLabel>Models</SelectLabel> */}
               {whisperModels.map((item) => {
@@ -72,14 +72,12 @@ export function LocalWhisperInputs() {
 
       <Separator />
 
-      {/* 
-        <ModelsRamRequirements />
+      {/* <ModelsRamRequirements />
         <Separator />
 
         <p className="text-xs text-white/50">
           <b>GPU acceleration:</b> This feature is currently not supported.
-        </p> 
-    */}
+        </p>  */}
 
       {/* Passe the key to force re-render when model changes */}
       <LocalWhisperModelsDownloadWrapper key={modelName} />
@@ -296,7 +294,7 @@ function ModelsRamRequirements() {
             </Button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent className="w-56">
+          <DropdownMenuContent className="w-56 z-[10002]">
             <Table>
               <TableHeader>
                 <TableRow className="text-xs text-white/50">
