@@ -3,8 +3,9 @@ import { useActivePageStore } from "@/store/active-page";
 import { useLocalPagesStore } from "@/store/local-pages";
 import NovelEditor from "../noveljs/advanced-editor";
 import { useDebouncedCallback } from "use-debounce";
-import hljs from "highlight.js";
 import { useConfigStore } from "@/store/config";
+
+import hljs from "highlight.js";
 
 export function ContentEditor() {
   const config = useConfigStore((state) => state.config);

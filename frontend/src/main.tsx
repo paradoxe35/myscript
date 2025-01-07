@@ -9,6 +9,7 @@ import { AppErrorBoundary } from "./components/error-boundary";
 
 import "./styles/style.css";
 import "./styles/prosemirror.css";
+import "highlight.js/styles/github-dark.css";
 
 const container = document.getElementById("root");
 
