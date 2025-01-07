@@ -64,6 +64,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
               value={inputValue}
               onValueChange={setInputValue}
               autoFocus
+              className="mr-6"
               placeholder={
                 hasCompletion
                   ? "Tell AI what to do next"
