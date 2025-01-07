@@ -105,10 +105,7 @@ function AsyncPromptModal({
         }, 100);
       }}
     >
-      <DialogContent
-        className="sm:max-w-[425px] z-[10000]"
-        showCloseButton={false}
-      >
+      <DialogContent className="sm:max-w-[425px]" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{option?.title}</DialogTitle>
           <DialogDescription>{option?.description}</DialogDescription>

@@ -122,8 +122,9 @@ function ContentTitle() {
         onChange={handleChange}
         rows={1}
         className={cn(
+          "px-8 sm:px-12 max-w-[846px]",
           "font-bold text-3xl bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
-          "max-w-[750px] mb-2 justify-self-center outline-none border-none w-full block",
+          "mb-2 justify-self-center outline-none border-none w-full block",
           "resize-none overflow-hidden",
 
           // zoomStore.zoom === 80 && "text-xl",

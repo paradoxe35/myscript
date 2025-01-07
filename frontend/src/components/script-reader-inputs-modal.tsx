@@ -251,7 +251,7 @@ export default function SRInputsModal(props: Props) {
     <Dialog>
       <DialogTrigger asChild>{props.trigger}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-md z-50" showCloseButton={false}>
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
         {/* Modal content */}
         <SRInputsContext.Provider value={ctx}>
           <Tabs defaultValue="languages" className="w-full">

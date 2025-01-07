@@ -32,8 +32,9 @@ export function ContentRead() {
     <div
       key={String(readMode)}
       className={cn(
+        "px-8 sm:px-12 max-w-[846px]",
         "w-full block mx-auto",
-        "prose prose-lg max-w-[750px] dark:prose-invert",
+        "prose prose-lg dark:prose-invert",
 
         // zoomStore.zoom === 80 && "prose-sm",
         // zoomStore.zoom === 90 && "prose-base",

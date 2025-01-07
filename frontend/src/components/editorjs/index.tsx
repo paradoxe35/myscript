@@ -20,6 +20,7 @@ import Table from "@editorjs/table";
 
 import "./style.css";
 import { useSyncRef } from "@/hooks/use-sync-ref";
+import { cn } from "@/lib/utils";
 
 const createEditorJs = (
   holder: string | HTMLElement = "editorjs",
@@ -119,7 +120,10 @@ export const EditorJS = forwardRef<Ejs, EditorJSProps>(
 
     return (
       <div
-        className="prose prose-lg max-w-[750px] dark:prose-invert w-full block mx-auto"
+        className={cn(
+          "px-8 sm:px-12 max-w-[846px] w-full block mx-auto",
+          "prose prose-lg dark:prose-invert "
+        )}
         ref={editorEl}
       />
     );
