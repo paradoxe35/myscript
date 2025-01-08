@@ -1,5 +1,9 @@
 import levenshtein from "damerau-levenshtein";
-import { createTreeTextWalker, surroundContentsTag } from "@/lib/dom";
+import {
+  cleanMarkTags,
+  createTreeTextWalker,
+  surroundContentsTag,
+} from "@/lib/dom";
 import { useActivePageStore } from "@/store/active-page";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useCallback, useEffect, useRef } from "react";
@@ -72,12 +76,14 @@ export function useContentReadMarker() {
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const relocatingMarkerPosition = useRef<boolean>(false);
+
   /**
    * This function will try to match the transcribed text with the current page content using levenshtein distance
    * If a match is found, it will surround the matched content with a span element (a marker)
    */
   const onTranscribedText = useCallback((text: string) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || relocatingMarkerPosition.current) return;
 
     let position = 0;
 
@@ -365,6 +371,62 @@ export function useContentReadMarker() {
     }
   }, []);
 
+  const moveMarker = useCallback(() => {
+    if (!containerRef.current) return;
+
+    relocatingMarkerPosition.current = true;
+
+    let selection = window.getSelection();
+
+    if (!selection || !selection.rangeCount) {
+      relocatingMarkerPosition.current = false;
+      toast.error("No selection found");
+      return;
+    }
+
+    const selectedText = selection.toString().trim().split(" ");
+    if (selectedText.length > 1) {
+      relocatingMarkerPosition.current = false;
+      toast.error("Please select a single word");
+      return;
+    }
+
+    cleanMarkTags(containerRef.current);
+
+    const range = selection?.getRangeAt(0).cloneRange();
+
+    const endContainer = range.endContainer;
+    const endOffset = range.endOffset;
+
+    if (endContainer.nodeType !== Node.TEXT_NODE) {
+      relocatingMarkerPosition.current = false;
+      toast.error("Please select a single word");
+      return;
+    }
+
+    const treeWalker = createTreeTextWalker(containerRef.current);
+
+    let position = 0;
+    while (treeWalker.nextNode()) {
+      const node = treeWalker.currentNode;
+      const nodeValueLength = node.nodeValue?.length || 0;
+
+      if (node !== endContainer) {
+        position += nodeValueLength;
+        continue;
+      }
+
+      position += endOffset === 0 ? nodeValueLength : endOffset;
+      break;
+    }
+
+    lastMarkerPosition.current = position;
+    moveMarkerToLastPosition();
+
+    relocatingMarkerPosition.current = false;
+    selection.removeAllRanges();
+  }, []);
+
   // Move marker to last position
   useEffect(() => {
     const pageId = activePageStore.getPageId();
@@ -409,5 +471,5 @@ export function useContentReadMarker() {
     });
   }, [onTranscribedText]);
 
-  return containerRef;
+  return { containerRef, moveMarker };
 }

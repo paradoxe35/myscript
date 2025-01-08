@@ -40,7 +40,7 @@ export default {
 
       backgroundImage: {
         "slide-primary":
-          "linear-gradient(to right, #1d4fdaaf 50%, transparent 50%)",
+          "linear-gradient(to right, #1d4fda83 50%, transparent 50%)",
 
         "slide-blue": "linear-gradient(to right, #3B82F6 50%, transparent 50%)",
         "slide-red": "linear-gradient(to right, #EF4444 50%, transparent 50%)",
