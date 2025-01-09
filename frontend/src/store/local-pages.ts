@@ -36,6 +36,8 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       title: DEFAULT_PAGE_TITLE,
       html_content: "",
       blocks: [],
+      is_folder: false,
+      order: 0,
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));

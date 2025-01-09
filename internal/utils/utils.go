@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/mem"
@@ -49,4 +51,9 @@ func B64toBytes(s string) ([]byte, error) {
 	}
 
 	return output, nil
+}
+
+func IsDevMode() bool {
+	winDev := strings.HasSuffix(os.Args[0], "-dev.exe")
+	return strings.HasSuffix(os.Args[0], "-dev") || winDev
 }

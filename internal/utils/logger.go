@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"runtime"
 	"time"
 )
 
@@ -21,7 +20,7 @@ type CustomLogger struct {
 	Logger *FileLogger
 }
 
-func NewFileLogger(homeDir string) (*CustomLogger, error) {
+func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 	logDir := filepath.Join(homeDir, "logs")
 
 	if err := os.MkdirAll(logDir, 0755); err != nil {
@@ -36,11 +35,33 @@ func NewFileLogger(homeDir string) (*CustomLogger, error) {
 		return nil, fmt.Errorf("failed to open log file: %w", err)
 	}
 
-	multiWriter := io.MultiWriter(file, os.Stdout)
-	opts := &slog.HandlerOptions{
-		Level:     slog.LevelDebug,
-		AddSource: false,
+	var multiWriter io.Writer
+	if devMode {
+		multiWriter = io.MultiWriter(os.Stdout, os.Stderr)
+	} else {
+		multiWriter = io.MultiWriter(file, os.Stdout, os.Stderr)
 	}
+
+	var ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
+	if devMode {
+		ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		}
+	} else {
+		ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
+			return a
+		}
+	}
+
+	opts := &slog.HandlerOptions{
+		Level:       slog.LevelDebug,
+		ReplaceAttr: ReplaceAttr,
+		AddSource:   false,
+	}
+
 	handler := slog.NewTextHandler(multiWriter, opts)
 	logger := slog.New(handler)
 
@@ -56,13 +77,13 @@ func NewFileLogger(homeDir string) (*CustomLogger, error) {
 }
 
 func (l *FileLogger) log(level slog.Level, message string) {
-	_, file, line, _ := runtime.Caller(2)
-	attrs := []slog.Attr{
-		slog.String("file", filepath.Base(file)),
-		slog.Int("line", line),
-	}
+	// _, file, line, _ := runtime.Caller(2)
+	// attrs := []slog.Attr{
+	// 	slog.String("file", filepath.Base(file)),
+	// 	slog.Int("line", line),
+	// }
 
-	l.logger.LogAttrs(context.TODO(), level, message, attrs...)
+	l.logger.LogAttrs(context.TODO(), level, message)
 }
 
 func (l *FileLogger) Print(message string) {

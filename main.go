@@ -27,7 +27,7 @@ const (
 )
 
 func main() {
-	logger, err := utils.NewFileLogger(filesystem.HOME_DIR)
+	logger, err := utils.NewFileLogger(filesystem.HOME_DIR, utils.IsDevMode())
 	if err != nil {
 		panic(err)
 	}

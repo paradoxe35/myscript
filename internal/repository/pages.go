@@ -10,6 +10,8 @@ type Page struct {
 	Title       string         `json:"title"`
 	HtmlContent string         `json:"html_content"`
 	Blocks      datatypes.JSON `json:"blocks"`
+	IsFolder    bool           `json:"is_folder"`
+	Order       int            `json:"order"`
 }
 
 func GetPages(db *gorm.DB) []Page {

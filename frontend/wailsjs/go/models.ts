@@ -209,6 +209,8 @@ export namespace repository {
 	    title: string;
 	    html_content: string;
 	    blocks: number[];
+	    is_folder: boolean;
+	    order: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Page(source);
@@ -223,6 +225,8 @@ export namespace repository {
 	        this.title = source["title"];
 	        this.html_content = source["html_content"];
 	        this.blocks = source["blocks"];
+	        this.is_folder = source["is_folder"];
+	        this.order = source["order"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
