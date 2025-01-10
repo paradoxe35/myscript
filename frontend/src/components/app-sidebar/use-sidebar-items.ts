@@ -93,7 +93,10 @@ export function useSidebarItems() {
   }, [notionPagesStore.pages, search]);
 
   const localPages = useMemo(() => {
-    const pages = localPagesStore.pages;
+    const pages = localPagesStore.pages
+      .slice()
+      .sort((a, b) => a.order - b.order);
+
     const searchValue = search.trim();
 
     if (!searchValue) {

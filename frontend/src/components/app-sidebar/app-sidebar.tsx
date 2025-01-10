@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Trash, Plus, RotateCw } from "lucide-react";
+import {
+  Trash,
+  Plus,
+  FolderPlusIcon,
+  RotateCw,
+  FolderIcon,
+  FileIcon,
+} from "lucide-react";
 
 import { SearchForm } from "@/components/app-sidebar/search-form";
 import { Settings } from "@/components/settings/settings";
@@ -28,6 +35,7 @@ import { useLocalPagesStore } from "@/store/local-pages";
 import { useActivePageStore } from "@/store/active-page";
 import { repository } from "~wails/models";
 import { useSidebarItems } from "./use-sidebar-items";
+import { NewFolderModal } from "./new-folder-modal";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
@@ -63,15 +71,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {/* Local pages */}
         <SidebarGroup>
-          <div className="group/local-add px-0 justify-between transition cursor-default">
+          <div className="group/local-add px-0 justify-between transition cursor-default flex">
             <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
 
-            <SidebarGroupAction
-              className="opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
-              onClick={createNewPage}
-            >
-              <Plus />
-            </SidebarGroupAction>
+            <div className="flex items-center gap-1">
+              <NewFolderModal>
+                <SidebarGroupLabel
+                  className={cn(
+                    "opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
+                  )}
+                >
+                  <FolderPlusIcon />
+                </SidebarGroupLabel>
+              </NewFolderModal>
+
+              <SidebarGroupLabel
+                className="opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
+                onClick={createNewPage}
+              >
+                <Plus />
+              </SidebarGroupLabel>
+            </div>
           </div>
 
           <SidebarGroupContent>
@@ -81,18 +101,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   activePage?.__typename === "local_page" &&
                   activePage.page.ID === item.ID;
 
+                const clickable = !item.is_folder;
+
+                const Icon = item.is_folder ? FolderIcon : FileIcon;
+
                 return (
                   <SidebarMenuItem key={item.ID} className="w-full">
                     <div className="group/local">
                       <SidebarMenuButton
                         isActive={active}
-                        onClick={() => onLocalPageClick(item)}
+                        onClick={() => clickable && onLocalPageClick(item)}
                         className={cn(
                           "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
                           "whitespace-nowrap text-ellipsis group-hover/local:pr-10 leading-3"
                         )}
                       >
-                        <span className="align-middle">{item.title}</span>
+                        <span className="align-middle">
+                          <Icon className="mr-1 h-4 w-4 inline-block -mt-[3.5px]" />
+                          <span>{item.title}</span>
+                        </span>
 
                         <DeletePageButton page={item} />
                       </SidebarMenuButton>
