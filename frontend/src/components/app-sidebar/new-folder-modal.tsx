@@ -25,6 +25,7 @@ export function NewFolderModal(props: PropsWithChildren<{}>) {
       return;
     }
 
+    setName("");
     localPagesStore.newFolder(folderName);
   };
 

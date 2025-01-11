@@ -100,10 +100,7 @@ export function LocalPages() {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                             >
-                              <div
-                                className="group/local"
-                                {...provided.dragHandleProps}
-                              >
+                              <div className="group/local">
                                 <SidebarMenuButton
                                   isActive={active}
                                   onClick={() => {
@@ -116,35 +113,40 @@ export function LocalPages() {
                                   className={cn(
                                     "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
                                     "whitespace-nowrap text-ellipsis leading-3",
-                                    "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10"
+                                    "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10",
+                                    "!cursor-pointer"
                                   )}
+                                  asChild
+                                  {...provided.dragHandleProps}
                                 >
-                                  <span className="align-middle">
-                                    <Icon
-                                      className={cn(
-                                        "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
-                                        item.is_folder &&
-                                          "group-hover/local:hidden"
-                                      )}
-                                    />
+                                  <div className="w-full">
+                                    <span className="align-middle">
+                                      <Icon
+                                        className={cn(
+                                          "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
+                                          item.is_folder &&
+                                            "group-hover/local:hidden"
+                                        )}
+                                      />
 
-                                    <ChevronRight
-                                      className={cn(
-                                        "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
-                                        item.expanded && "rotate-90",
-                                        item.is_folder &&
-                                          "group-hover/local:inline-block"
-                                      )}
-                                    />
+                                      <ChevronRight
+                                        className={cn(
+                                          "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
+                                          item.expanded && "rotate-90",
+                                          item.is_folder &&
+                                            "group-hover/local:inline-block"
+                                        )}
+                                      />
 
-                                    <span>{item.title}</span>
-                                  </span>
+                                      <span>{item.title}</span>
+                                    </span>
 
-                                  {item.is_folder ? (
-                                    <MoreOptionButton page={item} />
-                                  ) : (
-                                    <DeletePageButton page={item} />
-                                  )}
+                                    {item.is_folder ? (
+                                      <MoreOptionButton page={item} />
+                                    ) : (
+                                      <DeletePageButton page={item} />
+                                    )}
+                                  </div>
                                 </SidebarMenuButton>
                               </div>
                             </SidebarMenuItem>
