@@ -86,11 +86,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       title,
     };
 
-    console.log(body);
-
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
-
-    console.log(await GetLocalPages());
 
     set({ pages: await GetLocalPages() });
 

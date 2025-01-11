@@ -22,7 +22,7 @@ type Props = {
 
 export function RenameFolderModal(props: Props) {
   const [name, setName] = useState("");
-  const localPagesStore = useLocalPagesStore();
+  const savePageTitle = useLocalPagesStore((state) => state.savePageTitle);
 
   const handleCreate = async () => {
     const folderName = name.trim();
@@ -30,7 +30,7 @@ export function RenameFolderModal(props: Props) {
       return;
     }
 
-    localPagesStore.savePageTitle(name, props.page);
+    savePageTitle(name, props.page);
   };
 
   useEffect(() => {
