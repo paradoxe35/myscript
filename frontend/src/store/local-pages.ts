@@ -27,7 +27,7 @@ export const DEFAULT_PAGE_TITLE = "New Page";
 
 export const DEFAULT_FOLDER_TITLE = "New Folder";
 
-export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
+export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
   pages: [],
 
   getPages: async () => {
@@ -47,7 +47,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
-    set({ pages: await GetLocalPages() });
+    get().getPages();
 
     return newPage;
   },
@@ -64,7 +64,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
-    set({ pages: await GetLocalPages() });
+    get().getPages();
 
     return newPage;
   },
@@ -77,7 +77,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
 
     await SaveLocalPage(repository.Page.createFrom(body));
 
-    set({ pages: await GetLocalPages() });
+    get().getPages();
   },
 
   savePageTitle: async (title, page) => {
@@ -88,7 +88,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
-    set({ pages: await GetLocalPages() });
+    get().getPages();
 
     return newPage;
   },
@@ -102,8 +102,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
-    const pages = await GetLocalPages();
-    set({ pages });
+    get().getPages();
 
     return newPage;
   },
@@ -111,7 +110,6 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
   deletePage: async (id) => {
     await DeleteLocalPage(id);
 
-    const pages = await GetLocalPages();
-    set({ pages });
+    get().getPages();
   },
 }));
