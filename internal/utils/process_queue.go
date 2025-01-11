@@ -86,7 +86,7 @@ func (pq *ProcessQueue) worker() {
 	// Wait for the process to be ready
 	<-proc.ready
 
-	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", pq.executionId)
+	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", pq.executionId.String())
 
 	if proc.callback != nil {
 		proc.callback()

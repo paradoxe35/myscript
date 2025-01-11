@@ -2,12 +2,19 @@ import { useActivePageStore } from "@/store/active-page";
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useNotionPagesStore } from "@/store/notion-pages";
 import { NotionSimplePage } from "@/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { repository } from "~wails/models";
 import { useSidebar } from "../ui/sidebar";
 import { strNormalize } from "@/lib/string";
 
-export function useSidebarItems() {
+function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
 
   const activePageStore = useActivePageStore();
@@ -128,4 +135,24 @@ export function useSidebarItems() {
     refreshNotionPages,
     onNotionPageClick,
   };
+}
+
+type SidebarContext = ReturnType<typeof useSidebarItems>;
+
+const SidebarContext = createContext<SidebarContext | null>(null);
+
+export function useSidebarItemsContext() {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error("useSidebarContext must be used within a SidebarProvider.");
+  }
+  return context;
+}
+
+export function SidebarItemsProvider(props: React.PropsWithChildren<{}>) {
+  return (
+    <SidebarContext.Provider value={useSidebarItems()}>
+      {props.children}
+    </SidebarContext.Provider>
+  );
 }
