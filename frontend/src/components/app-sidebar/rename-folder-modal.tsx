@@ -39,7 +39,10 @@ export function RenameFolderModal(props: Props) {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>Rename folder</DialogTitle>
           <DialogDescription></DialogDescription>

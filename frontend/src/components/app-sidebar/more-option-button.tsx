@@ -15,7 +15,7 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
 
   return (
-    <>
+    <div onClick={(e) => e.stopPropagation()}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <a
@@ -29,12 +29,7 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
         </DropdownMenuTrigger>
 
         <DropdownMenuContent>
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              setRenameDialogOpen(true);
-            }}
-          >
+          <DropdownMenuItem onClick={(e) => setRenameDialogOpen(true)}>
             Rename
           </DropdownMenuItem>
 
@@ -47,6 +42,6 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
         open={renameDialogOpen}
         onOpenChange={setRenameDialogOpen}
       />
-    </>
+    </div>
   );
 }

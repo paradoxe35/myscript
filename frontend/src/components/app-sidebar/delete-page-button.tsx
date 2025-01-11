@@ -20,10 +20,7 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
   const activePageStore = useActivePageStore();
   const deletePage = useLocalPagesStore((state) => state.deletePage);
 
-  const handleDeletePage = async (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => {
-    e.stopPropagation();
+  const handleDeletePage = async () => {
     const activePage = activePageStore.page;
 
     deletePage(page.ID).then(() => {
@@ -44,14 +41,12 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
         </a>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent>
+      <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
           Delete
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-          Cancel
-        </DropdownMenuItem>
+        <DropdownMenuItem>Cancel</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
