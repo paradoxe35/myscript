@@ -134,6 +134,8 @@ function useSidebarItems() {
     onLocalPageClick,
     refreshNotionPages,
     onNotionPageClick,
+
+    reorderLocalPages: localPagesStore.reorderPages,
   };
 }
 

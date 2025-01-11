@@ -1,3 +1,4 @@
+import { reorder } from "@/lib/utils";
 import { WithoutRepositoryBaseFields } from "@/types";
 import { create } from "zustand";
 import { DeleteLocalPage, GetLocalPages, SaveLocalPage } from "~wails/main/App";
@@ -9,6 +10,7 @@ type LocalPagesStore = {
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
+  reorderPages: (startIndex: number, endIndex: number) => Promise<void>;
   savePageTitle: (
     title: string,
     page: repository.Page
@@ -42,7 +44,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       html_content: "",
       is_folder: false,
       expanded: false,
-      order: 0,
+      order: get().pages.length + 1,
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
@@ -59,7 +61,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       html_content: "",
       is_folder: true,
       expanded: false,
-      order: 0,
+      order: get().pages.length + 1,
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
@@ -67,6 +69,20 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     get().getPages();
 
     return newPage;
+  },
+
+  reorderPages: async (startIndex, endIndex) => {
+    const pages = get().pages;
+    const reorderedPages = reorder(pages, startIndex, endIndex).map(
+      (page, index) => {
+        page.order = index + 1;
+        return page;
+      }
+    );
+
+    set({ pages: reorderedPages });
+
+    reorderedPages.map((page) => SaveLocalPage(page));
   },
 
   togglePageExpanded: async (page) => {

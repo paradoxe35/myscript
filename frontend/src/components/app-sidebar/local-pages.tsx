@@ -18,6 +18,7 @@ import { useSidebarItemsContext } from "./context";
 import { DeletePageButton } from "./delete-page-button";
 import { MoreOptionButton } from "./more-option-button";
 import { NewFolderModal } from "./new-folder-modal";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 
 export function LocalPages() {
   const {
@@ -26,7 +27,19 @@ export function LocalPages() {
     togglePageExpanded,
     onLocalPageClick,
     activePage,
+    reorderLocalPages,
   } = useSidebarItemsContext();
+
+  const handleDragEnd = (result: { source: any; destination: any }) => {
+    const { source, destination } = result;
+
+    // Drop outside the list or no movement
+    if (!destination || source.index === destination.index) {
+      return;
+    }
+
+    reorderLocalPages(source.index, destination.index);
+  };
 
   return (
     <SidebarGroup>
@@ -53,64 +66,99 @@ export function LocalPages() {
         </div>
       </div>
 
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {localPages.map((item) => {
-            const active =
-              activePage?.__typename === "local_page" &&
-              activePage.page.ID === item.ID;
-
-            const Icon = item.is_folder ? FolderIcon : FileTextIcon;
-
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId="droppable-id">
+          {(provided, snapshot) => {
             return (
-              <SidebarMenuItem key={item.ID} className="w-full">
-                <div className="group/local">
-                  <SidebarMenuButton
-                    isActive={active}
-                    onClick={() => {
-                      // Clickable for pages
-                      !item.is_folder && onLocalPageClick(item);
+              <SidebarGroupContent
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+              >
+                <SidebarMenu>
+                  {localPages.map((item, index) => {
+                    const active =
+                      activePage?.__typename === "local_page" &&
+                      activePage.page.ID === item.ID;
 
-                      // Toggle expanded state for folder
-                      item.is_folder && togglePageExpanded(item);
-                    }}
-                    className={cn(
-                      "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
-                      "whitespace-nowrap text-ellipsis leading-3",
-                      "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10"
-                    )}
-                  >
-                    <span className="align-middle">
-                      <Icon
-                        className={cn(
-                          "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
-                          item.is_folder && "group-hover/local:hidden"
-                        )}
-                      />
+                    const pageId = item.ID;
 
-                      <ChevronRight
-                        className={cn(
-                          "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
-                          item.expanded && "rotate-90",
-                          item.is_folder && "group-hover/local:inline-block"
-                        )}
-                      />
+                    const Icon = item.is_folder ? FolderIcon : FileTextIcon;
 
-                      <span>{item.title}</span>
-                    </span>
+                    return (
+                      <Draggable
+                        key={item.ID}
+                        draggableId={item.ID.toString()}
+                        index={index}
+                      >
+                        {(provided, snapshot) => {
+                          return (
+                            <SidebarMenuItem
+                              key={pageId}
+                              className={cn(
+                                snapshot.isDragging && "opacity-50"
+                              )}
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <div className="group/local">
+                                <SidebarMenuButton
+                                  isActive={active}
+                                  onClick={() => {
+                                    // Clickable for pages
+                                    !item.is_folder && onLocalPageClick(item);
 
-                    {item.is_folder ? (
-                      <MoreOptionButton page={item} />
-                    ) : (
-                      <DeletePageButton page={item} />
-                    )}
-                  </SidebarMenuButton>
-                </div>
-              </SidebarMenuItem>
+                                    // Toggle expanded state for folder
+                                    item.is_folder && togglePageExpanded(item);
+                                  }}
+                                  className={cn(
+                                    "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
+                                    "whitespace-nowrap text-ellipsis leading-3",
+                                    "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10"
+                                  )}
+                                >
+                                  <span className="align-middle">
+                                    <Icon
+                                      className={cn(
+                                        "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
+                                        item.is_folder &&
+                                          "group-hover/local:hidden"
+                                      )}
+                                    />
+
+                                    <ChevronRight
+                                      className={cn(
+                                        "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
+                                        item.expanded && "rotate-90",
+                                        item.is_folder &&
+                                          "group-hover/local:inline-block"
+                                      )}
+                                    />
+
+                                    <span>{item.title}</span>
+                                  </span>
+
+                                  {item.is_folder ? (
+                                    <MoreOptionButton page={item} />
+                                  ) : (
+                                    <DeletePageButton page={item} />
+                                  )}
+                                </SidebarMenuButton>
+                              </div>
+                            </SidebarMenuItem>
+                          );
+                        }}
+                      </Draggable>
+                    );
+                  })}
+
+                  {provided.placeholder}
+                </SidebarMenu>
+              </SidebarGroupContent>
             );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
+          }}
+        </Droppable>
+      </DragDropContext>
     </SidebarGroup>
   );
 }
