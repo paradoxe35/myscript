@@ -14,8 +14,8 @@ type Page struct {
 	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
 	// Self-referential relationship
-	ParentID *uint `gorm:"index"` // Nullable, allows for root-level pages
-	Parent   *Page `gorm:"foreignkey:ParentID"`
+	ParentID *uint `gorm:"index;constraint:OnDelete:SET NULL"` // Nullable, allows for root-level pages
+	Parent   *Page `gorm:"foreignkey:ParentID;constraint:OnDelete:SET NULL"`
 }
 
 func GetPages(db *gorm.DB) []Page {

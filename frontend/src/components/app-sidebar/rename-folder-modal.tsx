@@ -39,10 +39,7 @@ export function RenameFolderModal(props: Props) {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent
-        className="sm:max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Rename folder</DialogTitle>
           <DialogDescription></DialogDescription>
@@ -55,6 +52,7 @@ export function RenameFolderModal(props: Props) {
             </Label>
 
             <Input
+              autoComplete="off"
               placeholder="Enter the folder name"
               value={name}
               onChange={(e) => setName(e.target.value)}

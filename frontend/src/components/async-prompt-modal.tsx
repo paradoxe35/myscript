@@ -17,21 +17,27 @@ import {
 } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { cn } from "@/lib/utils";
 
 type AsyncPromptModalParams = {
   title?: string;
   description?: string;
   placeholder?: string;
+  confirmationPrompt?: boolean;
 };
 
 type PromptFn = AsyncPromptModalContext["prompt"];
 
 type AsyncPromptModalContext = {
-  prompt(params: AsyncPromptModalParams): Promise<string | null>;
+  prompt<T extends AsyncPromptModalParams = AsyncPromptModalParams>(
+    params?: T
+  ): Promise<
+    T extends { confirmationPrompt: true } ? boolean | null : string | null
+  >;
 };
 
 const AsyncPromptModalContext = createContext<AsyncPromptModalContext>({
-  prompt: () => Promise.resolve(""),
+  prompt: () => Promise.resolve(null),
 });
 
 export const useAsyncPromptModal = () => {
@@ -50,7 +56,7 @@ export const AsyncPromptModalProvider = ({ children }: PropsWithChildren) => {
     }
 
     return promptRef.current(params);
-  }, []);
+  }, []) as PromptFn;
 
   useAsyncPromptModal.prompt = prompt;
 
@@ -67,31 +73,33 @@ function AsyncPromptModal({
 }: PropsWithChildren<{
   promptRef: React.RefObject<PromptFn | null>;
 }>) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState<string>("");
   const [open, setOpen] = useState(false);
-  const [option, setOption] = useState<AsyncPromptModalParams | null>(null);
+  const [option, setOption] = useState<AsyncPromptModalParams | undefined>(
+    undefined
+  );
 
-  const resolver = useRef<((v: string | null) => void) | null>(null);
+  const resolver = useRef<((v: string | boolean | null) => void) | null>(null);
 
-  promptRef.current = async (params: AsyncPromptModalParams) => {
+  promptRef.current = async function (params: AsyncPromptModalParams) {
     setValue("");
     setOpen(true);
     setOption(params);
 
-    return new Promise<string | null>((resolve) => {
-      resolver.current = resolve;
+    return new Promise((resolve) => {
+      resolver.current = resolve as any;
     });
-  };
+  } as PromptFn;
 
   const onEnterClick = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      resolver.current?.(value);
+      resolver.current?.(option?.confirmationPrompt || value);
       resolver.current = null;
 
       setOpen(false);
     },
-    [value]
+    [value, option]
   );
 
   return (
@@ -105,20 +113,28 @@ function AsyncPromptModal({
         }, 100);
       }}
     >
-      <DialogContent className="sm:max-w-[425px]" showCloseButton={false}>
+      <DialogContent
+        className={cn(
+          "sm:max-w-[425px]",
+          option?.confirmationPrompt && "sm:max-w-[400px]"
+        )}
+        showCloseButton={false}
+      >
         <DialogHeader>
           <DialogTitle>{option?.title}</DialogTitle>
           <DialogDescription>{option?.description}</DialogDescription>
         </DialogHeader>
 
         <form className="w-full" onSubmit={onEnterClick}>
-          <Input
-            type="text"
-            value={value}
-            autoFocus
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={option?.placeholder}
-          />
+          {!option?.confirmationPrompt && (
+            <Input
+              type="text"
+              value={value}
+              autoFocus
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={option?.placeholder}
+            />
+          )}
 
           <DialogFooter className="justify-between sm:justify-between mt-2">
             <DialogClose asChild>

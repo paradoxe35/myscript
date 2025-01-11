@@ -10,9 +10,26 @@ import { Ellipsis } from "lucide-react";
 import { dropdownButtonClassName } from "./delete-page-button";
 import { RenameFolderModal } from "./rename-folder-modal";
 import { useState } from "react";
+import { useAsyncPromptModal } from "../async-prompt-modal";
+import { useLocalPagesStore } from "@/store/local-pages";
 
 export function MoreOptionButton({ page }: { page: repository.Page }) {
+  const { prompt } = useAsyncPromptModal();
+
+  const deletePage = useLocalPagesStore((state) => state.deletePage);
+
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+
+  const handleDeletePage = async () => {
+    const canDelete = await prompt({
+      title: `Delete Folder: ${page.title}`,
+      confirmationPrompt: true,
+    });
+
+    if (canDelete) {
+      deletePage(page.ID);
+    }
+  };
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
@@ -33,7 +50,9 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
             Rename
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="text-red-300">Delete</DropdownMenuItem>
+          <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
