@@ -46,6 +46,8 @@ function useSRInputs(props: Props) {
   const { languages, selectedLanguageCode, setSelectedLanguageCode } =
     useLanguages();
 
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const [micInputDevice, setMicInputDevice] =
     useState<microphone.MicInputDevice | null>(null);
 
@@ -66,6 +68,8 @@ function useSRInputs(props: Props) {
   }, [micInputDevice]);
 
   useEffect(() => {
+    if (!dialogOpen) return;
+
     transcriberStore.getMicInputDevices().then(async (micInputDevices) => {
       let defaultDevice = await transcriberStore.getDefaultMicInput();
 
@@ -79,7 +83,7 @@ function useSRInputs(props: Props) {
         setMicInputDevice(defaultDevice);
       }
     });
-  }, []);
+  }, [dialogOpen]);
 
   const canSubmit = selectedLanguageCode && micInputDevice;
 
@@ -93,6 +97,9 @@ function useSRInputs(props: Props) {
     micInputDevice,
     micInputDevices,
     setMicInputDevice,
+
+    dialogOpen,
+    setDialogOpen,
   };
 }
 
@@ -258,7 +265,7 @@ export default function SRInputsModal(props: Props) {
   const ctx = useSRInputs(props);
 
   return (
-    <Dialog>
+    <Dialog open={ctx.dialogOpen} onOpenChange={ctx.setDialogOpen}>
       <DialogTrigger asChild>{props.trigger}</DialogTrigger>
 
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
