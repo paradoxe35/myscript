@@ -30,7 +30,7 @@ export function LocalPages() {
 
   return (
     <SidebarGroup>
-      <div className="group/local-add px-0 justify-between transition cursor-default flex">
+      <div className="group/local-add px-0 justify-between transition cursor-default flex mb-1">
         <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
 
         <div className="flex items-center gap-1">

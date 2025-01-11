@@ -25,15 +25,15 @@ export function NotionPages() {
       <Separator />
 
       <SidebarGroup>
-        <div className="group/notion-refresh px-0 justify-between transition cursor-default">
+        <div className="group/notion-refresh px-0 justify-between transition flex cursor-default mb-1">
           <SidebarGroupLabel>{"Notion pages"}</SidebarGroupLabel>
 
-          <SidebarGroupAction
+          <SidebarGroupLabel
             className="opacity-0 group-hover/notion-refresh:opacity-100 transition hover:bg-white/10"
             onClick={refreshNotionPages}
           >
             <RotateCw />
-          </SidebarGroupAction>
+          </SidebarGroupLabel>
         </div>
 
         <SidebarGroupContent>
