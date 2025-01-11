@@ -23,6 +23,7 @@ import {
 } from "../ui/select";
 import { LocalWhisperInputs } from "./settings-local-whisper";
 import { GetAppVersion } from "~wails/main/App";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 export function SettingsModal(props: PropsWithChildren) {
   const [version, setVersion] = useState("");
@@ -43,25 +44,44 @@ export function SettingsModal(props: PropsWithChildren) {
             Version: {version}
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          {/* Notion API Key */}
-          <NotionInputs />
-          <Separator />
 
-          {/* OpenAI API Key */}
-          <OpenAIApiKey />
-          <Separator />
+        <Tabs defaultValue="api-keys" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+            <TabsTrigger value="speech-recognition">
+              Speech Recognition
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Speech Recognition */}
-          <div className="flex flex-col gap-4 relative">
-            <Label>Speech Recognition (Whisper, Wit.ai)</Label>
-            <SelectSpeechSource />
-          </div>
+          {/* Body */}
+          <TabsContent value="api-keys">
+            <div className="grid gap-4 py-4">
+              {/* Notion API Key */}
+              <NotionInputs />
+              <Separator />
 
-          {state.TranscriberSource === "local" && <LocalWhisperInputs />}
-          {state.TranscriberSource === "openai" && <OpenAIApiKeyTranscriber />}
-          {state.TranscriberSource === "witai" && <WitAIHint />}
-        </div>
+              {/* OpenAI API Key */}
+              <OpenAIApiKey />
+              <Separator />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="speech-recognition">
+            {/* Speech Recognition */}
+            <div className="grid gap-4 py-4">
+              <div className="flex flex-col gap-4 relative">
+                <Label>Speech Recognition (Whisper, Wit.ai)</Label>
+                <SelectSpeechSource />
+              </div>
+
+              {state.TranscriberSource === "local" && <LocalWhisperInputs />}
+              {state.TranscriberSource === "openai" && (
+                <OpenAIApiKeyTranscriber />
+              )}
+              {state.TranscriberSource === "witai" && <WitAIHint />}
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button type="submit" disabled={!configModified} onClick={handleSave}>
