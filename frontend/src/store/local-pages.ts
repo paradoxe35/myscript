@@ -8,6 +8,7 @@ type LocalPagesStore = {
   getPages: () => Promise<void>;
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
+  togglePageExpanded: (page: repository.Page) => Promise<void>;
   savePageTitle: (
     title: string,
     page: repository.Page
@@ -40,6 +41,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       blocks: [],
       html_content: "",
       is_folder: false,
+      expanded: false,
       order: 0,
     };
 
@@ -56,16 +58,26 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       blocks: [],
       html_content: "",
       is_folder: true,
+      expanded: false,
       order: 0,
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
 
-    console.log(await GetLocalPages());
-
     set({ pages: await GetLocalPages() });
 
     return newPage;
+  },
+
+  togglePageExpanded: async (page) => {
+    const body: TPage = {
+      ...page,
+      expanded: !page.expanded,
+    };
+
+    await SaveLocalPage(repository.Page.createFrom(body));
+
+    set({ pages: await GetLocalPages() });
   },
 
   savePageTitle: async (title, page) => {
@@ -74,7 +86,11 @@ export const useLocalPagesStore = create<LocalPagesStore>((set) => ({
       title,
     };
 
+    console.log(body);
+
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
+
+    console.log(await GetLocalPages());
 
     set({ pages: await GetLocalPages() });
 

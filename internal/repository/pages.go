@@ -11,13 +11,17 @@ type Page struct {
 	HtmlContent string         `json:"html_content"`
 	Blocks      datatypes.JSON `json:"blocks"`
 	IsFolder    bool           `json:"is_folder"`
+	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
+	// Self-referential relationship
+	ParentID *uint `gorm:"index"` // Nullable, allows for root-level pages
+	Parent   *Page `gorm:"foreignkey:ParentID"`
 }
 
 func GetPages(db *gorm.DB) []Page {
 	var pages []Page
 
-	db.Select([]string{"id", "title", "is_folder", "order"}).Find(&pages)
+	db.Omit("html_content", "blocks").Find(&pages)
 
 	return pages
 }

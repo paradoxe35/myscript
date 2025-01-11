@@ -210,7 +210,10 @@ export namespace repository {
 	    html_content: string;
 	    blocks: number[];
 	    is_folder: boolean;
+	    expanded: boolean;
 	    order: number;
+	    ParentID?: number;
+	    Parent?: Page;
 	
 	    static createFrom(source: any = {}) {
 	        return new Page(source);
@@ -226,7 +229,10 @@ export namespace repository {
 	        this.html_content = source["html_content"];
 	        this.blocks = source["blocks"];
 	        this.is_folder = source["is_folder"];
+	        this.expanded = source["expanded"];
 	        this.order = source["order"];
+	        this.ParentID = source["ParentID"];
+	        this.Parent = this.convertValues(source["Parent"], Page);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -1,11 +1,11 @@
 import * as React from "react";
 import {
-  Trash,
   Plus,
   FolderPlusIcon,
   RotateCw,
   FolderIcon,
-  FileIcon,
+  FileTextIcon,
+  ChevronRight,
 } from "lucide-react";
 
 import { SearchForm } from "@/components/app-sidebar/search-form";
@@ -23,25 +23,19 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { Separator } from "../ui/separator";
-import { useLocalPagesStore } from "@/store/local-pages";
-import { useActivePageStore } from "@/store/active-page";
-import { repository } from "~wails/models";
 import { useSidebarItems } from "./use-sidebar-items";
 import { NewFolderModal } from "./new-folder-modal";
+import { DeletePageButton } from "./delete-page-button";
+import { MoreOptionButton } from "./more-option-button";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
     search,
     setSearch,
 
+    togglePageExpanded,
     createNewPage,
     localPages,
     notionPages,
@@ -101,27 +95,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   activePage?.__typename === "local_page" &&
                   activePage.page.ID === item.ID;
 
-                const clickable = !item.is_folder;
-
-                const Icon = item.is_folder ? FolderIcon : FileIcon;
+                const Icon = item.is_folder ? FolderIcon : FileTextIcon;
 
                 return (
                   <SidebarMenuItem key={item.ID} className="w-full">
                     <div className="group/local">
                       <SidebarMenuButton
                         isActive={active}
-                        onClick={() => clickable && onLocalPageClick(item)}
+                        onClick={() => {
+                          // Clickable for pages
+                          !item.is_folder && onLocalPageClick(item);
+
+                          // Toggle expanded state for folder
+                          item.is_folder && togglePageExpanded(item);
+                        }}
                         className={cn(
                           "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
                           "whitespace-nowrap text-ellipsis group-hover/local:pr-10 leading-3"
                         )}
                       >
                         <span className="align-middle">
-                          <Icon className="mr-1 h-4 w-4 inline-block -mt-[3.5px]" />
+                          <Icon
+                            className={cn(
+                              "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
+                              item.is_folder && "group-hover/local:hidden"
+                            )}
+                          />
+
+                          <ChevronRight
+                            className={cn(
+                              "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
+                              item.expanded && "rotate-90",
+                              item.is_folder && "group-hover/local:inline-block"
+                            )}
+                          />
+
                           <span>{item.title}</span>
                         </span>
 
-                        <DeletePageButton page={item} />
+                        {item.is_folder ? (
+                          <MoreOptionButton page={item} />
+                        ) : (
+                          <DeletePageButton page={item} />
+                        )}
                       </SidebarMenuButton>
                     </div>
                   </SidebarMenuItem>
@@ -178,52 +194,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
-  );
-}
-
-function DeletePageButton({ page }: { page: repository.Page }) {
-  const activePageStore = useActivePageStore();
-  const deletePage = useLocalPagesStore((state) => state.deletePage);
-
-  const handleDeletePage = async (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>
-  ) => {
-    e.stopPropagation();
-    const activePage = activePageStore.page;
-
-    deletePage(page.ID).then(() => {
-      if (
-        activePage?.__typename === "local_page" &&
-        activePage.page.ID === page.ID
-      ) {
-        activePageStore.unsetActivePage();
-      }
-    });
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <a
-          className={cn(
-            "absolute right-1 top-1 w-5 opacity-0 group-hover/local:opacity-100 cursor-pointer",
-            "flex aspect-square items-center justify-center rounded-md text-sidebar-foreground",
-            "ring-sidebar-ring hover:text-sidebar-accent-foreground focus-visible:ring-2 transition hover:bg-red-500/20"
-          )}
-        >
-          <Trash className="text-red-500/80 w-4" />
-        </a>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent>
-        <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
-          Delete
-        </DropdownMenuItem>
-
-        <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
-          Cancel
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }

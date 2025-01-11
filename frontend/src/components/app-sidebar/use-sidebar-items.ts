@@ -34,6 +34,10 @@ export function useSidebarItems() {
     setOpenMobile(false);
   };
 
+  const togglePageExpanded = async (page: repository.Page) => {
+    await localPagesStore.togglePageExpanded(page);
+  };
+
   const onLocalPageClick = (page: repository.Page) => {
     activePageStore.setActivePage({
       __typename: "local_page",
@@ -119,6 +123,7 @@ export function useSidebarItems() {
     notionPages,
     activePage,
     createNewPage,
+    togglePageExpanded,
     onLocalPageClick,
     refreshNotionPages,
     onNotionPageClick,
