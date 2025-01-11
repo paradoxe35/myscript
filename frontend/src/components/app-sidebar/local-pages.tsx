@@ -76,7 +76,8 @@ export function LocalPages() {
                     }}
                     className={cn(
                       "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
-                      "whitespace-nowrap text-ellipsis group-hover/local:pr-10 leading-3"
+                      "whitespace-nowrap text-ellipsis leading-3",
+                      "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10"
                     )}
                   >
                     <span className="align-middle">
