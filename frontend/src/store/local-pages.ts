@@ -1,12 +1,18 @@
 import { reorder } from "@/lib/utils";
 import { WithoutRepositoryBaseFields } from "@/types";
 import { create } from "zustand";
-import { DeleteLocalPage, GetLocalPages, SaveLocalPage } from "~wails/main/App";
+import {
+  DeleteLocalPage,
+  GetLocalPage,
+  GetLocalPages,
+  SaveLocalPage,
+} from "~wails/main/App";
 import { repository } from "~wails/models";
 
 type LocalPagesStore = {
   pages: Array<repository.Page>;
   getPages: () => Promise<void>;
+  getPage: (id: number) => Promise<repository.Page>;
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
@@ -35,6 +41,11 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
   getPages: async () => {
     const pages = await GetLocalPages();
     set({ pages });
+  },
+
+  getPage: async (id) => {
+    const page = await GetLocalPage(id);
+    return page;
   },
 
   newPage: async () => {
@@ -82,7 +93,12 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
 
     set({ pages: reorderedPages });
 
-    reorderedPages.map((page) => SaveLocalPage(page));
+    reorderedPages.map(async (page) => {
+      const fullPage = await get().getPage(page.ID);
+      fullPage.order = page.order;
+
+      SaveLocalPage(fullPage);
+    });
   },
 
   togglePageExpanded: async (page) => {

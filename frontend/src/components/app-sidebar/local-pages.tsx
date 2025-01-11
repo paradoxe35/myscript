@@ -99,9 +99,11 @@ export function LocalPages() {
                               )}
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              {...provided.dragHandleProps}
                             >
-                              <div className="group/local">
+                              <div
+                                className="group/local"
+                                {...provided.dragHandleProps}
+                              >
                                 <SidebarMenuButton
                                   isActive={active}
                                   onClick={() => {
