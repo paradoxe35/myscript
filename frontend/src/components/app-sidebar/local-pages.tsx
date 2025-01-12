@@ -24,6 +24,7 @@ import {
   DraggableProvided,
   DraggableStateSnapshot,
   Droppable,
+  OnDragEndResponder,
 } from "@hello-pangea/dnd";
 import { PropsWithChildren } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -33,9 +34,8 @@ export function LocalPages() {
   const { createNewPage, localPages, reorderLocalPages } =
     useSidebarItemsContext();
 
-  const handleDragEnd = (result: { source: any; destination: any }) => {
+  const handleDragEnd: OnDragEndResponder<string> = (result) => {
     const { source, destination } = result;
-
     // Drop outside the list or no movement
     if (!destination || source.index === destination.index) {
       return;
