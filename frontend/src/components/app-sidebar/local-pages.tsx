@@ -30,7 +30,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { repository } from "~wails/models";
 
 export function LocalPages() {
-  const { createNewPage, localPages, activePage, reorderLocalPages } =
+  const { createNewPage, localPages, reorderLocalPages } =
     useSidebarItemsContext();
 
   const handleDragEnd = (result: { source: any; destination: any }) => {
@@ -41,7 +41,7 @@ export function LocalPages() {
       return;
     }
 
-    reorderLocalPages(source.index, destination.index);
+    reorderLocalPages(localPages, source.index, destination.index);
   };
 
   return (

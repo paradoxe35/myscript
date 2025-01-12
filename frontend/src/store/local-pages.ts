@@ -17,7 +17,11 @@ type LocalPagesStore = {
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
-  reorderPages: (startIndex: number, endIndex: number) => Promise<void>;
+  reorderPages: (
+    pages: repository.Page[],
+    startIndex: number,
+    endIndex: number
+  ) => Promise<void>;
   savePageTitle: (
     title: string,
     page: repository.Page
@@ -83,8 +87,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     return newPage;
   },
 
-  reorderPages: async (startIndex, endIndex) => {
-    const pages = get().pages;
+  reorderPages: async (pages, startIndex, endIndex) => {
     const reorderedPages = reorder(pages, startIndex, endIndex).map(
       (page, index) => {
         page.order = index + 1;
