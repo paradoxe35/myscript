@@ -50,3 +50,7 @@ func (a *App) SaveLocalPage(page *repository.Page) *repository.Page {
 func (a *App) DeleteLocalPage(id uint) {
 	repository.DeletePage(a.db, id)
 }
+
+func (a *App) UpdateLocalPageOrder(id uint, order int) {
+	repository.UpdatePageOrder(a.db, id, order)
+}

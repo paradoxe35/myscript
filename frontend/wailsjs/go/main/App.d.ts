@@ -66,4 +66,6 @@ export function StopRecording():Promise<void>;
 
 export function Transcribe(arg1:Array<number>,arg2:string):Promise<string>;
 
+export function UpdateLocalPageOrder(arg1:number,arg2:number):Promise<void>;
+
 export function WitTranscribe(arg1:Array<number>,arg2:string):Promise<string>;

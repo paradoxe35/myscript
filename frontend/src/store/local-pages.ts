@@ -6,6 +6,7 @@ import {
   GetLocalPage,
   GetLocalPages,
   SaveLocalPage,
+  UpdateLocalPageOrder,
 } from "~wails/main/App";
 import { repository } from "~wails/models";
 
@@ -94,10 +95,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     set({ pages: reorderedPages });
 
     reorderedPages.map(async (page) => {
-      const fullPage = await get().getPage(page.ID);
-      fullPage.order = page.order;
-
-      SaveLocalPage(fullPage);
+      UpdateLocalPageOrder(page.ID, page.order);
     });
   },
 
