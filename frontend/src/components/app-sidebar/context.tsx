@@ -29,7 +29,7 @@ function useSidebarItems() {
     localPagesStore.getPages();
   }, []);
 
-  const createNewPage = async () => {
+  const createNewPage = useCallback(async () => {
     const newPage = await localPagesStore.newPage();
 
     activePageStore.setActivePage({
@@ -39,40 +39,49 @@ function useSidebarItems() {
     });
 
     setOpenMobile(false);
-  };
+  }, [localPagesStore, activePageStore]);
 
-  const togglePageExpanded = async (page: repository.Page) => {
-    await localPagesStore.togglePageExpanded(page);
-  };
+  const togglePageExpanded = useCallback(
+    async (page: repository.Page) => {
+      await localPagesStore.togglePageExpanded(page);
+    },
+    [localPagesStore]
+  );
 
-  const onLocalPageClick = (page: repository.Page) => {
-    activePageStore.setActivePage({
-      __typename: "local_page",
-      viewOnly: false,
-      page,
-    });
+  const onLocalPageClick = useCallback(
+    (page: repository.Page) => {
+      activePageStore.setActivePage({
+        __typename: "local_page",
+        viewOnly: false,
+        page,
+      });
 
-    activePageStore.fetchPageBlocks();
-    setOpenMobile(false);
-  };
+      activePageStore.fetchPageBlocks();
+      setOpenMobile(false);
+    },
+    [activePageStore]
+  );
 
-  const onNotionPageClick = (page: NotionSimplePage) => {
-    activePageStore.setActivePage({
-      __typename: "notion_page",
-      viewOnly: true,
-      page,
-    });
+  const onNotionPageClick = useCallback(
+    (page: NotionSimplePage) => {
+      activePageStore.setActivePage({
+        __typename: "notion_page",
+        viewOnly: true,
+        page,
+      });
 
-    activePageStore.fetchPageBlocks();
-    setOpenMobile(false);
-  };
+      activePageStore.fetchPageBlocks();
+      setOpenMobile(false);
+    },
+    [activePageStore]
+  );
 
-  const refreshNotionPages = () => {
+  const refreshNotionPages = useCallback(() => {
     notionPagesStore.getPages();
     if (activePage?.__typename === "notion_page") {
       activePageStore.fetchPageBlocks();
     }
-  };
+  }, [notionPagesStore, activePageStore, activePage]);
 
   // Refresh notion pages when the user is online
   useEffect(() => {
@@ -122,10 +131,25 @@ function useSidebarItems() {
     });
   }, [localPagesStore.pages, search]);
 
-  return {
+  return useMemo(() => {
+    return {
+      search,
+      setSearch,
+
+      localPages,
+      notionPages,
+      activePage,
+      createNewPage,
+      togglePageExpanded,
+      onLocalPageClick,
+      refreshNotionPages,
+      onNotionPageClick,
+
+      reorderLocalPages: localPagesStore.reorderPages,
+    };
+  }, [
     search,
     setSearch,
-
     localPages,
     notionPages,
     activePage,
@@ -134,9 +158,8 @@ function useSidebarItems() {
     onLocalPageClick,
     refreshNotionPages,
     onNotionPageClick,
-
-    reorderLocalPages: localPagesStore.reorderPages,
-  };
+    localPagesStore,
+  ]);
 }
 
 type SidebarContext = ReturnType<typeof useSidebarItems>;

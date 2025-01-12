@@ -29,6 +29,11 @@ import {
 import { PropsWithChildren } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { repository } from "~wails/models";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
 
 export function LocalPages() {
   const { createNewPage, localPages, reorderLocalPages } =
@@ -131,6 +136,54 @@ function PageItem({
 
   const Icon = item.is_folder ? FolderIcon : FileTextIcon;
 
+  const button = (
+    <SidebarMenuButton
+      isActive={active}
+      onClick={() => {
+        // Clickable for pages
+        !item.is_folder && onLocalPageClick(item);
+
+        // Toggle expanded state for folder
+        item.is_folder && togglePageExpanded(item);
+      }}
+      className={cn(
+        "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
+        "whitespace-nowrap text-ellipsis leading-3",
+        "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10",
+        "!cursor-pointer"
+      )}
+      asChild
+      {...provided.dragHandleProps}
+    >
+      <div className="w-full">
+        <span className="align-middle">
+          <Icon
+            className={cn(
+              "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
+              item.is_folder && "group-hover/local:hidden"
+            )}
+          />
+
+          <ChevronRight
+            className={cn(
+              "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
+              item.expanded && "rotate-90",
+              item.is_folder && "group-hover/local:inline-block"
+            )}
+          />
+
+          <span>{item.title}</span>
+        </span>
+
+        {item.is_folder ? (
+          <MoreOptionButton page={item} />
+        ) : (
+          <DeletePageButton page={item} />
+        )}
+      </div>
+    </SidebarMenuButton>
+  );
+
   return (
     <SidebarMenuItem
       key={pageId}
@@ -152,51 +205,18 @@ function PageItem({
         }}
       >
         <div className="group/local">
-          <SidebarMenuButton
-            isActive={active}
-            onClick={() => {
-              // Clickable for pages
-              !item.is_folder && onLocalPageClick(item);
+          {!item.is_folder && button}
 
-              // Toggle expanded state for folder
-              item.is_folder && togglePageExpanded(item);
-            }}
-            className={cn(
-              "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
-              "whitespace-nowrap text-ellipsis leading-3",
-              "group-hover/local:pr-10 has-[.dropdown-menu-open]:pr-10",
-              "!cursor-pointer"
-            )}
-            asChild
-            {...provided.dragHandleProps}
-          >
-            <div className="w-full">
-              <span className="align-middle">
-                <Icon
-                  className={cn(
-                    "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
-                    item.is_folder && "group-hover/local:hidden"
-                  )}
-                />
+          {item.is_folder && (
+            <Collapsible open={item.expanded}>
+              <CollapsibleTrigger asChild>{button}</CollapsibleTrigger>
 
-                <ChevronRight
-                  className={cn(
-                    "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
-                    item.expanded && "rotate-90",
-                    item.is_folder && "group-hover/local:inline-block"
-                  )}
-                />
-
-                <span>{item.title}</span>
-              </span>
-
-              {item.is_folder ? (
-                <MoreOptionButton page={item} />
-              ) : (
-                <DeletePageButton page={item} />
-              )}
-            </div>
-          </SidebarMenuButton>
+              <CollapsibleContent>
+                {/* Yes. Free to use for personal and commercial projects. No
+                attribution required. */}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       </motion.div>
     </SidebarMenuItem>
