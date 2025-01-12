@@ -61,6 +61,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       is_folder: false,
       expanded: false,
       order: get().pages.length + 1,
+      Children: [],
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));
@@ -78,6 +79,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       is_folder: true,
       expanded: false,
       order: get().pages.length + 1,
+      Children: [],
     };
 
     const newPage = await SaveLocalPage(repository.Page.createFrom(body));

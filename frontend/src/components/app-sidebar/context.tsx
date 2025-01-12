@@ -13,6 +13,7 @@ import {
 import { repository } from "~wails/models";
 import { useSidebar } from "../ui/sidebar";
 import { strNormalize } from "@/lib/string";
+import { OnDragEndResponder } from "@hello-pangea/dnd";
 
 function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
@@ -131,6 +132,19 @@ function useSidebarItems() {
     });
   }, [localPagesStore.pages, search]);
 
+  const reorderLocalPages = useCallback<OnDragEndResponder<string>>(
+    (result) => {
+      const { source, destination } = result;
+      // Drop outside the list or no movement
+      if (!destination || source.index === destination.index) {
+        return;
+      }
+
+      localPagesStore.reorderPages(localPages, source.index, destination.index);
+    },
+    [localPagesStore, localPages]
+  );
+
   return useMemo(() => {
     return {
       search,
@@ -145,7 +159,7 @@ function useSidebarItems() {
       refreshNotionPages,
       onNotionPageClick,
 
-      reorderLocalPages: localPagesStore.reorderPages,
+      reorderLocalPages,
     };
   }, [
     search,
@@ -159,6 +173,7 @@ function useSidebarItems() {
     refreshNotionPages,
     onNotionPageClick,
     localPagesStore,
+    reorderLocalPages,
   ]);
 }
 

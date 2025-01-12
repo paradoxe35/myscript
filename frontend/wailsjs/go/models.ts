@@ -213,7 +213,7 @@ export namespace repository {
 	    expanded: boolean;
 	    order: number;
 	    ParentID?: number;
-	    Parent?: Page;
+	    Children: Page[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Page(source);
@@ -232,7 +232,7 @@ export namespace repository {
 	        this.expanded = source["expanded"];
 	        this.order = source["order"];
 	        this.ParentID = source["ParentID"];
-	        this.Parent = this.convertValues(source["Parent"], Page);
+	        this.Children = this.convertValues(source["Children"], Page);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

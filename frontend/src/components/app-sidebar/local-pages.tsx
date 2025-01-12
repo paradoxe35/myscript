@@ -13,6 +13,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "../ui/sidebar";
 import { useSidebarItemsContext } from "./context";
 import { DeletePageButton } from "./delete-page-button";
@@ -39,14 +41,8 @@ export function LocalPages() {
   const { createNewPage, localPages, reorderLocalPages } =
     useSidebarItemsContext();
 
-  const handleDragEnd: OnDragEndResponder<string> = (result) => {
-    const { source, destination } = result;
-    // Drop outside the list or no movement
-    if (!destination || source.index === destination.index) {
-      return;
-    }
-
-    reorderLocalPages(localPages, source.index, destination.index);
+  const handleDragEnd: OnDragEndResponder<string> = (result, provided) => {
+    reorderLocalPages(result, provided);
   };
 
   return (
@@ -75,7 +71,7 @@ export function LocalPages() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="droppable-id">
+        <Droppable droppableId="root" type="droppable-item">
           {(provided) => {
             return (
               <SidebarGroupContent
@@ -121,10 +117,12 @@ function PageItem({
   provided,
   snapshot,
   item,
+  subMenu,
 }: PropsWithChildren<{
   item: repository.Page;
   snapshot: DraggableStateSnapshot;
   provided: DraggableProvided;
+  subMenu?: boolean;
 }>) {
   const { togglePageExpanded, onLocalPageClick, activePage } =
     useSidebarItemsContext();
@@ -136,8 +134,13 @@ function PageItem({
 
   const Icon = item.is_folder ? FolderIcon : FileTextIcon;
 
+  const children = item.Children || [];
+
+  const SubMenuButton = subMenu ? SidebarMenuSubButton : SidebarMenuButton;
+  const SubMenuItem = subMenu ? SidebarMenuSubItem : SidebarMenuItem;
+
   const button = (
-    <SidebarMenuButton
+    <SubMenuButton
       isActive={active}
       onClick={() => {
         // Clickable for pages
@@ -181,11 +184,11 @@ function PageItem({
           <DeletePageButton page={item} />
         )}
       </div>
-    </SidebarMenuButton>
+    </SubMenuButton>
   );
 
   return (
-    <SidebarMenuItem
+    <SubMenuItem
       key={pageId}
       className={cn(snapshot.isDragging && "opacity-40")}
       ref={provided.innerRef}
@@ -207,18 +210,52 @@ function PageItem({
         <div className="group/local">
           {!item.is_folder && button}
 
-          {item.is_folder && (
+          {item.is_folder && !subMenu && (
             <Collapsible open={item.expanded}>
               <CollapsibleTrigger asChild>{button}</CollapsibleTrigger>
 
-              <CollapsibleContent>
-                {/* Yes. Free to use for personal and commercial projects. No
-                attribution required. */}
-              </CollapsibleContent>
+              <Droppable
+                key={item.ID}
+                droppableId={item.ID.toString()}
+                type="droppable-item"
+              >
+                {(provided) => {
+                  return (
+                    <CollapsibleContent
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className="py-3"
+                    >
+                      {children.map((subItem, index) => {
+                        return (
+                          <Draggable
+                            key={subItem.ID}
+                            draggableId={subItem.ID.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => {
+                              return (
+                                <PageItem
+                                  item={subItem}
+                                  provided={provided}
+                                  snapshot={snapshot}
+                                  subMenu={true}
+                                />
+                              );
+                            }}
+                          </Draggable>
+                        );
+                      })}
+
+                      {provided.placeholder}
+                    </CollapsibleContent>
+                  );
+                }}
+              </Droppable>
             </Collapsible>
           )}
         </div>
       </motion.div>
-    </SidebarMenuItem>
+    </SubMenuItem>
   );
 }
