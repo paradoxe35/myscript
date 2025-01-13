@@ -132,25 +132,6 @@ function useSidebarItems() {
     });
   }, [notionPagesStore.pages, search]);
 
-  const _localPages = useMemo(() => {
-    const pages = localPagesStore.pages
-      .slice()
-      .sort((a, b) => a.order - b.order);
-
-    const searchValue = search.trim();
-
-    if (!searchValue) {
-      return pages;
-    }
-
-    return pages.filter((page) => {
-      const words = searchValue.split(" ");
-      return words.every((word) => {
-        return cls(page.title).includes(cls(word));
-      });
-    });
-  }, [localPagesStore.pages, search]);
-
   useEffect(() => {
     const sortedPages = localPagesStore.pages
       .slice()
@@ -291,6 +272,8 @@ function useSidebarItems() {
     reorderLocalPages,
   ]);
 }
+
+function useSidebarLocalPages() {}
 
 type SidebarContext = ReturnType<typeof useSidebarItems>;
 

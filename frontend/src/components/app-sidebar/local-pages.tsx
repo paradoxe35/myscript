@@ -187,7 +187,7 @@ function PageItem({
   return (
     <SidebarMenuItem
       key={pageId}
-      className={cn(snapshot.isDragging && "opacity-40", subMenu && "pl-2")}
+      className={cn(snapshot.isDragging && "opacity-40", subMenu && "pl-3")}
       ref={provided.innerRef}
       {...provided.draggableProps}
     >
@@ -205,7 +205,7 @@ function PageItem({
         {!item.is_folder && <div className="group/local">{button}</div>}
 
         {item.is_folder && (
-          <Collapsible open={item.expanded}>
+          <Collapsible open={item.expanded && !snapshot.isDragging}>
             <CollapsibleTrigger asChild>
               <div className="group/local">{button}</div>
             </CollapsibleTrigger>
