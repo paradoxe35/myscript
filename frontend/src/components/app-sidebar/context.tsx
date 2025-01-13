@@ -14,6 +14,9 @@ import { repository } from "~wails/models";
 import { useSidebar } from "../ui/sidebar";
 import { strNormalize } from "@/lib/string";
 import { OnDragEndResponder } from "@hello-pangea/dnd";
+import clone from "lodash/clone";
+
+const cls = (text: string) => strNormalize(text).toLowerCase();
 
 function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
@@ -23,6 +26,7 @@ function useSidebarItems() {
   const notionPagesStore = useNotionPagesStore();
 
   const [search, setSearch] = useState("");
+  const [localPages, setLocalPages] = useState<repository.Page[]>([]);
 
   const activePage = activePageStore.page;
 
@@ -93,10 +97,6 @@ function useSidebarItems() {
     };
   }, []);
 
-  const cls = useCallback((text: string) => {
-    return strNormalize(text).toLowerCase();
-  }, []);
-
   const notionPages = useMemo(() => {
     const pages = notionPagesStore.getSimplifiedPages();
     const searchValue = search.trim();
@@ -113,7 +113,7 @@ function useSidebarItems() {
     });
   }, [notionPagesStore.pages, search]);
 
-  const localPages = useMemo(() => {
+  const _localPages = useMemo(() => {
     const pages = localPagesStore.pages
       .slice()
       .sort((a, b) => a.order - b.order);
@@ -132,17 +132,134 @@ function useSidebarItems() {
     });
   }, [localPagesStore.pages, search]);
 
+  useEffect(() => {
+    const sortedPages = localPagesStore.pages
+      .slice()
+      .sort((a, b) => a.order - b.order);
+
+    const pages = sortedPages.reduce((acc, page) => {
+      acc[page.ID] = page;
+      return acc;
+    }, {} as Record<number, repository.Page>);
+
+    const group = (parentId: number | null) => {
+      const $pages = sortedPages.filter((page) => {
+        if (pages[page.ID] && page.ParentID === parentId) {
+          delete pages[page.ID];
+          return true;
+        }
+        return false;
+      });
+
+      return $pages.map((page) => {
+        const $page = clone(page);
+        $page.Children = group(page.ID).sort((a, b) => a.order - b.order);
+        return $page;
+      });
+    };
+
+    setLocalPages(group(null));
+  }, [localPagesStore.pages]);
+
+  const getPageChildren = useCallback(
+    (pageId: string, groupedPages: repository.Page[]) => {
+      if (pageId === "root") {
+        return groupedPages;
+      }
+
+      function locatePage(pages: repository.Page[]): repository.Page | null {
+        for (const page of pages) {
+          if (page.ID === Number(pageId)) {
+            return page;
+          }
+
+          const child = locatePage(page.Children || []);
+
+          if (child) {
+            return child;
+          }
+        }
+
+        return null;
+      }
+
+      return locatePage(groupedPages);
+    },
+    []
+  );
+
   const reorderLocalPages = useCallback<OnDragEndResponder<string>>(
     (result) => {
+      console.log(result);
+
       const { source, destination } = result;
       // Drop outside the list or no movement
-      if (!destination || source.index === destination.index) {
+      if (
+        !destination ||
+        (source.index === destination.index &&
+          source.droppableId === destination.droppableId)
+      ) {
         return;
       }
 
-      localPagesStore.reorderPages(localPages, source.index, destination.index);
+      const draggableId = result.draggableId;
+      const sourceCategoryId = source.droppableId;
+      const destinationCategoryId = destination.droppableId;
+
+      const sourcePage = localPages.find(
+        (page) => page.ID === Number(draggableId)
+      );
+
+      if (!sourcePage) return;
+
+      sourcePage.ParentID =
+        destinationCategoryId === "root"
+          ? (null as unknown as undefined)
+          : Number(destinationCategoryId);
+
+      let groupedPages = localPages.slice();
+
+      const destinationItem = getPageChildren(
+        destinationCategoryId,
+        groupedPages
+      );
+      const sourceItem = getPageChildren(sourceCategoryId, groupedPages);
+      if (!sourceItem || !destinationItem) return;
+
+      console.log("Source item", sourceItem);
+      console.log("Destination item", destinationItem);
+
+      // Source operation
+      if (Array.isArray(sourceItem)) {
+        groupedPages = sourceItem;
+        groupedPages.splice(source.index, 1);
+      } else {
+        sourceItem.Children.splice(source.index, 1);
+      }
+
+      // Destination operation
+      if (Array.isArray(destinationItem)) {
+        groupedPages = destinationItem;
+        groupedPages.splice(destination.index, 0, sourcePage);
+      } else {
+        destinationItem.Children.splice(destination.index, 0, sourcePage);
+      }
+
+      let order = 0;
+      const applyOrder = (pages: repository.Page[]) => {
+        for (const page of pages) {
+          order++;
+          page.order = order;
+          if (page.Children) {
+            applyOrder(page.Children);
+          }
+        }
+      };
+
+      applyOrder(groupedPages);
+      setLocalPages(groupedPages);
     },
-    [localPagesStore, localPages]
+    [localPagesStore, localPages, getPageChildren]
   );
 
   return useMemo(() => {

@@ -13,8 +13,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "../ui/sidebar";
 import { useSidebarItemsContext } from "./context";
 import { DeletePageButton } from "./delete-page-button";
@@ -44,6 +42,8 @@ export function LocalPages() {
   const handleDragEnd: OnDragEndResponder<string> = (result, provided) => {
     reorderLocalPages(result, provided);
   };
+
+  console.log(localPages);
 
   return (
     <SidebarGroup>
@@ -136,11 +136,8 @@ function PageItem({
 
   const children = item.Children || [];
 
-  const SubMenuButton = subMenu ? SidebarMenuSubButton : SidebarMenuButton;
-  const SubMenuItem = subMenu ? SidebarMenuSubItem : SidebarMenuItem;
-
   const button = (
-    <SubMenuButton
+    <SidebarMenuButton
       isActive={active}
       onClick={() => {
         // Clickable for pages
@@ -184,20 +181,18 @@ function PageItem({
           <DeletePageButton page={item} />
         )}
       </div>
-    </SubMenuButton>
+    </SidebarMenuButton>
   );
 
   return (
-    <SubMenuItem
+    <SidebarMenuItem
       key={pageId}
-      className={cn(snapshot.isDragging && "opacity-40")}
+      className={cn(snapshot.isDragging && "opacity-40", subMenu && "pl-2")}
       ref={provided.innerRef}
       {...provided.draggableProps}
     >
       <motion.div
         key={pageId}
-        initial={{ opacity: 0, y: 10, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{
           opacity: 0,
           scale: 0.95,
@@ -207,55 +202,55 @@ function PageItem({
           },
         }}
       >
-        <div className="group/local">
-          {!item.is_folder && button}
+        {!item.is_folder && <div className="group/local">{button}</div>}
 
-          {item.is_folder && !subMenu && (
-            <Collapsible open={item.expanded}>
-              <CollapsibleTrigger asChild>{button}</CollapsibleTrigger>
+        {item.is_folder && (
+          <Collapsible open={item.expanded}>
+            <CollapsibleTrigger asChild>
+              <div className="group/local">{button}</div>
+            </CollapsibleTrigger>
 
-              <Droppable
-                key={item.ID}
-                droppableId={item.ID.toString()}
-                type="droppable-item"
-              >
-                {(provided) => {
-                  return (
-                    <CollapsibleContent
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className="py-3"
-                    >
-                      {children.map((subItem, index) => {
-                        return (
-                          <Draggable
-                            key={subItem.ID}
-                            draggableId={subItem.ID.toString()}
-                            index={index}
-                          >
-                            {(provided, snapshot) => {
-                              return (
-                                <PageItem
-                                  item={subItem}
-                                  provided={provided}
-                                  snapshot={snapshot}
-                                  subMenu={true}
-                                />
-                              );
-                            }}
-                          </Draggable>
-                        );
-                      })}
+            <Droppable
+              key={item.ID}
+              droppableId={item.ID.toString()}
+              type="droppable-item"
+            >
+              {(provided) => {
+                return (
+                  <CollapsibleContent
+                    ref={provided.innerRef}
+                    className={cn(children.length === 0 && "py-2")}
+                    {...provided.droppableProps}
+                  >
+                    {children.map((subItem, index) => {
+                      return (
+                        <Draggable
+                          key={subItem.ID}
+                          draggableId={subItem.ID.toString()}
+                          index={index}
+                        >
+                          {(provided, snapshot) => {
+                            return (
+                              <PageItem
+                                item={subItem}
+                                provided={provided}
+                                snapshot={snapshot}
+                                subMenu={true}
+                              />
+                            );
+                          }}
+                        </Draggable>
+                      );
+                    })}
 
-                      {provided.placeholder}
-                    </CollapsibleContent>
-                  );
-                }}
-              </Droppable>
-            </Collapsible>
-          )}
-        </div>
+                    {provided.placeholder}
+                  </CollapsibleContent>
+                );
+              }}
+            </Droppable>
+          </Collapsible>
+        )}
       </motion.div>
-    </SubMenuItem>
+    </SidebarMenuItem>
   );
 }
