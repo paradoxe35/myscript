@@ -69,7 +69,7 @@ export function LocalPages() {
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="root" type="droppable-item">
+        <Droppable droppableId="root">
           {(provided) => {
             return (
               <SidebarGroupContent
@@ -151,7 +151,6 @@ function PageItem({
         "!cursor-pointer"
       )}
       asChild
-      {...provided.dragHandleProps}
     >
       <div className="w-full">
         <span className="align-middle">
@@ -187,6 +186,7 @@ function PageItem({
       className={cn(snapshot.isDragging && "opacity-40", subMenu && "pl-3")}
       ref={provided.innerRef}
       {...provided.draggableProps}
+      {...(item.expanded ? {} : provided.dragHandleProps)}
     >
       <motion.div
         key={pageId}
@@ -207,11 +207,7 @@ function PageItem({
               <div className="group/local">{button}</div>
             </CollapsibleTrigger>
 
-            <Droppable
-              key={item.ID}
-              droppableId={item.ID.toString()}
-              type="droppable-item"
-            >
+            <Droppable key={item.ID} droppableId={item.ID.toString()}>
               {(provided) => {
                 return (
                   <>
