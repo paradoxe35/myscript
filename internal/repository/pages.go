@@ -18,6 +18,8 @@ type Page struct {
 	Children []Page `gorm:"foreignkey:ParentID"`
 }
 
+type MapUpdate = map[string]interface{}
+
 func GetPages(db *gorm.DB) []Page {
 	var pages []Page
 
@@ -34,13 +36,12 @@ func GetPage(db *gorm.DB, id uint) *Page {
 }
 
 func UpdatePageOrder(db *gorm.DB, id uint, ParentID *uint, order int) {
-	var page Page
-	db.First(&page, id)
-
-	page.Order = order
-	page.ParentID = ParentID
-
-	db.Save(&page)
+	db.Model(&Page{}).
+		Where("id = ?", id).
+		Updates(MapUpdate{
+			"order":    order,
+			"ParentID": ParentID,
+		})
 }
 
 func SavePage(db *gorm.DB, page *Page) *Page {

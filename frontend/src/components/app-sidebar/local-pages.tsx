@@ -4,7 +4,7 @@ import {
   Plus,
   FolderIcon,
   FileTextIcon,
-  ChevronRight,
+  FolderOpen,
 } from "lucide-react";
 import {
   SidebarGroup,
@@ -158,17 +158,14 @@ function PageItem({
           <Icon
             className={cn(
               "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
-              item.is_folder && item.expanded && "hidden",
-              item.is_folder && "group-hover/local:hidden"
+              item.is_folder && item.expanded && "hidden"
             )}
           />
 
-          <ChevronRight
+          <FolderOpen
             className={cn(
               "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
-              item.expanded && "rotate-90",
-              item.is_folder && "group-hover/local:inline-block",
-              item.expanded && item.is_folder && ["inline-block", "rotate-90"]
+              item.expanded && item.is_folder && ["inline-block"]
             )}
           />
 
@@ -217,34 +214,36 @@ function PageItem({
             >
               {(provided) => {
                 return (
-                  <CollapsibleContent
-                    ref={provided.innerRef}
-                    className={cn("pt-1", children.length === 0 && "py-2")}
-                    {...provided.droppableProps}
-                  >
-                    {children.map((subItem, index) => {
-                      return (
-                        <Draggable
-                          key={subItem.ID}
-                          draggableId={subItem.ID.toString()}
-                          index={index}
-                        >
-                          {(provided, snapshot) => {
-                            return (
-                              <PageItem
-                                item={subItem}
-                                provided={provided}
-                                snapshot={snapshot}
-                                subMenu={true}
-                              />
-                            );
-                          }}
-                        </Draggable>
-                      );
-                    })}
+                  <>
+                    <CollapsibleContent
+                      ref={provided.innerRef}
+                      className={cn("pt-1", children.length === 0 && "py-2")}
+                      {...provided.droppableProps}
+                    >
+                      {children.map((subItem, index) => {
+                        return (
+                          <Draggable
+                            key={subItem.ID}
+                            draggableId={subItem.ID.toString()}
+                            index={index}
+                          >
+                            {(provided, snapshot) => {
+                              return (
+                                <PageItem
+                                  item={subItem}
+                                  provided={provided}
+                                  snapshot={snapshot}
+                                  subMenu={true}
+                                />
+                              );
+                            }}
+                          </Draggable>
+                        );
+                      })}
+                    </CollapsibleContent>
 
                     {provided.placeholder}
-                  </CollapsibleContent>
+                  </>
                 );
               }}
             </Droppable>
