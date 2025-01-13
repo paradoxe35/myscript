@@ -43,8 +43,6 @@ export function LocalPages() {
     reorderLocalPages(result, provided);
   };
 
-  console.log(localPages);
-
   return (
     <SidebarGroup>
       <div className="group/local-add px-0 justify-between transition cursor-default flex mb-1">
@@ -160,6 +158,7 @@ function PageItem({
           <Icon
             className={cn(
               "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
+              item.is_folder && item.expanded && "hidden",
               item.is_folder && "group-hover/local:hidden"
             )}
           />
@@ -168,7 +167,8 @@ function PageItem({
             className={cn(
               "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
               item.expanded && "rotate-90",
-              item.is_folder && "group-hover/local:inline-block"
+              item.is_folder && "group-hover/local:inline-block",
+              item.expanded && item.is_folder && ["inline-block", "rotate-90"]
             )}
           />
 
@@ -219,7 +219,7 @@ function PageItem({
                 return (
                   <CollapsibleContent
                     ref={provided.innerRef}
-                    className={cn(children.length === 0 && "py-2")}
+                    className={cn("pt-1", children.length === 0 && "py-2")}
                     {...provided.droppableProps}
                   >
                     {children.map((subItem, index) => {

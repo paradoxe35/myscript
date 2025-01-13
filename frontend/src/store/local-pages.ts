@@ -1,4 +1,3 @@
-import { reorder } from "@/lib/utils";
 import { WithoutRepositoryBaseFields } from "@/types";
 import { create } from "zustand";
 import {
@@ -17,11 +16,7 @@ type LocalPagesStore = {
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
-  reorderPages: (
-    pages: repository.Page[],
-    startIndex: number,
-    endIndex: number
-  ) => Promise<void>;
+  saveNewPageOrder: (page: repository.Page) => Promise<void>;
   savePageTitle: (
     title: string,
     page: repository.Page
@@ -89,19 +84,8 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     return newPage;
   },
 
-  reorderPages: async (pages, startIndex, endIndex) => {
-    const reorderedPages = reorder(pages, startIndex, endIndex).map(
-      (page, index) => {
-        page.order = index + 1;
-        return page;
-      }
-    );
-
-    set({ pages: reorderedPages });
-
-    reorderedPages.map(async (page) => {
-      UpdateLocalPageOrder(page.ID, page.order);
-    });
+  saveNewPageOrder: async (page) => {
+    UpdateLocalPageOrder(page.ID, page.ParentID || null, page.order);
   },
 
   togglePageExpanded: async (page) => {

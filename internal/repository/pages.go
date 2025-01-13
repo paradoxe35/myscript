@@ -33,8 +33,10 @@ func GetPage(db *gorm.DB, id uint) *Page {
 	return &page
 }
 
-func UpdatePageOrder(db *gorm.DB, id uint, order int) {
-	db.Model(&Page{}).Where("id = ?", id).Update("order", order)
+func UpdatePageOrder(db *gorm.DB, id uint, ParentID *uint, order int) {
+	db.Model(&Page{}).Where("id = ?", id).
+		Update("order", order).
+		Update("ParentID", ParentID)
 }
 
 func SavePage(db *gorm.DB, page *Page) *Page {

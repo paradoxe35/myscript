@@ -51,6 +51,6 @@ func (a *App) DeleteLocalPage(id uint) {
 	repository.DeletePage(a.db, id)
 }
 
-func (a *App) UpdateLocalPageOrder(id uint, order int) {
-	repository.UpdatePageOrder(a.db, id, order)
+func (a *App) UpdateLocalPageOrder(id uint, ParentID *uint, order int) {
+	repository.UpdatePageOrder(a.db, id, ParentID, order)
 }

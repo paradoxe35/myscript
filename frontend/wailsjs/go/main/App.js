@@ -118,8 +118,8 @@ export function Transcribe(arg1, arg2) {
   return window['go']['main']['App']['Transcribe'](arg1, arg2);
 }
 
-export function UpdateLocalPageOrder(arg1, arg2) {
-  return window['go']['main']['App']['UpdateLocalPageOrder'](arg1, arg2);
+export function UpdateLocalPageOrder(arg1, arg2, arg3) {
+  return window['go']['main']['App']['UpdateLocalPageOrder'](arg1, arg2, arg3);
 }
 
 export function WitTranscribe(arg1, arg2) {

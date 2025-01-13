@@ -18,6 +18,25 @@ import clone from "lodash/clone";
 
 const cls = (text: string) => strNormalize(text).toLowerCase();
 
+function locatePage(
+  pageId: string | number,
+  pages: repository.Page[]
+): repository.Page | null {
+  for (const page of pages) {
+    if (page.ID === Number(pageId)) {
+      return page;
+    }
+
+    const child = locatePage(pageId, page.Children || []);
+
+    if (child) {
+      return child;
+    }
+  }
+
+  return null;
+}
+
 function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
 
@@ -167,31 +186,13 @@ function useSidebarItems() {
         return groupedPages;
       }
 
-      function locatePage(pages: repository.Page[]): repository.Page | null {
-        for (const page of pages) {
-          if (page.ID === Number(pageId)) {
-            return page;
-          }
-
-          const child = locatePage(page.Children || []);
-
-          if (child) {
-            return child;
-          }
-        }
-
-        return null;
-      }
-
-      return locatePage(groupedPages);
+      return locatePage(pageId, groupedPages);
     },
     []
   );
 
   const reorderLocalPages = useCallback<OnDragEndResponder<string>>(
     (result) => {
-      console.log(result);
-
       const { source, destination } = result;
       // Drop outside the list or no movement
       if (
@@ -202,14 +203,13 @@ function useSidebarItems() {
         return;
       }
 
+      let groupedPages = localPages.slice();
+
       const draggableId = result.draggableId;
       const sourceCategoryId = source.droppableId;
       const destinationCategoryId = destination.droppableId;
 
-      const sourcePage = localPages.find(
-        (page) => page.ID === Number(draggableId)
-      );
-
+      const sourcePage = locatePage(draggableId, groupedPages);
       if (!sourcePage) return;
 
       sourcePage.ParentID =
@@ -217,17 +217,13 @@ function useSidebarItems() {
           ? (null as unknown as undefined)
           : Number(destinationCategoryId);
 
-      let groupedPages = localPages.slice();
-
       const destinationItem = getPageChildren(
         destinationCategoryId,
         groupedPages
       );
       const sourceItem = getPageChildren(sourceCategoryId, groupedPages);
-      if (!sourceItem || !destinationItem) return;
 
-      console.log("Source item", sourceItem);
-      console.log("Destination item", destinationItem);
+      if (!sourceItem || !destinationItem) return;
 
       // Source operation
       if (Array.isArray(sourceItem)) {
@@ -245,11 +241,13 @@ function useSidebarItems() {
         destinationItem.Children.splice(destination.index, 0, sourcePage);
       }
 
+      // Save new pages orders
       let order = 0;
       const applyOrder = (pages: repository.Page[]) => {
         for (const page of pages) {
           order++;
           page.order = order;
+          localPagesStore.saveNewPageOrder(page);
           if (page.Children) {
             applyOrder(page.Children);
           }
