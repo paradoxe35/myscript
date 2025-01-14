@@ -10,7 +10,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { LocalPages } from "./local-pages";
+import { LocalPages } from "./local-pages-v2";
 import { NotionPages } from "./notion-pages";
 import { SidebarItemsProvider } from "./context";
 
@@ -28,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SearchForm />
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="overflow-x-hidden">
           {/* Local pages */}
           <LocalPages />
 
