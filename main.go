@@ -2,6 +2,9 @@ package main
 
 import (
 	"embed"
+	"errors"
+	"io"
+	"io/fs"
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
@@ -9,6 +12,7 @@ import (
 	"myscript/internal/updater"
 	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
+	"strings"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -20,6 +24,14 @@ var assets embed.FS
 
 //go:embed version.txt
 var AppVersion string
+
+//go:embed all:credentials
+var credentials embed.FS
+
+const (
+	REPO_OWNER = "paradoxe35"
+	REPO_NAME  = "myscript"
+)
 
 const (
 	title  = "myscript"
@@ -36,8 +48,8 @@ func main() {
 	// Set Slog as the default logger
 	slog.SetDefault(logger.Slog)
 
-	appUpdater := updater.NewUpdater("paradoxe35", "myscript", AppVersion)
-	appUpdater.SetToken(utils.ReadGitHubToken())
+	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, AppVersion)
+	appUpdater.SetToken(readGitHubToken())
 
 	// Create an instance of the app structure
 	app := NewApp(
@@ -69,4 +81,25 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
+}
+
+func readGitHubToken() string {
+	var token string
+
+	if githubTokenFile, err := credentials.Open("github-token.txt"); err == nil {
+		tokenBytes, readErr := io.ReadAll(githubTokenFile)
+		if readErr == nil {
+			token = strings.TrimSpace(string(tokenBytes))
+		} else {
+			slog.Error("Failed to read GitHub token file", "error", readErr)
+		}
+
+		if closeErr := githubTokenFile.Close(); closeErr != nil {
+			slog.Warn("Failed to close token file", "error", closeErr)
+		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		slog.Error("Unexpected error opening GitHub token", "error", err)
+	}
+
+	return token
 }

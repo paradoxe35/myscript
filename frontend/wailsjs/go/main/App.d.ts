@@ -58,7 +58,7 @@ export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
 export function OpenAPITranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
-export function PerformUpdate():Promise<string>;
+export function PerformUpdate():Promise<void>;
 
 export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 
