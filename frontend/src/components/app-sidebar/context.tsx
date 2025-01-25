@@ -160,8 +160,6 @@ function useSidebarItems() {
       .filter((page) => !page.ParentID)
       .map((page) => page.ID);
 
-    console.log(rootChildren);
-
     items[rootId] = {
       id: rootId,
       children: rootChildren,
