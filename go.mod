@@ -8,6 +8,8 @@ require (
 	github.com/benbjohnson/litestream v0.3.13
 	github.com/gen2brain/malgo v0.11.23
 	github.com/go-audio/wav v1.1.0
+	github.com/google/go-github/v50 v50.2.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/openai/openai-go v0.1.0-alpha.41
 	github.com/paradoxe35/whisper.cpp-go v1.0.3
@@ -22,10 +24,12 @@ require (
 require (
 	filippo.io/age v1.1.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/go-audio/audio v1.0.0 // indirect
 	github.com/go-audio/riff v1.0.0 // indirect

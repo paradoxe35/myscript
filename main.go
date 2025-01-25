@@ -6,6 +6,7 @@ import (
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
 	local_whisper "myscript/internal/transcribe/whisper/local"
+	"myscript/internal/updater"
 	"myscript/internal/utils"
 	"myscript/internal/utils/microphone"
 
@@ -37,9 +38,12 @@ func main() {
 
 	// Create an instance of the app structure
 	app := NewApp(
-		database.NewDatabase(filesystem.HOME_DIR),
-		microphone.NewAudioSequencer(),
-		local_whisper.NewLocalWhisperTranscriber(),
+		AppOptions{
+			Db:             database.NewDatabase(filesystem.HOME_DIR),
+			AudioSequencer: microphone.NewAudioSequencer(),
+			Lwt:            local_whisper.NewLocalWhisperTranscriber(),
+			Updater:        updater.NewUpdater("paradoxe35", "myscript", AppVersion),
+		},
 	)
 
 	// Create application with options

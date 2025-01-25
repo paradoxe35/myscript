@@ -10,6 +10,8 @@ import {notionapi} from '../models';
 
 export function AreSomeLocalWhisperModelsDownloading():Promise<boolean>;
 
+export function CheckForUpdates():Promise<string>;
+
 export function DeleteCache(arg1:string):Promise<void>;
 
 export function DeleteLocalPage(arg1:number):Promise<void>;
@@ -46,6 +48,8 @@ export function GetWhisperLanguages():Promise<Array<structs.Language>>;
 
 export function GetWitAILanguages():Promise<Array<structs.Language>>;
 
+export function IsDevMode():Promise<boolean>;
+
 export function IsLocalWhisperModelDownloading(arg1:local_whisper.LocalWhisperModel):Promise<boolean>;
 
 export function IsRecording():Promise<boolean>;
@@ -53,6 +57,8 @@ export function IsRecording():Promise<boolean>;
 export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
 export function OpenAPITranscribe(arg1:Array<number>,arg2:string):Promise<string>;
+
+export function PerformUpdate():Promise<string>;
 
 export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 

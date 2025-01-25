@@ -6,6 +6,10 @@ export function AreSomeLocalWhisperModelsDownloading() {
   return window['go']['main']['App']['AreSomeLocalWhisperModelsDownloading']();
 }
 
+export function CheckForUpdates() {
+  return window['go']['main']['App']['CheckForUpdates']();
+}
+
 export function DeleteCache(arg1) {
   return window['go']['main']['App']['DeleteCache'](arg1);
 }
@@ -78,6 +82,10 @@ export function GetWitAILanguages() {
   return window['go']['main']['App']['GetWitAILanguages']();
 }
 
+export function IsDevMode() {
+  return window['go']['main']['App']['IsDevMode']();
+}
+
 export function IsLocalWhisperModelDownloading(arg1) {
   return window['go']['main']['App']['IsLocalWhisperModelDownloading'](arg1);
 }
@@ -92,6 +100,10 @@ export function LocalTranscribe(arg1, arg2) {
 
 export function OpenAPITranscribe(arg1, arg2) {
   return window['go']['main']['App']['OpenAPITranscribe'](arg1, arg2);
+}
+
+export function PerformUpdate() {
+  return window['go']['main']['App']['PerformUpdate']();
 }
 
 export function SaveCache(arg1, arg2) {
