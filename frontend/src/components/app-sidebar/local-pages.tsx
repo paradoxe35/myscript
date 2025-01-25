@@ -140,7 +140,10 @@ function PageItem({ provided, snapshot, item }: RenderItemParams) {
   return (
     <SidebarMenuItem
       key={pageId}
-      className={cn(snapshot.isDragging && "opacity-40")}
+      className={cn(
+        snapshot.isDragging && "opacity-40",
+        item.hasChildren && page.expanded && "mb-1"
+      )}
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}

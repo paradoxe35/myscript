@@ -85,7 +85,7 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
   },
 
   saveNewPageOrder: async (page) => {
-    UpdateLocalPageOrder(page.ID, page.ParentID || null, page.order);
+    return UpdateLocalPageOrder(page.ID, page.ParentID || null, page.order);
   },
 
   togglePageExpanded: async (page) => {

@@ -21,12 +21,23 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const activePageStore = useActivePageStore();
-  const deletePage = useLocalPagesStore((state) => state.deletePage);
+  const localPagesStore = useLocalPagesStore();
 
   const handleDeletePage = async () => {
     const activePage = activePageStore.page;
 
-    deletePage(page.ID).then(() => {
+    const pageChildren = localPagesStore.pages.filter(
+      (p) => p.ParentID === page.ID
+    );
+
+    await Promise.all(
+      pageChildren.map((p) => {
+        p.ParentID = page.ParentID;
+        return localPagesStore.saveNewPageOrder(p);
+      })
+    );
+
+    localPagesStore.deletePage(page.ID).then(() => {
       if (
         activePage?.__typename === "local_page" &&
         activePage.page.ID === page.ID
