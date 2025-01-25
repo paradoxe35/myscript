@@ -3,4 +3,5 @@ node_modules
 frontend/dist
 *.syso
 *.i.ts
+github-token.txt
 exp/

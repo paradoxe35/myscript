@@ -57,3 +57,14 @@ func IsDevMode() bool {
 	winDev := strings.HasSuffix(os.Args[0], "-dev.exe")
 	return strings.HasSuffix(os.Args[0], "-dev") || winDev
 }
+
+func ReadGitHubToken() string {
+	content, err := os.ReadFile("github-token.txt")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ""
+		}
+		return ""
+	}
+	return string(content)
+}

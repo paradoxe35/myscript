@@ -36,13 +36,16 @@ func main() {
 	// Set Slog as the default logger
 	slog.SetDefault(logger.Slog)
 
+	appUpdater := updater.NewUpdater("paradoxe35", "myscript", AppVersion)
+	appUpdater.SetToken(utils.ReadGitHubToken())
+
 	// Create an instance of the app structure
 	app := NewApp(
 		AppOptions{
 			Db:             database.NewDatabase(filesystem.HOME_DIR),
 			AudioSequencer: microphone.NewAudioSequencer(),
 			Lwt:            local_whisper.NewLocalWhisperTranscriber(),
-			Updater:        updater.NewUpdater("paradoxe35", "myscript", AppVersion),
+			Updater:        appUpdater,
 		},
 	)
 
