@@ -28,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SearchForm />
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent className="select-none overflow-x-hidden">
           {/* Local pages */}
           <LocalPages />
 

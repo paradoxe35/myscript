@@ -18,29 +18,30 @@ import { useSidebarItemsContext } from "./context";
 import { DeletePageButton } from "./delete-page-button";
 import { MoreOptionButton } from "./more-option-button";
 import { NewFolderModal } from "./new-folder-modal";
-import {
-  DragDropContext,
-  Draggable,
-  DraggableProvided,
-  DraggableStateSnapshot,
-  Droppable,
-  OnDragEndResponder,
-} from "@hello-pangea/dnd";
-import { PropsWithChildren } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { useMemo } from "react";
+// import { AnimatePresence, motion } from "motion/react";
 import { repository } from "~wails/models";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../ui/collapsible";
+
+import Tree, {
+  mutateTree,
+  moveItemOnTree,
+  type RenderItemParams,
+  type TreeItem,
+  type TreeData,
+  type ItemId,
+  type TreeSourcePosition,
+  type TreeDestinationPosition,
+} from "@atlaskit/tree";
 
 export function LocalPages() {
-  const { createNewPage, localPages, reorderLocalPages } =
+  const { createNewPage, pagesTree, reorderLocalPages } =
     useSidebarItemsContext();
 
-  const handleDragEnd: OnDragEndResponder<string> = (result, provided) => {
-    reorderLocalPages(result, provided);
+  const handleDragEnd = (
+    sourcePosition: TreeSourcePosition,
+    destinationPosition?: TreeDestinationPosition
+  ) => {
+    reorderLocalPages(sourcePosition, destinationPosition);
   };
 
   return (
@@ -68,81 +69,44 @@ export function LocalPages() {
         </div>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="root">
-          {(provided) => {
-            return (
-              <SidebarGroupContent
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-              >
-                <SidebarMenu>
-                  {/* Animated items */}
-                  <AnimatePresence>
-                    {localPages.map((item, index) => {
-                      return (
-                        <Draggable
-                          key={item.ID}
-                          draggableId={item.ID.toString()}
-                          index={index}
-                        >
-                          {(provided, snapshot) => {
-                            return (
-                              <PageItem
-                                item={item}
-                                provided={provided}
-                                snapshot={snapshot}
-                              />
-                            );
-                          }}
-                        </Draggable>
-                      );
-                    })}
-                  </AnimatePresence>
-
-                  {provided.placeholder}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            );
-          }}
-        </Droppable>
-      </DragDropContext>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <Tree
+            tree={pagesTree}
+            renderItem={(item: RenderItemParams) => <PageItem {...item} />}
+            offsetPerLevel={12}
+            onDragEnd={handleDragEnd}
+            isDragEnabled
+            isNestingEnabled
+          />
+        </SidebarMenu>
+      </SidebarGroupContent>
     </SidebarGroup>
   );
 }
 
-function PageItem({
-  provided,
-  snapshot,
-  item,
-  subMenu,
-}: PropsWithChildren<{
-  item: repository.Page;
-  snapshot: DraggableStateSnapshot;
-  provided: DraggableProvided;
-  subMenu?: boolean;
-}>) {
+function PageItem({ provided, snapshot, item }: RenderItemParams) {
   const { togglePageExpanded, onLocalPageClick, activePage } =
     useSidebarItemsContext();
 
+  const page = item.data as repository.Page;
+
   const active =
-    activePage?.__typename === "local_page" && activePage.page.ID === item.ID;
+    activePage?.__typename === "local_page" && activePage.page.ID === page.ID;
 
-  const pageId = item.ID;
+  const pageId = page.ID;
 
-  const Icon = item.is_folder ? FolderIcon : FileTextIcon;
-
-  const children = item.Children || [];
+  const Icon = page.is_folder ? FolderIcon : FileTextIcon;
 
   const button = (
     <SidebarMenuButton
       isActive={active}
       onClick={() => {
         // Clickable for pages
-        !item.is_folder && onLocalPageClick(item);
+        !page.is_folder && onLocalPageClick(page);
 
         // Toggle expanded state for folder
-        item.is_folder && togglePageExpanded(item);
+        page.is_folder && togglePageExpanded(page);
       }}
       className={cn(
         "block max-w-full overflow-hidden transition text-sidebar-foreground/70 font-medium",
@@ -157,24 +121,24 @@ function PageItem({
           <Icon
             className={cn(
               "mr-1 h-4 w-4 inline-block -mt-[3.5px]",
-              item.is_folder && item.expanded && "hidden"
+              page.is_folder && page.expanded && "hidden"
             )}
           />
 
           <FolderOpen
             className={cn(
               "mr-1 h-4 w-4 hidden -mt-[3.5px] transition-transform",
-              item.expanded && item.is_folder && ["inline-block"]
+              page.expanded && page.is_folder && ["inline-block"]
             )}
           />
 
-          <span>{item.title}</span>
+          <span>{page.title}</span>
         </span>
 
-        {item.is_folder ? (
-          <MoreOptionButton page={item} />
+        {page.is_folder ? (
+          <MoreOptionButton page={page} />
         ) : (
-          <DeletePageButton page={item} />
+          <DeletePageButton page={page} />
         )}
       </div>
     </SidebarMenuButton>
@@ -183,69 +147,12 @@ function PageItem({
   return (
     <SidebarMenuItem
       key={pageId}
-      className={cn(snapshot.isDragging && "opacity-40", subMenu && "pl-3")}
+      className={cn(snapshot.isDragging && "opacity-40")}
       ref={provided.innerRef}
       {...provided.draggableProps}
-      {...(item.expanded ? {} : provided.dragHandleProps)}
+      {...provided.dragHandleProps}
     >
-      <motion.div
-        key={pageId}
-        exit={{
-          opacity: 0,
-          scale: 0.95,
-          transition: {
-            opacity: { duration: 0.15, ease: "easeOut" },
-            scale: { duration: 0.2, ease: "easeOut" },
-          },
-        }}
-      >
-        {!item.is_folder && <div className="group/local">{button}</div>}
-
-        {item.is_folder && (
-          <Collapsible open={item.expanded && !snapshot.isDragging}>
-            <CollapsibleTrigger asChild>
-              <div className="group/local">{button}</div>
-            </CollapsibleTrigger>
-
-            <Droppable key={item.ID} droppableId={item.ID.toString()}>
-              {(provided) => {
-                return (
-                  <>
-                    <CollapsibleContent
-                      ref={provided.innerRef}
-                      className={cn("pt-1", children.length === 0 && "py-2")}
-                      {...provided.droppableProps}
-                    >
-                      {children.map((subItem, index) => {
-                        return (
-                          <Draggable
-                            key={subItem.ID}
-                            draggableId={subItem.ID.toString()}
-                            index={index}
-                          >
-                            {(provided, snapshot) => {
-                              return (
-                                <PageItem
-                                  item={subItem}
-                                  provided={provided}
-                                  snapshot={snapshot}
-                                  subMenu={true}
-                                />
-                              );
-                            }}
-                          </Draggable>
-                        );
-                      })}
-                    </CollapsibleContent>
-
-                    {provided.placeholder}
-                  </>
-                );
-              }}
-            </Droppable>
-          </Collapsible>
-        )}
-      </motion.div>
+      <div className="group/local">{button}</div>
     </SidebarMenuItem>
   );
 }

@@ -13,29 +13,27 @@ import {
 import { repository } from "~wails/models";
 import { useSidebar } from "../ui/sidebar";
 import { strNormalize } from "@/lib/string";
-import { OnDragEndResponder } from "@hello-pangea/dnd";
-import clone from "lodash/clone";
+
+import {
+  mutateTree,
+  moveItemOnTree,
+  type RenderItemParams,
+  type TreeItem,
+  type TreeData,
+  type ItemId,
+  type TreeSourcePosition,
+  type TreeDestinationPosition,
+} from "@atlaskit/tree";
+import { useSyncRef } from "@/hooks/use-sync-ref";
 
 const cls = (text: string) => strNormalize(text).toLowerCase();
 
-function locatePage(
-  pageId: string | number,
-  pages: repository.Page[]
-): repository.Page | null {
-  for (const page of pages) {
-    if (page.ID === Number(pageId)) {
-      return page;
-    }
+const rootId = "0";
 
-    const child = locatePage(pageId, page.Children || []);
-
-    if (child) {
-      return child;
-    }
-  }
-
-  return null;
-}
+const defaultPagesTree: TreeData = {
+  rootId,
+  items: {},
+};
 
 function useSidebarItems() {
   const { setOpenMobile } = useSidebar();
@@ -45,7 +43,9 @@ function useSidebarItems() {
   const notionPagesStore = useNotionPagesStore();
 
   const [search, setSearch] = useState("");
-  const [localPages, setLocalPages] = useState<repository.Page[]>([]);
+  const [pagesTree, setPagesTree] = useState<TreeData>(defaultPagesTree);
+
+  const $pagesTree = useSyncRef(pagesTree);
 
   const activePage = activePageStore.page;
 
@@ -132,113 +132,119 @@ function useSidebarItems() {
     });
   }, [notionPagesStore.pages, search]);
 
-  useEffect(() => {
-    const sortedPages = localPagesStore.pages
-      .slice()
-      .sort((a, b) => a.order - b.order);
-
-    const pages = sortedPages.reduce((acc, page) => {
-      acc[page.ID] = page;
-      return acc;
-    }, {} as Record<number, repository.Page>);
-
-    const group = (parentId: number | null) => {
-      const $pages = sortedPages.filter((page) => {
-        if (pages[page.ID] && page.ParentID === parentId) {
-          delete pages[page.ID];
-          return true;
-        }
-        return false;
-      });
-
-      return $pages.map((page) => {
-        const $page = clone(page);
-        $page.Children = group(page.ID).sort((a, b) => a.order - b.order);
-        return $page;
-      });
-    };
-
-    setLocalPages(group(null));
+  const sortedPages = useMemo(() => {
+    return localPagesStore.pages.slice().sort((a, b) => a.order - b.order);
   }, [localPagesStore.pages]);
 
-  const getPageChildren = useCallback(
-    (pageId: string, groupedPages: repository.Page[]) => {
-      if (pageId === "root") {
-        return groupedPages;
-      }
+  useEffect(() => {
+    // Create items for all pages
+    const items = sortedPages.reduce((acc, page) => {
+      const children = sortedPages
+        .filter((child) => child.ParentID === page.ID)
+        .map((child) => child.ID);
 
-      return locatePage(pageId, groupedPages);
-    },
-    []
-  );
+      return {
+        ...acc,
+        [page.ID]: {
+          id: page.ID,
+          children: children,
+          hasChildren: children.length > 0,
+          isExpanded: page.expanded,
+          data: page,
+        },
+      };
+    }, {} as TreeData["items"]);
 
-  const reorderLocalPages = useCallback<OnDragEndResponder<string>>(
-    (result) => {
-      const { source, destination } = result;
-      // Drop outside the list or no movement
+    // Add root item pointing to top-level pages
+    const rootChildren = sortedPages
+      .filter((page) => !page.ParentID)
+      .map((page) => page.ID);
+
+    console.log(rootChildren);
+
+    items[rootId] = {
+      id: rootId,
+      children: rootChildren,
+      hasChildren: rootChildren.length > 0,
+      isExpanded: true,
+      data: null, // Or add root data if needed
+    };
+
+    setPagesTree({ rootId, items });
+  }, [sortedPages]);
+
+  const reorderLocalPages = useCallback(
+    (
+      sourcePosition: TreeSourcePosition,
+      destinationPosition?: TreeDestinationPosition
+    ) => {
       if (
-        !destination ||
-        (source.index === destination.index &&
-          source.droppableId === destination.droppableId)
+        !destinationPosition ||
+        (sourcePosition.parentId === destinationPosition?.parentId &&
+          sourcePosition.index === destinationPosition.index)
       ) {
         return;
       }
 
-      let groupedPages = localPages.slice();
+      let items = $pagesTree.current.items;
 
-      const draggableId = result.draggableId;
-      const sourceCategoryId = source.droppableId;
-      const destinationCategoryId = destination.droppableId;
-
-      const sourcePage = locatePage(draggableId, groupedPages);
-      if (!sourcePage) return;
-
-      sourcePage.ParentID =
-        destinationCategoryId === "root"
-          ? (null as unknown as undefined)
-          : Number(destinationCategoryId);
-
-      const destinationItem = getPageChildren(
-        destinationCategoryId,
-        groupedPages
+      const sourceItemId = items[sourcePosition.parentId].children.at(
+        sourcePosition.index
       );
-      const sourceItem = getPageChildren(sourceCategoryId, groupedPages);
 
-      if (!sourceItem || !destinationItem) return;
+      const isValidDestination =
+        destinationPosition.parentId === rootId ||
+        items[destinationPosition.parentId].data?.is_folder;
 
-      // Source operation
-      if (Array.isArray(sourceItem)) {
-        groupedPages = sourceItem;
-        groupedPages.splice(source.index, 1);
-      } else {
-        sourceItem.Children.splice(source.index, 1);
+      if (!sourceItemId || !isValidDestination) {
+        return;
       }
 
-      // Destination operation
-      if (Array.isArray(destinationItem)) {
-        groupedPages = destinationItem;
-        groupedPages.splice(destination.index, 0, sourcePage);
-      } else {
-        destinationItem.Children.splice(destination.index, 0, sourcePage);
-      }
+      const item: repository.Page = items[sourceItemId].data;
+
+      item.ParentID =
+        destinationPosition.parentId === rootId
+          ? (null as any)
+          : Number(destinationPosition.parentId);
+
+      const newTree = moveItemOnTree(
+        $pagesTree.current,
+        sourcePosition,
+        destinationPosition
+      );
+
+      items = newTree.items;
 
       // Save new pages orders
       let order = 0;
       const applyOrder = (pages: repository.Page[]) => {
-        for (const page of pages) {
-          order++;
-          page.order = order;
+        for (let page of pages) {
+          if (page.ID === item.ID) {
+            page = item;
+          }
+
+          page.order = ++order;
           localPagesStore.saveNewPageOrder(page);
-          if (page.Children) {
-            applyOrder(page.Children);
+
+          const pageChildren = items[page.ID].children.map((id) => {
+            return items[id].data as repository.Page;
+          });
+
+          if (pageChildren.length > 0) {
+            applyOrder(pageChildren);
           }
         }
       };
 
-      applyOrder(groupedPages);
-      setLocalPages(groupedPages);
+      const rootChildren = items[rootId].children.map((id) => {
+        return items[id].data as repository.Page;
+      });
+
+      applyOrder(rootChildren);
+
+      setPagesTree(newTree);
     },
-    [localPagesStore, localPages, getPageChildren]
+    [sortedPages]
   );
 
   return useMemo(() => {
@@ -246,7 +252,7 @@ function useSidebarItems() {
       search,
       setSearch,
 
-      localPages,
+      pagesTree,
       notionPages,
       activePage,
       createNewPage,
@@ -260,7 +266,7 @@ function useSidebarItems() {
   }, [
     search,
     setSearch,
-    localPages,
+    pagesTree,
     notionPages,
     activePage,
     createNewPage,
@@ -272,8 +278,6 @@ function useSidebarItems() {
     reorderLocalPages,
   ]);
 }
-
-function useSidebarLocalPages() {}
 
 type SidebarContext = ReturnType<typeof useSidebarItems>;
 
