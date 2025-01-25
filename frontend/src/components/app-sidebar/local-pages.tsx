@@ -18,17 +18,10 @@ import { useSidebarItemsContext } from "./context";
 import { DeletePageButton } from "./delete-page-button";
 import { MoreOptionButton } from "./more-option-button";
 import { NewFolderModal } from "./new-folder-modal";
-import { useMemo } from "react";
-// import { AnimatePresence, motion } from "motion/react";
 import { repository } from "~wails/models";
 
 import Tree, {
-  mutateTree,
-  moveItemOnTree,
   type RenderItemParams,
-  type TreeItem,
-  type TreeData,
-  type ItemId,
   type TreeSourcePosition,
   type TreeDestinationPosition,
 } from "@atlaskit/tree";

@@ -20,8 +20,8 @@ root.render(
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AppErrorBoundary>
         <AsyncPromptModalProvider>
-          <App />
           <Toaster />
+          <App />
         </AsyncPromptModalProvider>
       </AppErrorBoundary>
     </ThemeProvider>

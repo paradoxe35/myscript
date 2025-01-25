@@ -40,6 +40,7 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
     <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
       <DropdownMenuTrigger asChild>
         <a
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             dropdownButtonClassName,
             menuOpen && "opacity-100 dropdown-menu-open bg-red-500/20"
