@@ -8,6 +8,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { repository } from "~wails/models";
@@ -15,16 +16,14 @@ import { useSidebar } from "../ui/sidebar";
 import { strNormalize } from "@/lib/string";
 
 import {
-  mutateTree,
   moveItemOnTree,
-  type RenderItemParams,
-  type TreeItem,
   type TreeData,
   type ItemId,
   type TreeSourcePosition,
   type TreeDestinationPosition,
 } from "@atlaskit/tree";
 import { useSyncRef } from "@/hooks/use-sync-ref";
+import { useDebouncedCallback } from "use-debounce";
 
 const cls = (text: string) => strNormalize(text).toLowerCase();
 
@@ -49,6 +48,8 @@ function useSidebarItems() {
 
   const activePage = activePageStore.page;
   const activePageId = activePageStore.getPageId();
+
+  const canExpandActivePageTree = useRef(true);
 
   useEffect(() => {
     localPagesStore.getPages();
@@ -151,7 +152,13 @@ function useSidebarItems() {
     });
   }, [sortedPages, search]);
 
+  const initialLoad = useDebouncedCallback(() => {
+    canExpandActivePageTree.current = false;
+  }, 1000);
+
   useEffect(() => {
+    initialLoad();
+
     // Create items for all pages
     const items = sortedPages.reduce((acc, page) => {
       const children = sortedPages
@@ -184,7 +191,7 @@ function useSidebarItems() {
     };
 
     // For active page, all parents are expanded
-    if (activePageId) {
+    if (activePageId && canExpandActivePageTree.current) {
       const getParents = (id: ItemId) => {
         const parents: ItemId[] = [];
         const item = items[id as any];
