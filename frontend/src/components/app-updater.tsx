@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CheckForUpdates, PerformUpdate, IsDevMode } from "~wails/main/App";
 import {
@@ -16,6 +16,8 @@ export function AppUpdater() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateProgress, setUpdateProgress] = useState(0);
   const [updateMessage, setUpdateMessage] = useState("");
+
+  const remainingTime = useRef<number | null>(null);
 
   const handleUpdate = async () => {
     setIsUpdating(true);
@@ -47,6 +49,13 @@ export function AppUpdater() {
 
   useEffect(() => {
     const checkForUpdates = async () => {
+      if (
+        remainingTime.current !== null &&
+        Date.now() < remainingTime.current
+      ) {
+        return;
+      }
+
       try {
         const response = await CheckForUpdates();
 
@@ -62,7 +71,10 @@ export function AppUpdater() {
                   <Button
                     size="sm"
                     variant="secondary"
-                    onClick={() => toast.dismiss(t)}
+                    onClick={() => {
+                      remainingTime.current = Date.now() + 1000 * 60 * 60 * 1; // 1 hour
+                      toast.dismiss(t);
+                    }}
                   >
                     Remind later
                   </Button>
