@@ -28,6 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create GitHub Token File
+        if: ${{ secrets.REPOSITORY_TOKEN != '' }}
+        run: |
+          echo "${{ secrets.REPOSITORY_TOKEN }}" > credentials/github-token.txt
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
