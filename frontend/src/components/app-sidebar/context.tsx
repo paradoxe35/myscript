@@ -48,6 +48,7 @@ function useSidebarItems() {
   const $pagesTree = useSyncRef(pagesTree);
 
   const activePage = activePageStore.page;
+  const activePageId = activePageStore.getPageId();
 
   useEffect(() => {
     localPagesStore.getPages();
@@ -136,6 +137,20 @@ function useSidebarItems() {
     return localPagesStore.pages.slice().sort((a, b) => a.order - b.order);
   }, [localPagesStore.pages]);
 
+  const filteredPages = useMemo(() => {
+    const searchValue = search.trim();
+    if (!searchValue) {
+      return sortedPages;
+    }
+
+    return sortedPages.filter((page) => {
+      const words = searchValue.split(" ");
+      return words.every((word) => {
+        return cls(page.title).includes(cls(word));
+      });
+    });
+  }, [sortedPages, search]);
+
   useEffect(() => {
     // Create items for all pages
     const items = sortedPages.reduce((acc, page) => {
@@ -168,8 +183,34 @@ function useSidebarItems() {
       data: null, // Or add root data if needed
     };
 
+    // For active page, all parents are expanded
+    if (activePageId) {
+      const getParents = (id: ItemId) => {
+        const parents: ItemId[] = [];
+        const item = items[id as any];
+
+        if (!item) {
+          return parents;
+        }
+
+        const parentID = item.data?.ParentID;
+
+        if (parentID) {
+          parents.push(parentID);
+          parents.push(...getParents(parentID));
+        }
+
+        return parents;
+      };
+
+      const activePageParents = getParents(activePageId);
+      activePageParents.forEach((parentId) => {
+        items[parentId as any].isExpanded = true;
+      });
+    }
+
     setPagesTree({ rootId, items });
-  }, [sortedPages]);
+  }, [sortedPages, activePageId]);
 
   const reorderLocalPages = useCallback(
     (
@@ -248,8 +289,9 @@ function useSidebarItems() {
   return useMemo(() => {
     return {
       search,
+      hasSearch: search.trim().length > 0,
       setSearch,
-
+      filteredPages,
       pagesTree,
       notionPages,
       activePage,
@@ -265,6 +307,7 @@ function useSidebarItems() {
     search,
     setSearch,
     pagesTree,
+    filteredPages,
     notionPages,
     activePage,
     createNewPage,
