@@ -25,7 +25,7 @@ export function ZoomController() {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent>
+      <DropdownMenuContent className="select-none">
         <DropdownMenuLabel
           onClick={(e) => e.preventDefault()}
           className="flex items-center gap-2"
