@@ -30,7 +30,7 @@ endif
 build:
 	@npm install -g cross-env
 ifeq ($(DETECTED_OS),Windows)
-	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails build -clean ${BUILD_FLAGS}
+	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails build -clean
 else
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails build -clean ${BUILD_FLAGS}
 endif

@@ -16,6 +16,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/wailsapp/wails/v2 v2.9.2
 	golang.org/x/oauth2 v0.25.0
+	golang.org/x/text v0.21.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
@@ -80,7 +81,6 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.2 // indirect
 	gorm.io/driver/mysql v1.5.7 // indirect

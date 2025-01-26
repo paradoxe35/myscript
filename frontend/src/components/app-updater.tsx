@@ -11,6 +11,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw } from "lucide-react";
+import { LogError } from "~wails-runtime";
+
+const errorMessage = (error: any) =>
+  typeof error === "string" ? error : error?.message;
 
 export function AppUpdater() {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -40,7 +44,7 @@ export function AppUpdater() {
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
       toast.error("Update failed. Please try again.");
-      console.error("Update error:", error);
+      LogError("Update error: " + errorMessage(error));
     } finally {
       setIsUpdating(false);
       setUpdateProgress(0);
@@ -97,8 +101,8 @@ export function AppUpdater() {
             }
           );
         }
-      } catch (error) {
-        console.error("Update check failed:", error);
+      } catch (error: any) {
+        LogError("Update check failed:" + errorMessage(error));
       }
     };
 

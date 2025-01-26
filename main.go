@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"errors"
+	"io"
 	"io/fs"
 	"log/slog"
 	"myscript/internal/database"
@@ -16,6 +18,8 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"golang.org/x/text/encoding/unicode"
+	"golang.org/x/text/transform"
 )
 
 //go:embed all:frontend/dist
@@ -85,11 +89,23 @@ func main() {
 func readGitHubToken() string {
 	var token string
 
-	if githubTokenFile, err := credentials.ReadFile("credentials/github-token.txt"); err == nil {
-		token = strings.TrimSpace(string(githubTokenFile))
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		slog.Error("Unexpected error opening GitHub token", "error", err)
+	githubTokenFile, err := credentials.ReadFile("credentials/github-token.txt")
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			slog.Error("Unexpected error opening GitHub token", "error", err)
+		}
+		return ""
 	}
 
+	// Detect and handle UTF-16 encoding
+	decoder := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
+	utf8Reader := transform.NewReader(bytes.NewReader(githubTokenFile), decoder)
+	decoded, err := io.ReadAll(utf8Reader)
+	if err != nil {
+		slog.Error("Failed to decode token", "error", err)
+		return ""
+	}
+
+	token = strings.TrimSpace(string(decoded))
 	return token
 }
