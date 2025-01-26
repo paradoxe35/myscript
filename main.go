@@ -47,7 +47,7 @@ func main() {
 	// Set Slog as the default logger
 	slog.SetDefault(logger.Slog)
 
-	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, AppVersion)
+	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
 	appUpdater.SetToken(readGitHubToken())
 
 	// Create an instance of the app structure
