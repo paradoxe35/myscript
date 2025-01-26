@@ -14,8 +14,8 @@ type Page struct {
 	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
 	// Self-referential relationship
-	ParentID *uint  `gorm:"index;constraint:OnDelete:SET NULL"` // Nullable, allows for root-level pages
-	Children []Page `gorm:"foreignkey:ParentID"`
+	ParentID *uint  `gorm:"index"` // Nullable parent reference
+	Children []Page `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
 }
 
 type MapUpdate = map[string]interface{}

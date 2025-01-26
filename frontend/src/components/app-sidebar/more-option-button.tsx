@@ -16,7 +16,7 @@ import { useLocalPagesStore } from "@/store/local-pages";
 export function MoreOptionButton({ page }: { page: repository.Page }) {
   const { prompt } = useAsyncPromptModal();
 
-  const deletePage = useLocalPagesStore((state) => state.deletePage);
+  const localPagesStore = useLocalPagesStore();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -27,9 +27,22 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
       confirmationPrompt: true,
     });
 
-    if (canDelete) {
-      deletePage(page.ID);
+    if (!canDelete) {
+      return;
     }
+
+    const pageChildren = localPagesStore.pages.filter(
+      (p) => p.ParentID === page.ID
+    );
+
+    await Promise.all(
+      pageChildren.map((p) => {
+        p.ParentID = page.ParentID;
+        return localPagesStore.saveNewPageOrder(p);
+      })
+    );
+
+    localPagesStore.deletePage(page.ID);
   };
 
   return (

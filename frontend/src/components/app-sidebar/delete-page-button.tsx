@@ -23,7 +23,9 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
   const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
 
-  const handleDeletePage = async () => {
+  const handleDeletePage = async (e: any) => {
+    e?.stopPropagation();
+
     const activePage = activePageStore.page;
 
     const pageChildren = localPagesStore.pages.filter(
