@@ -105,11 +105,11 @@ export function AppUpdater() {
     let intervalID: NodeJS.Timeout | undefined;
 
     (async () => {
-      //   const isDevMode = await IsDevMode();
-      //   if (isDevMode) return;
-
-      checkForUpdates();
-      intervalID = setInterval(checkForUpdates, 1000 * 60 * 3);
+      const inDevMode = await IsDevMode();
+      if (!inDevMode) {
+        checkForUpdates();
+        intervalID = setInterval(checkForUpdates, 1000 * 60 * 3);
+      }
     })();
 
     return () => clearInterval(intervalID);
