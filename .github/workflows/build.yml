@@ -28,11 +28,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create GitHub Token File
-        if: ${{ secrets.REPOSITORY_TOKEN != '' }}
-        run: |
-          echo "${{ secrets.REPOSITORY_TOKEN }}" > credentials/github-token.txt
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,6 +38,14 @@ jobs:
         with:
           version: 9
           run_install: false
+
+      - name: Create GitHub Token File
+        run: |
+          echo "${{ secrets.REPOSITORY_TOKEN }}" > credentials/github-token.txt
+
+      - name: Set App Version
+        run: |
+          echo "${{ github.ref_name }}" > version.txt
 
       - name: Create API Keys file
         run: |
@@ -74,10 +77,6 @@ jobs:
         run: |
           brew update
           brew install sdl2 cmake gcc
-
-      - name: Set App Version
-        run: |
-          echo "${{ github.ref_name }}" > version.txt
 
       - name: Build Windows
         if: matrix.os == 'windows-latest'
