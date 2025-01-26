@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"errors"
-	"io"
 	"io/fs"
 	"log/slog"
 	"myscript/internal/database"
@@ -86,17 +85,8 @@ func main() {
 func readGitHubToken() string {
 	var token string
 
-	if githubTokenFile, err := credentials.Open("github-token.txt"); err == nil {
-		tokenBytes, readErr := io.ReadAll(githubTokenFile)
-		if readErr == nil {
-			token = strings.TrimSpace(string(tokenBytes))
-		} else {
-			slog.Error("Failed to read GitHub token file", "error", readErr)
-		}
-
-		if closeErr := githubTokenFile.Close(); closeErr != nil {
-			slog.Warn("Failed to close token file", "error", closeErr)
-		}
+	if githubTokenFile, err := credentials.ReadFile("credentials/github-token.txt"); err == nil {
+		token = strings.TrimSpace(string(githubTokenFile))
 	} else if !errors.Is(err, fs.ErrNotExist) {
 		slog.Error("Unexpected error opening GitHub token", "error", err)
 	}
