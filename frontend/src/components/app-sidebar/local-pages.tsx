@@ -104,10 +104,7 @@ function PageItemTree({ provided, snapshot, item }: RenderItemParams) {
 
   return (
     <SidebarMenuItem
-      className={cn(
-        snapshot.isDragging && "opacity-40",
-        item.hasChildren && item.isExpanded && "mb-1"
-      )}
+      className={cn(snapshot.isDragging && "opacity-40")}
       ref={provided.innerRef}
       {...provided.draggableProps}
       {...provided.dragHandleProps}
@@ -133,7 +130,7 @@ function PageLocalItem({
   const Icon = page.is_folder ? FolderIcon : FileTextIcon;
 
   return (
-    <div className="group/local">
+    <div className="group/local mb-[2px]">
       <SidebarMenuButton
         isActive={active}
         onClick={() => {
