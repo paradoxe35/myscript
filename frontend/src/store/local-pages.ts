@@ -16,6 +16,7 @@ type LocalPagesStore = {
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
+  savePage: (page: repository.Page) => Promise<repository.Page>;
   saveNewPageOrder: (page: repository.Page) => Promise<void>;
   savePageTitle: (
     title: string,
@@ -82,6 +83,10 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     get().getPages();
 
     return newPage;
+  },
+
+  savePage: async (page) => {
+    return SaveLocalPage(repository.Page.createFrom(page));
   },
 
   saveNewPageOrder: async (page) => {

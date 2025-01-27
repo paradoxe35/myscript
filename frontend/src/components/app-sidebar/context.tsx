@@ -217,9 +217,9 @@ function useSidebarItems() {
         item.isExpanded = true;
 
         // Save page expanded state
-        if (page && !page.expanded) {
+        if (page && page.is_folder && !page.expanded) {
           page.expanded = true;
-          localPagesStore.saveNewPageOrder(page);
+          localPagesStore.savePage(page);
         }
       });
     }
