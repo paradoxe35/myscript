@@ -213,6 +213,13 @@ function useSidebarItems() {
       const activePageParents = getParents(activePageId);
       activePageParents.forEach((parentId) => {
         items[parentId as any].isExpanded = true;
+        const page = items[parentId as any].data as repository.Page;
+
+        // Save page expanded state
+        if (page && !page.expanded) {
+          page.expanded = true;
+          localPagesStore.saveNewPageOrder(page);
+        }
       });
     }
 
