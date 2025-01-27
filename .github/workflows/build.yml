@@ -40,8 +40,9 @@ jobs:
           run_install: false
 
       - name: Create GitHub Token File
-        run: |
-          echo "${{ secrets.REPOSITORY_TOKEN }}" > credentials/github-token.txt
+        run: node -e "require('fs').writeFileSync('credentials/github-token.txt', process.env.REPOSITORY_TOKEN)"
+        env:
+          REPOSITORY_TOKEN: "${{ secrets.REPOSITORY_TOKEN }}"
 
       - name: Set App Version
         run: |
