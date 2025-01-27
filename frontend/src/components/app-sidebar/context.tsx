@@ -212,8 +212,9 @@ function useSidebarItems() {
 
       const activePageParents = getParents(activePageId);
       activePageParents.forEach((parentId) => {
-        items[parentId as any].isExpanded = true;
-        const page = items[parentId as any].data as repository.Page;
+        const item = items[parentId as any];
+        const page = item.data as repository.Page;
+        item.isExpanded = true;
 
         // Save page expanded state
         if (page && !page.expanded) {
