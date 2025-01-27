@@ -85,6 +85,7 @@ jobs:
         run: |
           wails build -platform windows/${{ matrix.arch }} -nsis -webview2 embed
           mv build/bin/*-installer.exe build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe
+          Get-ChildItem -Path build/bin -Exclude *-installer.exe | Rename-Item -NewName "${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
 
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
@@ -125,7 +126,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/**/*-installer.exe
+            artifacts/**/*.exe
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
           generate_release_notes: true
