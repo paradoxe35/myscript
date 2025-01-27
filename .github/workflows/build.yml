@@ -41,7 +41,7 @@ jobs:
 
       - name: Create GitHub Token File
         run: |
-          node -e "require('fs').writeFileSync('credentials/github-token.txt', process.env.REPOSITORY_TOKEN, { encoding: 'utf8' })"
+          node -e "require('fs').writeFileSync('credentials/github-token.txt', process.env.REPOSITORY_TOKEN)"
         env:
           REPOSITORY_TOKEN: "${{ secrets.REPOSITORY_TOKEN }}"
 

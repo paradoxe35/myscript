@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"embed"
 	"errors"
-	"io"
 	"io/fs"
 	"log/slog"
 	"myscript/internal/database"
@@ -18,8 +17,6 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	"golang.org/x/text/encoding/unicode"
-	"golang.org/x/text/transform"
 )
 
 //go:embed all:frontend/dist
@@ -52,7 +49,6 @@ func main() {
 	slog.SetDefault(logger.Slog)
 
 	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
-	slog.Error("GitHub token", "token", readGitHubToken())
 	appUpdater.SetToken(readGitHubToken())
 
 	// Create an instance of the app structure
@@ -88,8 +84,6 @@ func main() {
 }
 
 func readGitHubToken() string {
-	var token string
-
 	githubTokenFile, err := credentials.ReadFile("credentials/github-token.txt")
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
@@ -98,15 +92,14 @@ func readGitHubToken() string {
 		return ""
 	}
 
-	// Detect and handle UTF-16 encoding
-	decoder := unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder()
-	utf8Reader := transform.NewReader(bytes.NewReader(githubTokenFile), decoder)
-	decoded, err := io.ReadAll(utf8Reader)
-	if err != nil {
-		slog.Error("Failed to decode token", "error", err)
-		return ""
-	}
+	// Remove UTF-8 BOM if present
+	data := bytes.TrimPrefix(githubTokenFile, []byte{0xEF, 0xBB, 0xBF})
 
-	token = strings.TrimSpace(string(decoded))
+	// Remove UTF-16 BOM if present
+	data = bytes.TrimPrefix(data, []byte{0xFF, 0xFE})
+
+	// Handle Windows/Unix line endings
+	token := strings.TrimSpace(strings.ReplaceAll(string(data), "\r\n", "\n"))
+
 	return token
 }
