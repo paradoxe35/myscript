@@ -21,7 +21,7 @@ export function AppUpdater() {
   const [updateProgress, setUpdateProgress] = useState(0);
   const [updateMessage, setUpdateMessage] = useState("");
 
-  const remainingTime = useRef<number | null>(null);
+  const lastCheckTime = useRef<number | null>(null);
 
   const handleUpdate = async () => {
     setIsUpdating(true);
@@ -52,13 +52,17 @@ export function AppUpdater() {
   };
 
   useEffect(() => {
+    let intervalID: NodeJS.Timeout | undefined;
+
     const checkForUpdates = async () => {
       if (
-        remainingTime.current !== null &&
-        Date.now() < remainingTime.current
+        lastCheckTime.current !== null &&
+        Date.now() < lastCheckTime.current
       ) {
         return;
       }
+
+      lastCheckTime.current = Date.now() + 1000 * 60 * 2; // 2 minutes
 
       try {
         const response = await CheckForUpdates();
@@ -76,7 +80,7 @@ export function AppUpdater() {
                     size="sm"
                     variant="secondary"
                     onClick={() => {
-                      remainingTime.current = Date.now() + 1000 * 60 * 60 * 1; // 1 hour
+                      lastCheckTime.current = Date.now() + 1000 * 60 * 60 * 1; // 1 hour
                       toast.dismiss(t);
                     }}
                   >
@@ -106,18 +110,18 @@ export function AppUpdater() {
       }
     };
 
-    let intervalID: NodeJS.Timeout | undefined;
-
     (async () => {
       const inDevMode = await IsDevMode();
       if (!inDevMode) {
         checkForUpdates();
-        intervalID = setInterval(checkForUpdates, 1000 * 60 * 3);
+        intervalID = setInterval(checkForUpdates, 2000);
       }
     })();
 
-    return () => clearInterval(intervalID);
-  }, []);
+    return () => {
+      clearInterval(intervalID);
+    };
+  }, [lastCheckTime]);
 
   return (
     <Dialog open={isUpdating} modal>
