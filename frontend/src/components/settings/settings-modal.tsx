@@ -82,7 +82,13 @@ export function SettingsModal(props: PropsWithChildren) {
 
               {state.TranscriberSource === "witai" && <WitAIHint />}
 
-              {state.TranscriberSource === "groq" && <GroqApiKey />}
+              {state.TranscriberSource === "groq" && (
+                <>
+                  <Separator />
+
+                  <GroqApiKey />
+                </>
+              )}
             </div>
           </TabsContent>
         </Tabs>
