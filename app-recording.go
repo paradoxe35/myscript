@@ -29,6 +29,8 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
 		bookId := pq.Book()
 
+		slog.Debug("AudioSequencer: new audio chunk", "chunk", len(buffer), "transcribing", true)
+
 		waveBuffer, _ := a.audioSequencer.RawBytesToWAV(buffer)
 		transcribed, err := a.Transcribe(waveBuffer, language)
 

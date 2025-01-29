@@ -21,10 +21,6 @@ type process struct {
 
 type BookID uint
 
-func (b BookID) String() string {
-	return string(rune(b))
-}
-
 func NewProcessQueue(name string) *ProcessQueue {
 	return &ProcessQueue{
 		processCounter: 0,
@@ -53,7 +49,7 @@ func (pq *ProcessQueue) Book() BookID {
 
 func (pq *ProcessQueue) Add(id BookID, callback func()) {
 	if _, ok := pq.processes[id]; !ok {
-		slog.Debug("ProcessQueue: process not found", "name", pq.name, "id", id)
+		slog.Debug("ProcessQueue: process not found", "name", pq.name, "id", uint(id))
 		return
 	}
 
@@ -85,7 +81,7 @@ func (pq *ProcessQueue) worker() {
 	// Wait for the process to be ready
 	<-proc.ready
 
-	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", string(rune(pq.executionId)))
+	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", uint(pq.executionId))
 
 	if proc.callback != nil {
 		proc.callback()
