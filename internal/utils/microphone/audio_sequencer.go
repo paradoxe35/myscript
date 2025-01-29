@@ -58,7 +58,7 @@ func NewAudioSequencer() *AudioSequencer {
 		MaxDecibels:     0,
 		TriggerDecibels: -40,
 		NoiseThreshold:  -50,
-		MaxBlankTime:    600,
+		MaxBlankTime:    500,
 
 		SampleRate: DEFAULT_SAMPLE_RATE,
 		Channels:   DEFAULT_CHANNELS,
