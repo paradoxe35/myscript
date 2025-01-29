@@ -74,8 +74,7 @@ func (pq *ProcessQueue) worker() {
 
 	proc, ok := pq.processes[pq.executionId]
 	if !ok {
-		// If process not found, it means that the worker was stopped
-		// reset the processing flag
+		// If process not found, it means we reached the end of the queue
 		pq.processes = make(map[BookID]*process)
 		pq.processCounter = 0
 		pq.executionId = 0
@@ -86,7 +85,7 @@ func (pq *ProcessQueue) worker() {
 	// Wait for the process to be ready
 	<-proc.ready
 
-	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", pq.executionId.String())
+	slog.Debug("ProcessQueue: executing process", "name", pq.name, "id", string(rune(pq.executionId)))
 
 	if proc.callback != nil {
 		proc.callback()

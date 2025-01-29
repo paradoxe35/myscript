@@ -203,7 +203,7 @@ func (ar *AudioSequencer) Start(micInputDeviceID []byte) error {
 func (ar *AudioSequencer) autoStop() {
 	// if silence duration exceeds MaxSilenceTime
 	// we stop recording
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {

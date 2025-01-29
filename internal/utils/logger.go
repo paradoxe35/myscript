@@ -37,9 +37,9 @@ func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 
 	var multiWriter io.Writer
 	if devMode {
-		multiWriter = io.MultiWriter(os.Stdout, os.Stderr)
+		multiWriter = io.MultiWriter(os.Stdout)
 	} else {
-		multiWriter = io.MultiWriter(file, os.Stdout, os.Stderr)
+		multiWriter = io.MultiWriter(file, os.Stdout)
 	}
 
 	var ReplaceAttr func(groups []string, a slog.Attr) slog.Attr

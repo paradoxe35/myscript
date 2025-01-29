@@ -24,8 +24,6 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		return err
 	}
 
-	slog.Debug("Starting recording with language", "language", language)
-
 	pq := utils.NewProcessQueue("transcriber-queue")
 
 	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
@@ -50,6 +48,8 @@ func (a *App) StartRecording(language string, micInputDeviceID string) error {
 		// Unload local whisper model, if it is loaded
 		go a.lwt.Close()
 	})
+
+	slog.Debug("Starting recording with language", "language", language)
 
 	return a.audioSequencer.Start(micDeviceID)
 }
