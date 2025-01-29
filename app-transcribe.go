@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"myscript/internal/transcribe/groq"
 	"myscript/internal/transcribe/structs"
 	witai "myscript/internal/transcribe/wait.ai"
 	"myscript/internal/transcribe/whisper/openai"
@@ -53,19 +54,30 @@ func (a *App) WitTranscribe(buffer []byte, language string) (string, error) {
 	return witai.WitAITranscribeFromBuffer(buffer, apiKey.Key)
 }
 
-func (a *App) OpenAPITranscribe(buffer []byte, language string) (string, error) {
+func (a *App) OpenAITranscribe(buffer []byte, language string) (string, error) {
 	config := a.GetConfig()
-
-	if config.OpenAIApiKey == nil || *config.OpenAIApiKey == "" {
+	if *config.OpenAIApiKey == "" {
 		return "", fmt.Errorf("no OpenAI API key found")
 	}
 
-	text, err := openai.TranscribeFromBuffer(buffer, language, *config.OpenAIApiKey)
-	if err != nil {
+	if text, err := openai.TranscribeFromBuffer(buffer, language, *config.OpenAIApiKey); err != nil {
 		return "", err
+	} else {
+		return text, nil
+	}
+}
+
+func (a *App) GroqTranscribe(buffer []byte, language string) (string, error) {
+	config := a.GetConfig()
+	if *config.GroqApiKey == "" {
+		return "", fmt.Errorf("no Groq API key found")
 	}
 
-	return text, nil
+	if text, err := groq.TranscribeFromBuffer(buffer, language, *config.GroqApiKey); err != nil {
+		return "", err
+	} else {
+		return text, nil
+	}
 }
 
 func (a *App) LocalTranscribe(buffer []byte, language string) (string, error) {
@@ -81,9 +93,11 @@ func (a *App) Transcribe(buffer []byte, language string) (string, error) {
 	case "witai":
 		return a.WitTranscribe(buffer, language)
 	case "openai":
-		return a.OpenAPITranscribe(buffer, language)
+		return a.OpenAITranscribe(buffer, language)
 	case "local":
 		return a.LocalTranscribe(buffer, language)
+	case "groq":
+		return a.GroqTranscribe(buffer, language)
 	}
 
 	return "", fmt.Errorf("invalid transcriber source: %s", config.TranscriberSource)

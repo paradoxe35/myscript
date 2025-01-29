@@ -11,25 +11,9 @@ import (
 
 const WHISPER_MODEL = "whisper-1"
 
-func validateLanguage(language string) error {
-	valid := false
-	for _, lang := range whisper.GetWhisperLanguages() {
-		if lang.Code == language {
-			valid = true
-			break
-		}
-	}
-
-	if !valid {
-		return whisper.ErrInvalidLanguage
-	}
-
-	return nil
-}
-
 func TranscribeFromBuffer(buffer []byte, language, apiKey string) (string, error) {
 	// It should have a valid language
-	err := validateLanguage(language)
+	err := whisper.ValidateWhisperLanguage(language)
 	if err != nil {
 		return "", err
 	}

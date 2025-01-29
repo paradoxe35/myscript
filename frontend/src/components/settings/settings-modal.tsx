@@ -75,10 +75,14 @@ export function SettingsModal(props: PropsWithChildren) {
               </div>
 
               {state.TranscriberSource === "local" && <LocalWhisperInputs />}
+
               {state.TranscriberSource === "openai" && (
                 <OpenAIApiKeyTranscriber />
               )}
+
               {state.TranscriberSource === "witai" && <WitAIHint />}
+
+              {state.TranscriberSource === "groq" && <GroqApiKey />}
             </div>
           </TabsContent>
         </Tabs>
@@ -140,6 +144,29 @@ function OpenAIApiKey() {
 
       <p className="text-xs text-white/50">
         <em>For speech recognition and text generation.</em>
+      </p>
+    </div>
+  );
+}
+
+const GROQ_TRANSCRIBE_MODEL = "whisper-large-v3-turbo";
+
+function GroqApiKey() {
+  const { state, dispatch } = useSettings();
+
+  return (
+    <div className="flex flex-col gap-3 relative">
+      <Label className="text-xs">Groq API Key</Label>
+
+      <ApiKeyInput
+        className="col-span-3"
+        tabIndex={-1}
+        value={state.GroqApiKey}
+        onChange={(e) => dispatch({ GroqApiKey: e.target.value })}
+      />
+
+      <p className="text-xs text-white/50">
+        <em>It uses the {GROQ_TRANSCRIBE_MODEL} model.</em>
       </p>
     </div>
   );

@@ -14,7 +14,7 @@ import { repository, whisper } from "~wails/models";
 import isEqual from "lodash/isEqual";
 import { useLocalWhisperStore } from "@/store/local-whisper";
 
-export type TranscriberSource = "local" | "openai" | "witai";
+export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
 export type TranscriberSources = {
   [key in TranscriberSource]: {
@@ -35,6 +35,10 @@ export const TRANSCRIBER_SOURCES: TranscriberSources = {
   witai: {
     name: "Wit.ai",
     key: "witai",
+  },
+  groq: {
+    name: "Groq",
+    key: "groq",
   },
 };
 
@@ -88,18 +92,44 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
     localWhisperStore.getModels();
   }, []);
 
-  const handleSave = useCallback(() => {
+  function validateOpenAIApiKey(state: SettingsState) {
     if (state.TranscriberSource === "openai") {
       if (!state.OpenAIApiKey) {
         toast.error("OpenAI API key is required");
-        return;
+        return false;
       }
 
       if (!state.OpenAIApiKey.startsWith("sk-")) {
         toast.error("OpenAI API key must start with 'sk-'");
-        return;
+        return false;
       }
     }
+
+    return true;
+  }
+
+  function validateGroqApiKey(state: SettingsState) {
+    if (state.TranscriberSource === "groq") {
+      if (!state.GroqApiKey) {
+        toast.error("Groq API key is required");
+        return false;
+      }
+
+      if (!state.GroqApiKey.startsWith("gsk_")) {
+        toast.error("Groq API key must start with 'gsk_'");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  const handleSave = useCallback(() => {
+    const valid = [
+      validateOpenAIApiKey(state),
+      validateGroqApiKey(state),
+    ].every((v) => v);
+
+    if (!valid) return;
 
     configStore.writeConfig(state).then(() => {
       toast.success("Settings saved successfully!");

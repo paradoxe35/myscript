@@ -82,6 +82,10 @@ export function GetWitAILanguages() {
   return window['go']['main']['App']['GetWitAILanguages']();
 }
 
+export function GroqTranscribe(arg1, arg2) {
+  return window['go']['main']['App']['GroqTranscribe'](arg1, arg2);
+}
+
 export function IsDevMode() {
   return window['go']['main']['App']['IsDevMode']();
 }
@@ -98,8 +102,8 @@ export function LocalTranscribe(arg1, arg2) {
   return window['go']['main']['App']['LocalTranscribe'](arg1, arg2);
 }
 
-export function OpenAPITranscribe(arg1, arg2) {
-  return window['go']['main']['App']['OpenAPITranscribe'](arg1, arg2);
+export function OpenAITranscribe(arg1, arg2) {
+  return window['go']['main']['App']['OpenAITranscribe'](arg1, arg2);
 }
 
 export function PerformUpdate() {

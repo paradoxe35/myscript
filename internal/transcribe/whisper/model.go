@@ -108,6 +108,22 @@ func GetWhisperLanguages() []structs.Language {
 	return LANGUAGES
 }
 
+func ValidateWhisperLanguage(language string) error {
+	valid := false
+	for _, lang := range GetWhisperLanguages() {
+		if lang.Code == language {
+			valid = true
+			break
+		}
+	}
+
+	if !valid {
+		return ErrInvalidLanguage
+	}
+
+	return nil
+}
+
 func GetLocalWhisperModels() (models []WhisperModel) {
 	for _, model := range localWhisperModels {
 		if model.Enabled {

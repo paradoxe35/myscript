@@ -159,6 +159,7 @@ export namespace repository {
 	    DeletedAt: any;
 	    NotionApiKey?: string;
 	    OpenAIApiKey?: string;
+	    GroqApiKey?: string;
 	    TranscriberSource: string;
 	    LocalWhisperModel?: string;
 	    LocalWhisperGPU?: boolean;
@@ -175,6 +176,7 @@ export namespace repository {
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
 	        this.NotionApiKey = source["NotionApiKey"];
 	        this.OpenAIApiKey = source["OpenAIApiKey"];
+	        this.GroqApiKey = source["GroqApiKey"];
 	        this.TranscriberSource = source["TranscriberSource"];
 	        this.LocalWhisperModel = source["LocalWhisperModel"];
 	        this.LocalWhisperGPU = source["LocalWhisperGPU"];

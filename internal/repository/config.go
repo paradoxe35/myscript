@@ -4,9 +4,11 @@ import "gorm.io/gorm"
 
 type Config struct {
 	gorm.Model
-	NotionApiKey      *string `gorm:"column:notion_api_key"`
-	OpenAIApiKey      *string `gorm:"column:openai_api_key"`
-	TranscriberSource string  `gorm:"column:transcriber_source;default:local"` // local, openai, witai
+	NotionApiKey *string `gorm:"column:notion_api_key"`
+	OpenAIApiKey *string `gorm:"column:openai_api_key"`
+	GroqApiKey   *string `gorm:"column:groq_api_key"`
+
+	TranscriberSource string  `gorm:"column:transcriber_source;default:local"` // local, openai, witai, groq
 	LocalWhisperModel *string `gorm:"column:local_whisper_model"`
 	LocalWhisperGPU   *bool   `gorm:"column:local_whisper_gpu"`
 }

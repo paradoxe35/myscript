@@ -48,6 +48,8 @@ export function GetWhisperLanguages():Promise<Array<structs.Language>>;
 
 export function GetWitAILanguages():Promise<Array<structs.Language>>;
 
+export function GroqTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
+
 export function IsDevMode():Promise<boolean>;
 
 export function IsLocalWhisperModelDownloading(arg1:local_whisper.LocalWhisperModel):Promise<boolean>;
@@ -56,7 +58,7 @@ export function IsRecording():Promise<boolean>;
 
 export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
-export function OpenAPITranscribe(arg1:Array<number>,arg2:string):Promise<string>;
+export function OpenAITranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
 export function PerformUpdate():Promise<void>;
 

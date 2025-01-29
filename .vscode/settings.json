@@ -6,6 +6,7 @@
         "Colour",
         "datatypes",
         "gorm",
+        "groq",
         "Maximised",
         "myscript",
         "notionapi",
