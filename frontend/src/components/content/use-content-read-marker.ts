@@ -458,14 +458,17 @@ export function useContentReadMarker() {
       text = cleanUp(text);
 
       queue.task(() => {
-        requestAnimationFrame(() => {
-          console.groupCollapsed("New transcription...");
+        return new Promise<null>((resolve) => {
+          requestAnimationFrame(() => {
+            console.groupCollapsed("New transcription...");
 
-          onTranscribedText(text);
-          scrollToLastMarker();
-          onTranscriptionProgress();
+            onTranscribedText(text);
+            scrollToLastMarker();
+            onTranscriptionProgress();
+            resolve(null);
 
-          console.groupEnd();
+            console.groupEnd();
+          });
         });
       });
     });
