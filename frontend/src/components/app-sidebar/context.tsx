@@ -259,7 +259,7 @@ function useSidebarItems() {
       item.ParentID =
         destinationPosition.parentId === rootId
           ? (null as any)
-          : Number(destinationPosition.parentId);
+          : destinationPosition.parentId;
 
       const newTree = moveItemOnTree(
         $pagesTree.current,

@@ -15,7 +15,7 @@ type Page struct {
 	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
 	// Self-referential relationship
-	ParentID *string `gorm:"index"` // Nullable parent reference
+	ParentID *string `gorm:"type:uuid;index"` // Nullable parent reference
 	Children []Page  `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
 }
 
@@ -37,7 +37,7 @@ func GetPage(db *gorm.DB, ID string) *Page {
 }
 
 func UpdatePageOrder(db *gorm.DB, ID string, ParentID *string, order int) {
-	db.Model(&Page{}).
+	db.Debug().Model(&Page{}).
 		Where("id = ?", ID).
 		Updates(MapUpdate{
 			"order":    order,

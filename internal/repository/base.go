@@ -8,14 +8,16 @@ import (
 )
 
 type BaseUUIDModel struct {
-	ID        string `gorm:"type:uuid;primary_key;"`
+	ID        string `gorm:"type:uuid;primaryKey;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.
-func (b *BaseUUIDModel) BeforeCreate(tx *gorm.DB) (err error) {
-	b.ID = uuid.New().String()
-	return
+func (base *BaseUUIDModel) BeforeCreate(tx *gorm.DB) error {
+	if base.ID == "" {
+		base.ID = uuid.New().String()
+	}
+	return nil
 }

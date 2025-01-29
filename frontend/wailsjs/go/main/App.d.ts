@@ -28,6 +28,8 @@ export function GetCache(arg1:string):Promise<repository.CacheValue>;
 
 export function GetConfig():Promise<repository.Config>;
 
+export function GetGoogleAuthToken():Promise<repository.GoogleAuthToken>;
+
 export function GetLanguages():Promise<Array<structs.Language>>;
 
 export function GetLocalPage(arg1:string):Promise<repository.Page>;
@@ -48,6 +50,8 @@ export function GetWhisperLanguages():Promise<Array<structs.Language>>;
 
 export function GetWitAILanguages():Promise<Array<structs.Language>>;
 
+export function GoogleStartAuthorization():Promise<void>;
+
 export function GroqTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
 export function IsDevMode():Promise<boolean>;
@@ -55,6 +59,8 @@ export function IsDevMode():Promise<boolean>;
 export function IsLocalWhisperModelDownloading(arg1:local_whisper.LocalWhisperModel):Promise<boolean>;
 
 export function IsRecording():Promise<boolean>;
+
+export function IsSynchronizerEnabled():Promise<boolean>;
 
 export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 

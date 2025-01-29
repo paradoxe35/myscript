@@ -7,12 +7,14 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
 } from "react";
 import { toast } from "sonner";
 import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
 import { useLocalWhisperStore } from "@/store/local-whisper";
+import { GetAppVersion, IsSynchronizerEnabled } from "~wails/main/App";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
@@ -46,14 +48,7 @@ type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
   TranscriberSource: TranscriberSource;
 };
 
-export type SettingsContextValue = {
-  state: SettingsState;
-  bestWhisperModel: string | undefined;
-  whisperModels: whisper.WhisperModel[];
-  configModified: boolean;
-  dispatch: React.Dispatch<Partial<SettingsState>>;
-  handleSave: () => void;
-};
+type SettingsContextValue = ReturnType<typeof useSettingsHook>;
 
 const SettingsContext = createContext<SettingsContextValue>({} as any);
 
@@ -64,14 +59,22 @@ function reducer(state: SettingsState, action: Partial<SettingsState>) {
   };
 }
 
-export function SettingsProvider({ children }: React.PropsWithChildren) {
+function useSettingsHook() {
+  const [appVersion, setAppVersion] = useState("");
+
   const [state, dispatch] = useReducer(reducer, { TranscriberSource: "local" });
+
+  const cloudHook = useCloudSettings();
 
   const localWhisperStore = useLocalWhisperStore();
   const configStore = useConfigStore();
 
   useEffect(() => {
     configStore.fetchConfig();
+  }, []);
+
+  useEffect(() => {
+    GetAppVersion().then((v) => setAppVersion(v));
   }, []);
 
   useEffect(() => {
@@ -140,19 +143,37 @@ export function SettingsProvider({ children }: React.PropsWithChildren) {
     return !isEqual(state, configStore.config);
   }, [state, configStore.config]);
 
+  return {
+    state,
+    dispatch,
+    handleSave,
+    appVersion,
+    configModified,
+    bestWhisperModel: localWhisperStore.bestModel,
+    whisperModels: localWhisperStore.models,
+    cloud: cloudHook,
+  };
+}
+
+function useCloudSettings() {
+  const [cloudEnabled, setCloudEnabled] = useState(false);
+
+  useEffect(() => {
+    IsSynchronizerEnabled().then((enabled) => {
+      setCloudEnabled(enabled);
+    });
+  }, []);
+
+  return {
+    cloudEnabled,
+  };
+}
+
+export function SettingsProvider({ children }: React.PropsWithChildren) {
+  const hook = useSettingsHook();
+
   return (
-    <SettingsContext.Provider
-      value={{
-        state,
-        dispatch,
-        handleSave,
-        configModified,
-        bestWhisperModel: localWhisperStore.bestModel,
-        whisperModels: localWhisperStore.models,
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
+    <SettingsContext.Provider value={hook}>{children}</SettingsContext.Provider>
   );
 }
 

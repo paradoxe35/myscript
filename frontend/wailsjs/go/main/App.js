@@ -42,6 +42,10 @@ export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
 }
 
+export function GetGoogleAuthToken() {
+  return window['go']['main']['App']['GetGoogleAuthToken']();
+}
+
 export function GetLanguages() {
   return window['go']['main']['App']['GetLanguages']();
 }
@@ -82,6 +86,10 @@ export function GetWitAILanguages() {
   return window['go']['main']['App']['GetWitAILanguages']();
 }
 
+export function GoogleStartAuthorization() {
+  return window['go']['main']['App']['GoogleStartAuthorization']();
+}
+
 export function GroqTranscribe(arg1, arg2) {
   return window['go']['main']['App']['GroqTranscribe'](arg1, arg2);
 }
@@ -96,6 +104,10 @@ export function IsLocalWhisperModelDownloading(arg1) {
 
 export function IsRecording() {
   return window['go']['main']['App']['IsRecording']();
+}
+
+export function IsSynchronizerEnabled() {
+  return window['go']['main']['App']['IsSynchronizerEnabled']();
 }
 
 export function LocalTranscribe(arg1, arg2) {

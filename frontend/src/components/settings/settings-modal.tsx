@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { PropsWithChildren, useEffect, useState } from "react";
+import { PropsWithChildren } from "react";
 import { Separator } from "../ui/separator";
 import { ApiKeyInput } from "../ui/api-key-input";
 import { TRANSCRIBER_SOURCES, useSettings, TranscriberSource } from "./context";
@@ -22,16 +22,12 @@ import {
   SelectValue,
 } from "../ui/select";
 import { LocalWhisperInputs } from "./settings-local-whisper";
-import { GetAppVersion } from "~wails/main/App";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { SettingsCloud } from "./settings-cloud";
 
 export function SettingsModal(props: PropsWithChildren) {
-  const [version, setVersion] = useState("");
-  const { state, configModified, handleSave } = useSettings();
-
-  useEffect(() => {
-    GetAppVersion().then((v) => setVersion(v));
-  }, []);
+  const { state, cloud, appVersion, configModified, handleSave } =
+    useSettings();
 
   return (
     <Dialog>
@@ -41,22 +37,26 @@ export function SettingsModal(props: PropsWithChildren) {
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription className="text-xs text-white/50">
-            Version: {version}
+            Version: {appVersion}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="api-keys" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+
             <TabsTrigger value="speech-recognition">
               Speech Recognition
             </TabsTrigger>
+
+            {cloud.cloudEnabled && (
+              <TabsTrigger value="cloud">Cloud</TabsTrigger>
+            )}
           </TabsList>
 
-          {/* Body */}
-          <TabsContent value="api-keys">
+          {/* Notion API Key */}
+          <TabsContent value="api-keys" className="min-h-48">
             <div className="grid gap-4 py-4">
-              {/* Notion API Key */}
               <NotionInputs />
               <Separator />
 
@@ -66,8 +66,8 @@ export function SettingsModal(props: PropsWithChildren) {
             </div>
           </TabsContent>
 
-          <TabsContent value="speech-recognition">
-            {/* Speech Recognition */}
+          {/* Speech Recognition */}
+          <TabsContent value="speech-recognition" className="min-h-48">
             <div className="grid gap-4 py-4">
               <div className="flex flex-col gap-4 relative">
                 <Label>Speech Recognition (Whisper, Wit.ai)</Label>
@@ -91,6 +91,13 @@ export function SettingsModal(props: PropsWithChildren) {
               )}
             </div>
           </TabsContent>
+
+          {/* Cloud */}
+          {cloud.cloudEnabled && (
+            <TabsContent value="cloud" className="min-h-48">
+              <SettingsCloud />
+            </TabsContent>
+          )}
         </Tabs>
 
         <DialogFooter>
