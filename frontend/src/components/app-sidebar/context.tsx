@@ -271,6 +271,7 @@ function useSidebarItems() {
 
       // Save new pages orders
       let order = 0;
+      const applyingOrders: Promise<void>[] = [];
       const applyOrder = (pages: repository.Page[]) => {
         for (let page of pages) {
           if (page.ID === item.ID) {
@@ -278,7 +279,7 @@ function useSidebarItems() {
           }
 
           page.order = ++order;
-          localPagesStore.saveNewPageOrder(page);
+          applyingOrders.push(localPagesStore.saveNewPageOrder(page));
 
           const pageChildren = items[page.ID].children.map((id) => {
             return items[id].data as repository.Page;
@@ -295,6 +296,13 @@ function useSidebarItems() {
       });
 
       applyOrder(rootChildren);
+
+      // After all orders are applied, refresh active page
+      Promise.all(applyingOrders).then(() => {
+        if (activePage?.__typename === "local_page") {
+          activePageStore.fetchPageBlocks();
+        }
+      });
 
       setPagesTree(newTree);
     },
