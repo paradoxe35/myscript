@@ -56,7 +56,7 @@ func NewAudioSequencer() *AudioSequencer {
 	config := NoiseConfig{
 		MinDecibels:     -100,
 		MaxDecibels:     0,
-		TriggerDecibels: -30,
+		TriggerDecibels: -40,
 		NoiseThreshold:  -50,
 		MaxBlankTime:    600,
 
