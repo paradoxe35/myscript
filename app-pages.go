@@ -39,18 +39,18 @@ func (a *App) GetLocalPages() []repository.Page {
 	return repository.GetPages(a.syncedDb)
 }
 
-func (a *App) GetLocalPage(id uint) *repository.Page {
-	return repository.GetPage(a.syncedDb, id)
+func (a *App) GetLocalPage(ID string) *repository.Page {
+	return repository.GetPage(a.syncedDb, ID)
 }
 
 func (a *App) SaveLocalPage(page *repository.Page) *repository.Page {
 	return repository.SavePage(a.syncedDb, page)
 }
 
-func (a *App) DeleteLocalPage(id uint) {
-	repository.DeletePage(a.syncedDb, id)
+func (a *App) DeleteLocalPage(ID string) {
+	repository.DeletePage(a.syncedDb, ID)
 }
 
-func (a *App) UpdateLocalPageOrder(id uint, ParentID *uint, order int) {
-	repository.UpdatePageOrder(a.syncedDb, id, ParentID, order)
+func (a *App) UpdateLocalPageOrder(ID string, ParentID *string, order int) {
+	repository.UpdatePageOrder(a.syncedDb, ID, ParentID, order)
 }

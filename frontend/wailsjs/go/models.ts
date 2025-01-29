@@ -201,7 +201,7 @@ export namespace repository {
 		}
 	}
 	export class Page {
-	    ID: number;
+	    ID: string;
 	    // Go type: time
 	    CreatedAt: any;
 	    // Go type: time
@@ -214,7 +214,7 @@ export namespace repository {
 	    is_folder: boolean;
 	    expanded: boolean;
 	    order: number;
-	    ParentID?: number;
+	    ParentID?: string;
 	    Children: Page[];
 	
 	    static createFrom(source: any = {}) {

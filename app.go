@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"myscript/internal/synchronizer"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
@@ -20,11 +21,15 @@ type App struct {
 }
 
 type AppOptions struct {
+	SyncedDb   *gorm.DB
+	UnSyncedDb *gorm.DB
+
 	Lwt            *local_whisper.LocalWhisperTranscriber
-	SyncedDb       *gorm.DB
-	UnSyncedDb     *gorm.DB
 	AudioSequencer *microphone.AudioSequencer
 	Updater        *updater.Updater
+
+	// Synchronizer
+	GoogleClient *synchronizer.GoogleClient
 }
 
 // NewApp creates a new App application struct

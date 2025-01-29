@@ -14,7 +14,7 @@ export function CheckForUpdates():Promise<string>;
 
 export function DeleteCache(arg1:string):Promise<void>;
 
-export function DeleteLocalPage(arg1:number):Promise<void>;
+export function DeleteLocalPage(arg1:string):Promise<void>;
 
 export function DownloadLocalWhisperModels(arg1:Array<local_whisper.LocalWhisperModel>):Promise<void>;
 
@@ -30,7 +30,7 @@ export function GetConfig():Promise<repository.Config>;
 
 export function GetLanguages():Promise<Array<structs.Language>>;
 
-export function GetLocalPage(arg1:number):Promise<repository.Page>;
+export function GetLocalPage(arg1:string):Promise<repository.Page>;
 
 export function GetLocalPages():Promise<Array<repository.Page>>;
 
@@ -74,6 +74,6 @@ export function StopRecording():Promise<void>;
 
 export function Transcribe(arg1:Array<number>,arg2:string):Promise<string>;
 
-export function UpdateLocalPageOrder(arg1:number,arg2:any,arg3:number):Promise<void>;
+export function UpdateLocalPageOrder(arg1:string,arg2:any,arg3:number):Promise<void>;
 
 export function WitTranscribe(arg1:Array<number>,arg2:string):Promise<string>;

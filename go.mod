@@ -9,6 +9,7 @@ require (
 	github.com/gen2brain/malgo v0.11.23
 	github.com/go-audio/wav v1.1.0
 	github.com/google/go-github/v50 v50.2.0
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/openai/openai-go v0.1.0-alpha.41
@@ -16,6 +17,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/wailsapp/wails/v2 v2.9.2
 	golang.org/x/oauth2 v0.25.0
+	google.golang.org/api v0.219.0
 	gorm.io/datatypes v1.2.5
 	gorm.io/driver/sqlite v1.5.7
 	gorm.io/gorm v1.25.12
@@ -41,7 +43,6 @@ require (
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
@@ -84,7 +85,6 @@ require (
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	google.golang.org/api v0.219.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250124145028-65684f501c47 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect

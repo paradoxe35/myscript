@@ -12,7 +12,7 @@ import { repository } from "~wails/models";
 type LocalPagesStore = {
   pages: Array<repository.Page>;
   getPages: () => Promise<void>;
-  getPage: (id: number) => Promise<repository.Page>;
+  getPage: (ID: string) => Promise<repository.Page>;
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
@@ -27,7 +27,7 @@ type LocalPagesStore = {
     blocks: any,
     htmlContent: string
   ) => Promise<repository.Page>;
-  deletePage: (id: number) => Promise<void>;
+  deletePage: (ID: string) => Promise<void>;
 };
 
 type TPage = WithoutRepositoryBaseFields<repository.Page>;
@@ -44,8 +44,8 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     set({ pages });
   },
 
-  getPage: async (id) => {
-    const page = await GetLocalPage(id);
+  getPage: async (ID) => {
+    const page = await GetLocalPage(ID);
     return page;
   },
 
@@ -131,8 +131,8 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     return newPage;
   },
 
-  deletePage: async (id) => {
-    await DeleteLocalPage(id);
+  deletePage: async (ID) => {
+    await DeleteLocalPage(ID);
 
     get().getPages();
   },

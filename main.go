@@ -1,13 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"embed"
-	"errors"
-	"io/fs"
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
+	"myscript/internal/synchronizer"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
@@ -52,11 +50,17 @@ func main() {
 	appUpdater.SetToken(readGitHubToken())
 
 	// Create an instance of the app structure
+	syncedDb := database.NewSyncedDatabase(filesystem.HOME_DIR)
+	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
+
 	app := NewApp(
 		AppOptions{
-			SyncedDb:       database.NewSyncedDatabase(filesystem.HOME_DIR),
-			AudioSequencer: microphone.NewAudioSequencer(),
+			SyncedDb:   syncedDb,
+			UnSyncedDb: unSyncedDb,
+
+			GoogleClient:   synchronizer.NewGoogleClient(readGoogleCredentials(), unSyncedDb),
 			Lwt:            local_whisper.NewLocalWhisperTranscriber(),
+			AudioSequencer: microphone.NewAudioSequencer(),
 			Updater:        appUpdater,
 		},
 	)
@@ -81,25 +85,4 @@ func main() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
-}
-
-func readGitHubToken() string {
-	githubTokenFile, err := credentials.ReadFile("credentials/github-token.txt")
-	if err != nil {
-		if !errors.Is(err, fs.ErrNotExist) {
-			slog.Error("Unexpected error opening GitHub token", "error", err)
-		}
-		return ""
-	}
-
-	// Remove UTF-8 BOM if present
-	data := bytes.TrimPrefix(githubTokenFile, []byte{0xEF, 0xBB, 0xBF})
-
-	// Remove UTF-16 BOM if present
-	data = bytes.TrimPrefix(data, []byte{0xFF, 0xFE})
-
-	// Handle Windows/Unix line endings
-	token := strings.TrimSpace(strings.ReplaceAll(string(data), "\r\n", "\n"))
-
-	return token
 }

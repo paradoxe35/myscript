@@ -61,5 +61,8 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 		panic("failed to connect database: " + err.Error())
 	}
 
+	// Migrate schemas
+	db.AutoMigrate(&repository.GoogleAuthToken{})
+
 	return db
 }
