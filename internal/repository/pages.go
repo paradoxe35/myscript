@@ -6,7 +6,8 @@ import (
 )
 
 type Page struct {
-	gorm.Model
+	BaseUUIDModel
+
 	Title       string         `json:"title"`
 	HtmlContent string         `json:"html_content"`
 	Blocks      datatypes.JSON `json:"blocks"`

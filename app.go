@@ -15,13 +15,14 @@ type App struct {
 	ctx            context.Context
 	audioSequencer *microphone.AudioSequencer
 	lwt            *local_whisper.LocalWhisperTranscriber
-	db             *gorm.DB
+	syncedDb       *gorm.DB
 	updater        *updater.Updater
 }
 
 type AppOptions struct {
 	Lwt            *local_whisper.LocalWhisperTranscriber
-	Db             *gorm.DB
+	SyncedDb       *gorm.DB
+	UnSyncedDb     *gorm.DB
 	AudioSequencer *microphone.AudioSequencer
 	Updater        *updater.Updater
 }
@@ -29,7 +30,7 @@ type AppOptions struct {
 // NewApp creates a new App application struct
 func NewApp(options AppOptions) *App {
 	return &App{
-		db:             options.Db,
+		syncedDb:       options.SyncedDb,
 		audioSequencer: options.AudioSequencer,
 		lwt:            options.Lwt,
 		updater:        options.Updater,

@@ -5,10 +5,10 @@ import "myscript/internal/repository"
 // --- Config ---
 
 func (a *App) GetConfig() *repository.Config {
-	return repository.GetConfig(a.db)
+	return repository.GetConfig(a.syncedDb)
 }
 
 func (a *App) SaveConfig(config *repository.Config) *repository.Config {
-	repository.SaveConfig(a.db, config)
+	repository.SaveConfig(a.syncedDb, config)
 	return a.GetConfig()
 }

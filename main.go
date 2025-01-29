@@ -54,7 +54,7 @@ func main() {
 	// Create an instance of the app structure
 	app := NewApp(
 		AppOptions{
-			Db:             database.NewDatabase(filesystem.HOME_DIR),
+			SyncedDb:       database.NewSyncedDatabase(filesystem.HOME_DIR),
 			AudioSequencer: microphone.NewAudioSequencer(),
 			Lwt:            local_whisper.NewLocalWhisperTranscriber(),
 			Updater:        appUpdater,

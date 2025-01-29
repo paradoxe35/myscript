@@ -7,10 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
-const DB_NAME = "data.db"
-
-func setupDatabase(homeDir string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(homeDir+"/"+DB_NAME), &gorm.Config{})
+func setupDatabase(homeDir, dbName string) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(homeDir+"/"+dbName), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +41,8 @@ func setupDatabase(homeDir string) (*gorm.DB, error) {
 	return db, nil
 }
 
-func NewDatabase(homeDir string) *gorm.DB {
-	db, err := setupDatabase(homeDir)
+func NewSyncedDatabase(homeDir string) *gorm.DB {
+	db, err := setupDatabase(homeDir, "data.db")
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
@@ -53,6 +51,15 @@ func NewDatabase(homeDir string) *gorm.DB {
 	db.AutoMigrate(&repository.Config{})
 	db.AutoMigrate(&repository.Page{})
 	db.AutoMigrate(&repository.Cache{})
+
+	return db
+}
+
+func NewUnSyncedDatabase(homeDir string) *gorm.DB {
+	db, err := setupDatabase(homeDir, "unsynced-data.db")
+	if err != nil {
+		panic("failed to connect database: " + err.Error())
+	}
 
 	return db
 }
