@@ -46,10 +46,11 @@ func main() {
 	// Set Slog as the default logger
 	slog.SetDefault(logger.Slog)
 
+	// Updater
 	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
 	appUpdater.SetToken(readGitHubToken())
 
-	// Create an instance of the app structure
+	// Database
 	syncedDb := database.NewSyncedDatabase(filesystem.HOME_DIR)
 	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 

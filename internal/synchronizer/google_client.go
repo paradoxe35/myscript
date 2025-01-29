@@ -27,6 +27,10 @@ type GoogleClient struct {
 }
 
 func NewGoogleClient(credentials []byte, db *gorm.DB) *GoogleClient {
+	if len(credentials) == 0 {
+		return &GoogleClient{}
+	}
+
 	config, err := google.ConfigFromJSON(credentials, SCOPES...)
 
 	if err != nil {
@@ -66,12 +70,16 @@ func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 	return client, nil
 }
 
-func (c *GoogleClient) GenerateAuthURL() (string, error) {
+func (c *GoogleClient) GenerateAuthURL(redirectURI string) (string, error) {
 	if _, err := c.getConfig(); err != nil {
 		return "", err
 	}
 
-	authURL := c.config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
+	authURL := c.config.AuthCodeURL(
+		"state-token",
+		oauth2.AccessTypeOffline,
+		oauth2.SetAuthURLParam("redirect_uri", redirectURI),
+	)
 
 	slog.Debug(
 		"Go to the following link in your browser then type the",

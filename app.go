@@ -13,11 +13,16 @@ import (
 
 // App struct
 type App struct {
-	ctx            context.Context
+	ctx context.Context
+
+	syncedDb   *gorm.DB
+	UnSyncedDb *gorm.DB
+
 	audioSequencer *microphone.AudioSequencer
 	lwt            *local_whisper.LocalWhisperTranscriber
-	syncedDb       *gorm.DB
 	updater        *updater.Updater
+
+	googleClient *synchronizer.GoogleClient
 }
 
 type AppOptions struct {
@@ -36,6 +41,8 @@ type AppOptions struct {
 func NewApp(options AppOptions) *App {
 	return &App{
 		syncedDb:       options.SyncedDb,
+		UnSyncedDb:     options.UnSyncedDb,
+		googleClient:   options.GoogleClient,
 		audioSequencer: options.AudioSequencer,
 		lwt:            options.Lwt,
 		updater:        options.Updater,
