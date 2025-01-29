@@ -1,13 +1,12 @@
 import OpenAI from "openai";
 import { type Option } from "./ai-selector-commands";
 import { useState } from "react";
+import { EDITOR_AI_COMPLETION_MODEL } from "@/lib/constants";
 
 interface Messages {
   role: "system" | "user";
   content: string;
 }
-
-const OPENAI_MODEL = "gpt-4o-mini";
 
 const generateMessage = (
   option: Option,
@@ -88,7 +87,7 @@ export const useOpenAICompletion = (apiKey: string) => {
 
     try {
       const response = await openai.chat.completions.create({
-        model: OPENAI_MODEL,
+        model: EDITOR_AI_COMPLETION_MODEL,
         messages,
         top_p: 1,
         frequency_penalty: 0,
