@@ -23,19 +23,17 @@ func GetGoogleAuthToken(db *gorm.DB) *GoogleAuthToken {
 	return &token
 }
 
-func SaveGoogleAuthToken(db *gorm.DB, userInfo *oauth2v2.Userinfo, token *oauth2.Token) *GoogleAuthToken {
-	cToken := GetGoogleAuthToken(db)
-
-	if cToken == nil {
-		cToken = &GoogleAuthToken{}
+func SaveGoogleAuthToken(db *gorm.DB, userInfo *oauth2v2.Userinfo, authToken *oauth2.Token) *GoogleAuthToken {
+	gToken := GetGoogleAuthToken(db)
+	if gToken == nil {
+		gToken = &GoogleAuthToken{}
 	}
 
-	cToken.AuthToken = datatypes.NewJSONType(token)
-	cToken.UserInfo = datatypes.NewJSONType(userInfo)
+	gToken.AuthToken = datatypes.NewJSONType(authToken)
+	gToken.UserInfo = datatypes.NewJSONType(userInfo)
+	db.Save(gToken)
 
-	db.Save(token)
-
-	return cToken
+	return gToken
 }
 
 func DeleteGoogleAuthToken(db *gorm.DB) {

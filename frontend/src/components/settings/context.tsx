@@ -15,6 +15,7 @@ import { repository, whisper } from "~wails/models";
 import isEqual from "lodash/isEqual";
 import { useLocalWhisperStore } from "@/store/local-whisper";
 import {
+  DeleteGoogleAuthToken,
   GetAppVersion,
   GetGoogleAuthToken,
   IsSynchronizerEnabled,
@@ -169,16 +170,18 @@ function useCloudSettings() {
 
   const [authorizing, setAuthorizing] = useState(false);
 
-  useEffect(() => {
-    IsSynchronizerEnabled().then((enabled) => {
-      setCloudEnabled(enabled);
+  const getGoogleAuthToken = useCallback(() => {
+    GetGoogleAuthToken().then((token) => {
+      setGoogleAuthToken(token);
     });
   }, []);
 
   useEffect(() => {
-    GetGoogleAuthToken().then((token) => {
-      setGoogleAuthToken(token);
-    });
+    getGoogleAuthToken();
+  }, []);
+
+  useEffect(() => {
+    IsSynchronizerEnabled().then((enabled) => setCloudEnabled(enabled));
   }, []);
 
   useEffect(() => {
@@ -196,13 +199,21 @@ function useCloudSettings() {
 
   const startAuthorization = useCallback(() => {
     setAuthorizing(true);
-    return StartGoogleAuthorization().finally(() => setAuthorizing(false));
+
+    return StartGoogleAuthorization()
+      .then(getGoogleAuthToken)
+      .finally(() => setAuthorizing(false));
+  }, []);
+
+  const deleteGoogleAuthToken = useCallback(() => {
+    return DeleteGoogleAuthToken().then(getGoogleAuthToken);
   }, []);
 
   return {
     cloudEnabled,
     googleAuthToken,
     startAuthorization,
+    deleteGoogleAuthToken,
     authorizing,
   };
 }

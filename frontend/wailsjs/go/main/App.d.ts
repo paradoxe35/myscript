@@ -14,6 +14,8 @@ export function CheckForUpdates():Promise<string>;
 
 export function DeleteCache(arg1:string):Promise<void>;
 
+export function DeleteGoogleAuthToken():Promise<void>;
+
 export function DeleteLocalPage(arg1:string):Promise<void>;
 
 export function DownloadLocalWhisperModels(arg1:Array<local_whisper.LocalWhisperModel>):Promise<void>;

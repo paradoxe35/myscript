@@ -34,10 +34,11 @@ func NewGoogleClient(credentials []byte, db *gorm.DB) *GoogleClient {
 	config, err := google.ConfigFromJSON(credentials, SCOPES...)
 
 	if err != nil {
-		return &GoogleClient{}
+		return &GoogleClient{db: db}
 	}
 
 	return &GoogleClient{
+		db:     db,
 		config: config,
 	}
 }

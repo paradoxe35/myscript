@@ -14,6 +14,10 @@ export function DeleteCache(arg1) {
   return window['go']['main']['App']['DeleteCache'](arg1);
 }
 
+export function DeleteGoogleAuthToken() {
+  return window['go']['main']['App']['DeleteGoogleAuthToken']();
+}
+
 export function DeleteLocalPage(arg1) {
   return window['go']['main']['App']['DeleteLocalPage'](arg1);
 }

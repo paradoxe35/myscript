@@ -18,6 +18,10 @@ func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
 	return repository.GetGoogleAuthToken(a.UnSyncedDb)
 }
 
+func (a *App) DeleteGoogleAuthToken() {
+	repository.DeleteGoogleAuthToken(a.UnSyncedDb)
+}
+
 func (a *App) StartGoogleAuthorization() error {
 	port := 43056
 	addr := fmt.Sprintf("http://localhost:%d", port)

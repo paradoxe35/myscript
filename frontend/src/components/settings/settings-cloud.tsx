@@ -1,6 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { useSettings } from "./context";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 export function SettingsCloud() {
   const { cloud } = useSettings();
@@ -12,6 +13,42 @@ export function SettingsCloud() {
         across all your devices.
       </p>
 
+      {cloud.googleAuthToken ? (
+        <UserAuthorizedContent />
+      ) : (
+        <UnauthorizedContent />
+      )}
+    </div>
+  );
+}
+
+function UserAuthorizedContent() {
+  const { cloud } = useSettings();
+
+  const user_info = cloud.googleAuthToken?.user_info;
+
+  return (
+    <div className="flex flex-col gap-1 justify-center items-center mt-5">
+      <Avatar>
+        <AvatarImage src={user_info?.picture} />
+        <AvatarFallback>{user_info?.name}</AvatarFallback>
+      </Avatar>
+
+      <h3 className="text-lg font-medium">{user_info?.name}</h3>
+      <p className="text-xs text-white/50">Synchronization is enabled.</p>
+
+      <Button variant="secondary" onClick={cloud.deleteGoogleAuthToken}>
+        Disconnect
+      </Button>
+    </div>
+  );
+}
+
+function UnauthorizedContent() {
+  const { cloud } = useSettings();
+
+  return (
+    <>
       {cloud.authorizing && (
         <Button className="mt-5" disabled>
           <Loader2 className="animate-spin" />
@@ -25,11 +62,9 @@ export function SettingsCloud() {
           Connect to Google Drive
         </Button>
       )}
-    </div>
+    </>
   );
 }
-
-function AuthorizationTimeout() {}
 
 function GoogleDriveIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
