@@ -26,18 +26,30 @@ function UserAuthorizedContent() {
   const { cloud } = useSettings();
 
   const user_info = cloud.googleAuthToken?.user_info;
+  const name = (user_info?.name || "") as string;
+
+  const imageText = name.split(" ").reduce((acc, v, i) => {
+    if (i < 2) {
+      acc += v[0] || "";
+    }
+    return acc;
+  }, "");
 
   return (
     <div className="flex flex-col gap-1 justify-center items-center mt-5">
       <Avatar>
         <AvatarImage src={user_info?.picture} />
-        <AvatarFallback>{user_info?.name}</AvatarFallback>
+        <AvatarFallback className="uppercase">{imageText}</AvatarFallback>
       </Avatar>
 
       <h3 className="text-lg font-medium">{user_info?.name}</h3>
       <p className="text-xs text-white/50">Synchronization is enabled.</p>
 
-      <Button variant="secondary" onClick={cloud.deleteGoogleAuthToken}>
+      <Button
+        variant="secondary"
+        onClick={cloud.deleteGoogleAuthToken}
+        className="mt-5"
+      >
         Disconnect
       </Button>
     </div>
