@@ -89,18 +89,24 @@ func (c *GoogleClient) GenerateAuthURL(redirectURI string) (string, error) {
 	return authURL, nil
 }
 
-func (c *GoogleClient) SaveAuthToken(code string) (*oauth2.Token, error) {
+func (c *GoogleClient) SaveAuthToken(code, redirectURI string) (*oauth2.Token, error) {
 	if _, err := c.getConfig(); err != nil {
 		return nil, err
 	}
 
-	token, err := c.config.Exchange(context.Background(), code)
+	token, err := c.config.Exchange(
+		context.Background(), code,
+		oauth2.AccessTypeOffline,
+		oauth2.SetAuthURLParam("redirect_uri", redirectURI),
+	)
 	if err != nil {
+		slog.Error("Unable to retrieve token from web", "error", err)
 		return nil, err
 	}
 
 	userInfo, err := c.getUserInfo(token)
 	if err != nil {
+		slog.Error("Unable to retrieve user info", "error", err)
 		return nil, err
 	}
 

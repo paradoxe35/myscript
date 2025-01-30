@@ -8,7 +8,8 @@ import (
 )
 
 type AuthServerRedirection struct {
-	server *http.Server
+	server           *http.Server
+	authCodeReceived func(string)
 }
 
 func NewAuthServerRedirection() *AuthServerRedirection {
@@ -21,21 +22,23 @@ func (a *AuthServerRedirection) Start(port int) error {
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
+
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authorizationCode := r.URL.Query().Get("code")
+
+			if a.authCodeReceived != nil {
+				go a.authCodeReceived(authorizationCode)
+			}
+
+			fmt.Fprintf(w, "You are now authorized, you can close this window.")
+		}),
 	}
 
 	return a.server.ListenAndServe()
 }
 
 func (a *AuthServerRedirection) Handler(authCodeReceived func(string)) {
-	if a.server != nil {
-		a.server.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authorizationCode := r.URL.Query().Get("code")
-
-			fmt.Fprintf(w, "You are now authorized, you can close this window.")
-
-			authCodeReceived(authorizationCode)
-		})
-	}
+	a.authCodeReceived = authCodeReceived
 }
 
 func (a *AuthServerRedirection) Stop() error {

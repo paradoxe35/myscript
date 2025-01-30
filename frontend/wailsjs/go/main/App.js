@@ -86,10 +86,6 @@ export function GetWitAILanguages() {
   return window['go']['main']['App']['GetWitAILanguages']();
 }
 
-export function GoogleStartAuthorization() {
-  return window['go']['main']['App']['GoogleStartAuthorization']();
-}
-
 export function GroqTranscribe(arg1, arg2) {
   return window['go']['main']['App']['GroqTranscribe'](arg1, arg2);
 }
@@ -132,6 +128,10 @@ export function SaveConfig(arg1) {
 
 export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
+}
+
+export function StartGoogleAuthorization() {
+  return window['go']['main']['App']['StartGoogleAuthorization']();
 }
 
 export function StartRecording(arg1, arg2) {

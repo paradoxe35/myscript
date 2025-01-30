@@ -26,6 +26,10 @@ func GetGoogleAuthToken(db *gorm.DB) *GoogleAuthToken {
 func SaveGoogleAuthToken(db *gorm.DB, userInfo *oauth2v2.Userinfo, token *oauth2.Token) *GoogleAuthToken {
 	cToken := GetGoogleAuthToken(db)
 
+	if cToken == nil {
+		cToken = &GoogleAuthToken{}
+	}
+
 	cToken.AuthToken = datatypes.NewJSONType(token)
 	cToken.UserInfo = datatypes.NewJSONType(userInfo)
 

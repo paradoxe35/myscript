@@ -14,7 +14,13 @@ import { repository, whisper } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
 import { useLocalWhisperStore } from "@/store/local-whisper";
-import { GetAppVersion, IsSynchronizerEnabled } from "~wails/main/App";
+import {
+  GetAppVersion,
+  GetGoogleAuthToken,
+  IsSynchronizerEnabled,
+  StartGoogleAuthorization,
+} from "~wails/main/App";
+import { EventsOn } from "~wails-runtime";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
@@ -156,7 +162,12 @@ function useSettingsHook() {
 }
 
 function useCloudSettings() {
+  const [googleAuthToken, setGoogleAuthToken] =
+    useState<repository.GoogleAuthToken | null>(null);
+
   const [cloudEnabled, setCloudEnabled] = useState(false);
+
+  const [authorizing, setAuthorizing] = useState(false);
 
   useEffect(() => {
     IsSynchronizerEnabled().then((enabled) => {
@@ -164,8 +175,35 @@ function useCloudSettings() {
     });
   }, []);
 
+  useEffect(() => {
+    GetGoogleAuthToken().then((token) => {
+      setGoogleAuthToken(token);
+    });
+  }, []);
+
+  useEffect(() => {
+    return EventsOn("on-google-authorization-timeout", () => {
+      toast.warning("Google authorization timeout");
+      setAuthorizing(false);
+    });
+  }, []);
+
+  useEffect(() => {
+    return EventsOn("on-google-authorization-error", (error) => {
+      toast.error("Error Google authorization: " + error);
+    });
+  }, []);
+
+  const startAuthorization = useCallback(() => {
+    setAuthorizing(true);
+    return StartGoogleAuthorization().finally(() => setAuthorizing(false));
+  }, []);
+
   return {
     cloudEnabled,
+    googleAuthToken,
+    startAuthorization,
+    authorizing,
   };
 }
 
