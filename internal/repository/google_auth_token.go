@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// UNSYNCED MODEL
+
 type GoogleAuthToken struct {
 	gorm.Model
 	UserInfo  datatypes.JSONType[*oauth2v2.Userinfo] `json:"user_info"`

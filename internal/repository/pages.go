@@ -5,6 +5,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// !SYNCED MODEL
+
 type Page struct {
 	BaseUUIDModel
 

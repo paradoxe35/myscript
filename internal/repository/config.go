@@ -2,6 +2,8 @@ package repository
 
 import "gorm.io/gorm"
 
+// !SYNCED MODEL
+
 type Config struct {
 	gorm.Model
 	NotionApiKey *string `gorm:"column:notion_api_key"`
