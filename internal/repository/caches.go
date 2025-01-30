@@ -17,6 +17,19 @@ type Cache struct {
 	Value datatypes.JSONType[*CacheValue] `json:"value"`
 }
 
+// Hooks
+func (n *Cache) AfterCreate(tx *gorm.DB) error {
+	return logChange(tx, n, "CREATE")
+}
+
+func (n *Cache) AfterUpdate(tx *gorm.DB) error {
+	return logChange(tx, n, "UPDATE")
+}
+
+func (n *Cache) AfterDelete(tx *gorm.DB) error {
+	return logChange(tx, n, "DELETE")
+}
+
 func GetCache(db *gorm.DB, key string) *CacheValue {
 	var cache Cache
 

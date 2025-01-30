@@ -21,7 +21,20 @@ type Page struct {
 	Children []Page  `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
 }
 
-type MapUpdate = map[string]interface{}
+// Hooks
+func (n *Page) AfterCreate(tx *gorm.DB) error {
+	return logChange(tx, n, "CREATE")
+}
+
+func (n *Page) AfterUpdate(tx *gorm.DB) error {
+	return logChange(tx, n, "UPDATE")
+}
+
+func (n *Page) AfterDelete(tx *gorm.DB) error {
+	return logChange(tx, n, "DELETE")
+}
+
+// Functions
 
 func GetPages(db *gorm.DB) []Page {
 	var pages []Page

@@ -15,6 +15,21 @@ type Config struct {
 	LocalWhisperGPU   *bool   `gorm:"column:local_whisper_gpu"`
 }
 
+// Hooks
+func (n *Config) AfterCreate(tx *gorm.DB) error {
+	return logChange(tx, n, "CREATE")
+}
+
+func (n *Config) AfterUpdate(tx *gorm.DB) error {
+	return logChange(tx, n, "UPDATE")
+}
+
+func (n *Config) AfterDelete(tx *gorm.DB) error {
+	return logChange(tx, n, "DELETE")
+}
+
+// Functions
+
 func GetConfig(db *gorm.DB) *Config {
 	var config Config
 	db.First(&config)

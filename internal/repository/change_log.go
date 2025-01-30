@@ -18,7 +18,7 @@ type ChangeLog struct {
 	Synced    bool `gorm:"default:false"`
 }
 
-func LogChange(tx *gorm.DB, model interface{}, operation string) error {
+func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{

@@ -25,6 +25,8 @@ func (base *BaseUUIDModel) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+type MapUpdate = map[string]interface{}
+
 func getModelID(model interface{}) string {
 	val := reflect.ValueOf(model)
 
