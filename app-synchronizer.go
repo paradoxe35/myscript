@@ -11,7 +11,7 @@ import (
 )
 
 func (a *App) IsSynchronizerEnabled() bool {
-	return a.googleClient.HasCredentials()
+	return a.synchronizer.googleClient.HasCredentials()
 }
 
 func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
@@ -28,6 +28,7 @@ func (a *App) StartGoogleAuthorization() error {
 
 	done := make(chan bool)
 	ticker := time.NewTicker(2 * time.Minute)
+	googleClient := a.synchronizer.googleClient
 
 	tmpServer := synchronizer.NewAuthServerRedirection()
 
@@ -54,7 +55,7 @@ func (a *App) StartGoogleAuthorization() error {
 
 		slog.Debug("Google authorization received", "code", authorizationCode)
 
-		_, err := a.googleClient.SaveAuthToken(authorizationCode, addr)
+		_, err := googleClient.SaveAuthToken(authorizationCode, addr)
 		if err != nil {
 			slog.Error("Error saving Google authorization token", "error", err)
 			runtime.EventsEmit(a.ctx, "on-google-authorization-error", err.Error())
@@ -62,7 +63,7 @@ func (a *App) StartGoogleAuthorization() error {
 		}
 	})
 
-	if authURL, err := a.googleClient.GenerateAuthURL(addr); err != nil {
+	if authURL, err := googleClient.GenerateAuthURL(addr); err != nil {
 		return err
 	} else {
 		runtime.BrowserOpenURL(a.ctx, authURL)

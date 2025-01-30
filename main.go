@@ -55,15 +55,18 @@ func main() {
 	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 
 	app := NewApp(
-		AppOptions{
-			SyncedDb:   syncedDb,
-			UnSyncedDb: unSyncedDb,
+		WithSyncedDB(syncedDb),
+		WithUnSyncedDB(unSyncedDb),
+		WithLocalWhisper(local_whisper.NewLocalWhisperTranscriber()),
+		WithAudioSequencer(microphone.NewAudioSequencer()),
+		WithUpdater(appUpdater),
 
-			GoogleClient:   synchronizer.NewGoogleClient(readGoogleCredentials(), unSyncedDb),
-			Lwt:            local_whisper.NewLocalWhisperTranscriber(),
-			AudioSequencer: microphone.NewAudioSequencer(),
-			Updater:        appUpdater,
-		},
+		// Synchronizer
+		WithSynchronizer(
+			WithGoogleClient(
+				synchronizer.NewGoogleClient(readGoogleCredentials(), unSyncedDb),
+			),
+		),
 	)
 
 	// Create application with options
