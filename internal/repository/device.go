@@ -16,9 +16,9 @@ type DeviceRepository struct {
 	BaseRepository
 }
 
-func NewDeviceRepository(db *gorm.DB) *DeviceRepository {
+func NewDeviceRepository(unsyncedDb *gorm.DB) *DeviceRepository {
 	return &DeviceRepository{
-		BaseRepository: BaseRepository{db: db},
+		BaseRepository: BaseRepository{db: unsyncedDb},
 	}
 }
 

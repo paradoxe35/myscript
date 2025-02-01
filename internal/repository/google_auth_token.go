@@ -19,9 +19,9 @@ type GoogleAuthTokenRepository struct {
 	BaseRepository
 }
 
-func NewGoogleAuthTokenRepository(db *gorm.DB) *GoogleAuthTokenRepository {
+func NewGoogleAuthTokenRepository(unsyncedDb *gorm.DB) *GoogleAuthTokenRepository {
 	return &GoogleAuthTokenRepository{
-		BaseRepository: BaseRepository{db: db},
+		BaseRepository: BaseRepository{db: unsyncedDb},
 	}
 }
 

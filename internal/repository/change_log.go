@@ -22,9 +22,9 @@ type ChangeLogRepository struct {
 	BaseRepository
 }
 
-func NewChangeLogRepository(db *gorm.DB) *ChangeLogRepository {
+func NewChangeLogRepository(unsyncedDb *gorm.DB) *ChangeLogRepository {
 	return &ChangeLogRepository{
-		BaseRepository: BaseRepository{db: db},
+		BaseRepository: BaseRepository{db: unsyncedDb},
 	}
 }
 
