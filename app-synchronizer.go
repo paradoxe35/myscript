@@ -15,11 +15,15 @@ func (a *App) IsSynchronizerEnabled() bool {
 }
 
 func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
-	return repository.GetGoogleAuthToken(a.UnSyncedDb)
+	return repository.
+		NewGoogleAuthTokenRepository(a.UnSyncedDb).
+		GetGoogleAuthToken()
 }
 
 func (a *App) DeleteGoogleAuthToken() {
-	repository.DeleteGoogleAuthToken(a.UnSyncedDb)
+	repository.
+		NewGoogleAuthTokenRepository(a.UnSyncedDb).
+		DeleteGoogleAuthToken()
 }
 
 func (a *App) StartGoogleAuthorization() error {

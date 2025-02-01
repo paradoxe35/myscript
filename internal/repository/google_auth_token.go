@@ -15,32 +15,42 @@ type GoogleAuthToken struct {
 	AuthToken datatypes.JSONType[*oauth2.Token]      `json:"auth_token"`
 }
 
-func GetGoogleAuthToken(db *gorm.DB) *GoogleAuthToken {
+type GoogleAuthTokenRepository struct {
+	BaseRepository
+}
+
+func NewGoogleAuthTokenRepository(db *gorm.DB) *GoogleAuthTokenRepository {
+	return &GoogleAuthTokenRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
+}
+
+func (r *GoogleAuthTokenRepository) GetGoogleAuthToken() *GoogleAuthToken {
 	var token GoogleAuthToken
 
-	if err := db.First(&token).Error; err != nil {
+	if err := r.db.First(&token).Error; err != nil {
 		return nil
 	}
 
 	return &token
 }
 
-func SaveGoogleAuthToken(db *gorm.DB, userInfo *oauth2v2.Userinfo, authToken *oauth2.Token) *GoogleAuthToken {
-	gToken := GetGoogleAuthToken(db)
+func (r *GoogleAuthTokenRepository) SaveGoogleAuthToken(userInfo *oauth2v2.Userinfo, authToken *oauth2.Token) *GoogleAuthToken {
+	gToken := r.GetGoogleAuthToken()
 	if gToken == nil {
 		gToken = &GoogleAuthToken{}
 	}
 
 	gToken.AuthToken = datatypes.NewJSONType(authToken)
 	gToken.UserInfo = datatypes.NewJSONType(userInfo)
-	db.Save(gToken)
+	r.db.Save(gToken)
 
 	return gToken
 }
 
-func DeleteGoogleAuthToken(db *gorm.DB) {
+func (r *GoogleAuthTokenRepository) DeleteGoogleAuthToken() {
 	var token GoogleAuthToken
 
-	db.First(&token)
-	db.Delete(&token)
+	r.db.First(&token)
+	r.db.Delete(&token)
 }

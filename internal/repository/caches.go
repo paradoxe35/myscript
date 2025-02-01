@@ -34,19 +34,21 @@ type CacheRepository struct {
 	BaseRepository
 }
 
-func NewCacheRepository() *CacheRepository {
-	return &CacheRepository{}
+func NewCacheRepository(db *gorm.DB) *CacheRepository {
+	return &CacheRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
 }
 
-func (*CacheRepository) GetCache(db *gorm.DB, key string) *CacheValue {
+func (r *CacheRepository) GetCache(key string) *CacheValue {
 	var cache Cache
 
-	db.Where("key = ?", key).First(&cache)
+	r.db.Where("key = ?", key).First(&cache)
 
 	return cache.Value.Data()
 }
 
-func (*CacheRepository) SaveCache(db *gorm.DB, key string, value interface{}) *Cache {
+func (r *CacheRepository) SaveCache(key string, value interface{}) *Cache {
 	var cache Cache
 	item := &Cache{
 		Key: key,
@@ -56,21 +58,21 @@ func (*CacheRepository) SaveCache(db *gorm.DB, key string, value interface{}) *C
 	}
 
 	if item.Key != "" {
-		db.Where("key = ?", item.Key).First(&cache)
+		r.db.Where("key = ?", item.Key).First(&cache)
 	} else if item.ID != 0 {
-		db.First(&cache, item.ID)
+		r.db.First(&cache, item.ID)
 	}
 
 	cache.Key = key
 	cache.Value = item.Value
-	db.Save(&cache)
+	r.db.Save(&cache)
 
 	return &cache
 }
 
-func (*CacheRepository) DeleteCache(db *gorm.DB, key string) {
+func (r *CacheRepository) DeleteCache(key string) {
 	var cache Cache
 
-	db.Where("key = ?", key).First(&cache)
-	db.Delete(&cache)
+	r.db.Where("key = ?", key).First(&cache)
+	r.db.Delete(&cache)
 }

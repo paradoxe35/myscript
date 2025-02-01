@@ -11,7 +11,6 @@ import (
 	"golang.org/x/oauth2/google"
 	oauth2v2 "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
-	"gorm.io/gorm"
 )
 
 var SCOPES = []string{
@@ -22,11 +21,11 @@ var SCOPES = []string{
 }
 
 type GoogleClient struct {
-	db     *gorm.DB
-	config *oauth2.Config
+	repository *repository.GoogleAuthTokenRepository
+	config     *oauth2.Config
 }
 
-func NewGoogleClient(credentials []byte, db *gorm.DB) *GoogleClient {
+func NewGoogleClient(credentials []byte, repository *repository.GoogleAuthTokenRepository) *GoogleClient {
 	if len(credentials) == 0 {
 		return &GoogleClient{}
 	}
@@ -34,12 +33,12 @@ func NewGoogleClient(credentials []byte, db *gorm.DB) *GoogleClient {
 	config, err := google.ConfigFromJSON(credentials, SCOPES...)
 
 	if err != nil {
-		return &GoogleClient{db: db}
+		return &GoogleClient{repository: repository}
 	}
 
 	return &GoogleClient{
-		db:     db,
-		config: config,
+		repository: repository,
+		config:     config,
 	}
 }
 
@@ -57,7 +56,7 @@ func (c *GoogleClient) GetClient(token *oauth2.Token) (*http.Client, error) {
 }
 
 func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
-	token := repository.GetGoogleAuthToken(c.db)
+	token := c.repository.GetGoogleAuthToken()
 	if token == nil {
 		return nil, fmt.Errorf("invalid Google credentials, no token found")
 	}
@@ -115,7 +114,7 @@ func (c *GoogleClient) SaveAuthToken(code, redirectURI string) (*oauth2.Token, e
 		return nil, err
 	}
 
-	repository.SaveGoogleAuthToken(c.db, userInfo, token)
+	c.repository.SaveGoogleAuthToken(userInfo, token)
 
 	slog.Debug("Authentication successful and token saved", "user", userInfo.Email)
 

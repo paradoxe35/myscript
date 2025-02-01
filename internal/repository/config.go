@@ -32,22 +32,24 @@ type ConfigRepository struct {
 	BaseRepository
 }
 
-func NewConfigRepository() *ConfigRepository {
-	return &ConfigRepository{}
+func NewConfigRepository(db *gorm.DB) *ConfigRepository {
+	return &ConfigRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
 }
 
 // Functions
 
-func (*ConfigRepository) GetConfig(db *gorm.DB) *Config {
+func (r *ConfigRepository) GetConfig() *Config {
 	var config Config
-	db.First(&config)
+	r.db.First(&config)
 	return &config
 }
 
-func (c *ConfigRepository) SaveConfig(db *gorm.DB, config *Config) {
-	if newConfig := c.GetConfig(db); newConfig != nil {
+func (r *ConfigRepository) SaveConfig(config *Config) {
+	if newConfig := r.GetConfig(); newConfig != nil {
 		config.ID = newConfig.ID
 	}
 
-	db.Save(config)
+	r.db.Save(config)
 }

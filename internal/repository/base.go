@@ -11,6 +11,7 @@ import (
 )
 
 type BaseRepository struct {
+	db *gorm.DB
 }
 
 type BaseUUIDModel struct {

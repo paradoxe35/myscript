@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
+	"myscript/internal/repository"
 	"myscript/internal/synchronizer"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
@@ -64,7 +65,10 @@ func main() {
 		// Synchronizer
 		WithSynchronizer(
 			WithGoogleClient(
-				synchronizer.NewGoogleClient(readGoogleCredentials(), unSyncedDb),
+				synchronizer.NewGoogleClient(
+					readGoogleCredentials(),
+					repository.NewGoogleAuthTokenRepository(unSyncedDb),
+				),
 			),
 		),
 	)
