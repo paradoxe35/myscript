@@ -55,6 +55,9 @@ func main() {
 	syncedDb := database.NewSyncedDatabase(filesystem.HOME_DIR)
 	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 
+	// Set global variable (for use in change log)
+	repository.SetUnSyncedDB(unSyncedDb)
+
 	app := NewApp(
 		WithSyncedDB(syncedDb),
 		WithUnSyncedDB(unSyncedDb),

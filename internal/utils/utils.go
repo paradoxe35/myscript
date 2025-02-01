@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
@@ -56,4 +57,12 @@ func B64toBytes(s string) ([]byte, error) {
 func IsDevMode() bool {
 	winDev := strings.HasSuffix(os.Args[0], "-dev.exe")
 	return strings.HasSuffix(os.Args[0], "-dev") || winDev
+}
+
+func HasInternet() bool {
+	client := http.Client{Timeout: time.Duration(5000 * time.Millisecond)}
+	if _, err := client.Get("http://clients3.google.com/generate_204"); err != nil {
+		return false
+	}
+	return true
 }

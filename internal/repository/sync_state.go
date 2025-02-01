@@ -10,6 +10,7 @@ import (
 
 type SyncState struct {
 	gorm.Model
+	Enabled        bool
 	SyncTimeOffset time.Time
 }
 

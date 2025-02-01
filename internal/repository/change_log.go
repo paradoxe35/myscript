@@ -28,7 +28,17 @@ func NewChangeLogRepository(unsyncedDb *gorm.DB) *ChangeLogRepository {
 	}
 }
 
+var unSyncedDB *gorm.DB
+
+func SetUnSyncedDB(db *gorm.DB) {
+	unSyncedDB = db
+}
+
 func logChange(tx *gorm.DB, model interface{}, operation string) error {
+	if unSyncedDB == nil {
+		return nil
+	}
+
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{
@@ -41,13 +51,13 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 
 	// Check if the change already exists
 	var existing ChangeLog
-	if tx.Where("table_name = ? AND row_id = ? and operation = ?", change.TableName, change.RowID, operation).
+	if unSyncedDB.Where("table_name = ? AND row_id = ? and operation = ?", change.TableName, change.RowID, operation).
 		First(&existing).Error == nil {
 		change.ID = existing.ID
-		return tx.Save(&change).Error
+		return unSyncedDB.Save(&change).Error
 	}
 
-	return tx.Create(&change).Error
+	return unSyncedDB.Create(&change).Error
 }
 
 func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
