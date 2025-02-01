@@ -38,28 +38,30 @@ type PageRepository struct {
 	BaseRepository
 }
 
-func NewPageRepository() *PageRepository {
-	return &PageRepository{}
+func NewPageRepository(db *gorm.DB) *PageRepository {
+	return &PageRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
 }
 
-func (*PageRepository) GetPages(db *gorm.DB) []Page {
+func (r *PageRepository) GetPages() []Page {
 	var pages []Page
 
-	db.Omit("html_content", "blocks").Find(&pages)
+	r.db.Omit("html_content", "blocks").Find(&pages)
 
 	return pages
 }
 
-func (*PageRepository) GetPage(db *gorm.DB, ID string) *Page {
+func (r *PageRepository) GetPage(ID string) *Page {
 	var page Page
 
-	db.First(&page, "id = ?", ID)
+	r.db.First(&page, "id = ?", ID)
 
 	return &page
 }
 
-func (*PageRepository) UpdatePageOrder(db *gorm.DB, ID string, ParentID *string, order int) {
-	db.Model(&Page{}).
+func (r *PageRepository) UpdatePageOrder(ID string, ParentID *string, order int) {
+	r.db.Model(&Page{}).
 		Where("id = ?", ID).
 		Updates(MapUpdate{
 			"order":    order,
@@ -67,14 +69,14 @@ func (*PageRepository) UpdatePageOrder(db *gorm.DB, ID string, ParentID *string,
 		})
 }
 
-func (*PageRepository) SavePage(db *gorm.DB, page *Page) *Page {
-	db.Save(page)
+func (r *PageRepository) SavePage(page *Page) *Page {
+	r.db.Save(page)
 	return page
 }
 
-func (*PageRepository) DeletePage(db *gorm.DB, ID string) {
+func (r *PageRepository) DeletePage(ID string) {
 	var page Page
 
-	db.First(&page, "id = ?", ID)
-	db.Delete(&page)
+	r.db.First(&page, "id = ?", ID)
+	r.db.Delete(&page)
 }

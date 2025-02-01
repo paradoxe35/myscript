@@ -12,12 +12,22 @@ type Device struct {
 	DeviceID string
 }
 
-func GetDeviceID(db *gorm.DB) string {
+type DeviceRepository struct {
+	BaseRepository
+}
+
+func NewDeviceRepository(db *gorm.DB) *DeviceRepository {
+	return &DeviceRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
+}
+
+func (r *DeviceRepository) GetDeviceID() string {
 	device := &Device{}
 
-	if db.First(device).Error != nil {
+	if r.db.First(device).Error != nil {
 		device.DeviceID = uuid.NewString()
-		db.Create(device)
+		r.db.Create(device)
 	}
 
 	return device.DeviceID

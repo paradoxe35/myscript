@@ -18,6 +18,16 @@ type ChangeLog struct {
 	Synced    bool `gorm:"default:false"`
 }
 
+type ChangeLogRepository struct {
+	BaseRepository
+}
+
+func NewChangeLogRepository(db *gorm.DB) *ChangeLogRepository {
+	return &ChangeLogRepository{
+		BaseRepository: BaseRepository{db: db},
+	}
+}
+
 func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	newData, _ := json.Marshal(model)
 
@@ -40,10 +50,10 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	return tx.Create(&change).Error
 }
 
-func GetUnSyncedChanges(db *gorm.DB) []ChangeLog {
+func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
 	var changes []ChangeLog
 
-	db.Where("synced = ?", false).Find(&changes)
+	r.db.Where("synced = ?", false).Find(&changes)
 
 	return changes
 }
