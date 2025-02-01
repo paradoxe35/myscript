@@ -52,7 +52,7 @@ export function AppUpdater() {
   };
 
   useEffect(() => {
-    let intervalID: Timer | undefined;
+    let intervalID: any;
 
     const checkForUpdates = async () => {
       if (
