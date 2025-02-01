@@ -60,7 +60,7 @@ export function IsLocalWhisperModelDownloading(arg1:local_whisper.LocalWhisperMo
 
 export function IsRecording():Promise<boolean>;
 
-export function IsSynchronizerEnabled():Promise<boolean>;
+export function IsGoogleAuthEnabled():Promise<boolean>;
 
 export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 

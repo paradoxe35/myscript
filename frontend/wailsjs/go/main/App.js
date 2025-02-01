@@ -106,8 +106,8 @@ export function IsRecording() {
   return window['go']['main']['App']['IsRecording']();
 }
 
-export function IsSynchronizerEnabled() {
-  return window['go']['main']['App']['IsSynchronizerEnabled']();
+export function IsGoogleAuthEnabled() {
+  return window['go']['main']['App']['IsGoogleAuthEnabled']();
 }
 
 export function LocalTranscribe(arg1, arg2) {

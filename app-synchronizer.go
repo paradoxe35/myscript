@@ -10,7 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) IsSynchronizerEnabled() bool {
+func (a *App) IsGoogleAuthEnabled() bool {
 	return a.synchronizer.googleClient.HasCredentials()
 }
 

@@ -18,7 +18,7 @@ import {
   DeleteGoogleAuthToken,
   GetAppVersion,
   GetGoogleAuthToken,
-  IsSynchronizerEnabled,
+  IsGoogleAuthEnabled,
   StartGoogleAuthorization,
 } from "~wails/main/App";
 import { EventsOn } from "~wails-runtime";
@@ -166,9 +166,9 @@ function useCloudSettings() {
   const [googleAuthToken, setGoogleAuthToken] =
     useState<repository.GoogleAuthToken | null>(null);
 
-  const [cloudEnabled, setCloudEnabled] = useState(false);
-
   const [authorizing, setAuthorizing] = useState(false);
+  // Services status
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
   const getGoogleAuthToken = useCallback(() => {
     GetGoogleAuthToken().then((token) => {
@@ -181,7 +181,7 @@ function useCloudSettings() {
   }, []);
 
   useEffect(() => {
-    IsSynchronizerEnabled().then((enabled) => setCloudEnabled(enabled));
+    IsGoogleAuthEnabled().then(setGoogleAuthEnabled);
   }, []);
 
   useEffect(() => {
@@ -197,7 +197,7 @@ function useCloudSettings() {
     });
   }, []);
 
-  const startAuthorization = useCallback(() => {
+  const startGoogleAuthorization = useCallback(() => {
     setAuthorizing(true);
 
     return StartGoogleAuthorization()
@@ -210,9 +210,10 @@ function useCloudSettings() {
   }, []);
 
   return {
-    cloudEnabled,
+    googleAuthEnabled,
+    cloudEnabled: googleAuthEnabled,
     googleAuthToken,
-    startAuthorization,
+    startGoogleAuthorization,
     deleteGoogleAuthToken,
     authorizing,
   };
