@@ -29,6 +29,14 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 		Synced:    false,
 	}
 
+	// Check if the change already exists
+	var existing ChangeLog
+	if tx.Where("table_name = ? AND row_id = ? and operation = ?", change.TableName, change.RowID, operation).
+		First(&existing).Error == nil {
+		change.ID = existing.ID
+		return tx.Save(&change).Error
+	}
+
 	return tx.Create(&change).Error
 }
 

@@ -28,16 +28,24 @@ func (n *Config) AfterDelete(tx *gorm.DB) error {
 	return logChange(tx, n, "DELETE")
 }
 
+type ConfigRepository struct {
+	BaseRepository
+}
+
+func NewConfigRepository() *ConfigRepository {
+	return &ConfigRepository{}
+}
+
 // Functions
 
-func GetConfig(db *gorm.DB) *Config {
+func (*ConfigRepository) GetConfig(db *gorm.DB) *Config {
 	var config Config
 	db.First(&config)
 	return &config
 }
 
-func SaveConfig(db *gorm.DB, config *Config) {
-	if newConfig := GetConfig(db); newConfig != nil {
+func (c *ConfigRepository) SaveConfig(db *gorm.DB, config *Config) {
+	if newConfig := c.GetConfig(db); newConfig != nil {
 		config.ID = newConfig.ID
 	}
 

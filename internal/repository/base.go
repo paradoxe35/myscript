@@ -10,6 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
+type BaseRepository struct {
+}
+
 type BaseUUIDModel struct {
 	ID        string `gorm:"primaryKey"`
 	CreatedAt time.Time

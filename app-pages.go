@@ -36,21 +36,26 @@ func (a *App) GetNotionPageBlocks(pageID string) ([]*notion.NotionBlock, error) 
 // --- Local Pages ---
 
 func (a *App) GetLocalPages() []repository.Page {
-	return repository.GetPages(a.syncedDb)
+	return repository.NewPageRepository().
+		GetPages(a.syncedDb)
 }
 
 func (a *App) GetLocalPage(ID string) *repository.Page {
-	return repository.GetPage(a.syncedDb, ID)
+	return repository.NewPageRepository().
+		GetPage(a.syncedDb, ID)
 }
 
 func (a *App) SaveLocalPage(page *repository.Page) *repository.Page {
-	return repository.SavePage(a.syncedDb, page)
+	return repository.NewPageRepository().
+		SavePage(a.syncedDb, page)
 }
 
 func (a *App) DeleteLocalPage(ID string) {
-	repository.DeletePage(a.syncedDb, ID)
+	repository.NewPageRepository().
+		DeletePage(a.syncedDb, ID)
 }
 
 func (a *App) UpdateLocalPageOrder(ID string, ParentID *string, order int) {
-	repository.UpdatePageOrder(a.syncedDb, ID, ParentID, order)
+	repository.NewPageRepository().
+		UpdatePageOrder(a.syncedDb, ID, ParentID, order)
 }

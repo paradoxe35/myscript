@@ -30,7 +30,15 @@ func (n *Cache) AfterDelete(tx *gorm.DB) error {
 	return logChange(tx, n, "DELETE")
 }
 
-func GetCache(db *gorm.DB, key string) *CacheValue {
+type CacheRepository struct {
+	BaseRepository
+}
+
+func NewCacheRepository() *CacheRepository {
+	return &CacheRepository{}
+}
+
+func (*CacheRepository) GetCache(db *gorm.DB, key string) *CacheValue {
 	var cache Cache
 
 	db.Where("key = ?", key).First(&cache)
@@ -38,7 +46,7 @@ func GetCache(db *gorm.DB, key string) *CacheValue {
 	return cache.Value.Data()
 }
 
-func SaveCache(db *gorm.DB, key string, value interface{}) *Cache {
+func (*CacheRepository) SaveCache(db *gorm.DB, key string, value interface{}) *Cache {
 	var cache Cache
 	item := &Cache{
 		Key: key,
@@ -60,7 +68,7 @@ func SaveCache(db *gorm.DB, key string, value interface{}) *Cache {
 	return &cache
 }
 
-func DeleteCache(db *gorm.DB, key string) {
+func (*CacheRepository) DeleteCache(db *gorm.DB, key string) {
 	var cache Cache
 
 	db.Where("key = ?", key).First(&cache)
