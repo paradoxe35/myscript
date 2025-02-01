@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"myscript/internal/synchronizer"
+	"myscript/internal/google"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
@@ -24,7 +24,7 @@ type App struct {
 }
 
 type Synchronizer struct {
-	googleClient *synchronizer.GoogleClient
+	googleClient *google.GoogleClient
 }
 
 type AppOption func(app *App)
@@ -75,7 +75,7 @@ func WithSynchronizer(options ...SynchronizerOption) AppOption {
 	}
 }
 
-func WithGoogleClient(client *synchronizer.GoogleClient) SynchronizerOption {
+func WithGoogleClient(client *google.GoogleClient) SynchronizerOption {
 	return func(sync *Synchronizer) {
 		sync.googleClient = client
 	}

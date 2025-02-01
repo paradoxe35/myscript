@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/filesystem"
+	"myscript/internal/google"
 	"myscript/internal/repository"
-	"myscript/internal/synchronizer"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
@@ -55,8 +55,12 @@ func main() {
 	syncedDb := database.NewSyncedDatabase(filesystem.HOME_DIR)
 	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 
-	// Set global variable (for use in change log)
+	// Set global variable (used in change log repository)
 	repository.SetUnSyncedDB(unSyncedDb)
+
+	// Repositories
+	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDb)
+	// deviceRepository := repository.NewDeviceRepository(unSyncedDb)
 
 	app := NewApp(
 		WithSyncedDB(syncedDb),
@@ -68,9 +72,9 @@ func main() {
 		// Synchronizer
 		WithSynchronizer(
 			WithGoogleClient(
-				synchronizer.NewGoogleClient(
+				google.NewGoogleClient(
 					readGoogleCredentials(),
-					repository.NewGoogleAuthTokenRepository(unSyncedDb),
+					googleAuthTokenRepository,
 				),
 			),
 		),
