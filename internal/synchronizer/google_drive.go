@@ -19,21 +19,22 @@ import (
 const PARENT_FOLDER = "appDataFolder"
 
 type GoogleDriveService struct {
-	ctx          context.Context
-	service      *drive.Service
-	serviceError error
+	ctx     context.Context
+	service *drive.Service
 }
 
-func NewGoogleDriveService(client *http.Client) *GoogleDriveService {
+func NewGoogleDriveService(client *http.Client) (*GoogleDriveService, error) {
 	ctx := context.Background()
 
 	service, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, err
+	}
 
 	return &GoogleDriveService{
-		ctx:          ctx,
-		service:      service,
-		serviceError: err,
-	}
+		ctx:     ctx,
+		service: service,
+	}, nil
 }
 
 func (s *GoogleDriveService) formatTime(t time.Time) string {
