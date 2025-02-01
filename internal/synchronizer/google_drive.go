@@ -77,22 +77,22 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 // 	return resp.Body, nil
 // }
 
-func (s *GoogleDriveService) updateFile(file *drive.File, content interface{}) error {
+func (s *GoogleDriveService) updateFileWithJson(file *drive.File, content interface{}) error {
 	data, err := json.Marshal(content)
 	if err != nil {
-		slog.Error("GoogleDriveService[updateFile] Marshal content to JSON", "error", err)
+		slog.Error("GoogleDriveService[updateFileWithJson] Marshal content to JSON", "error", err)
 		return err
 	}
 
 	if _, err := s.service.Files.Update(file.Id, file).Media(bytes.NewReader(data)).Do(); err != nil {
-		slog.Error("GoogleDriveService[updateFile] Update file", "error", err)
+		slog.Error("GoogleDriveService[updateFileWithJson] Update file", "error", err)
 		return err
 	}
 
 	return nil
 }
 
-func (s *GoogleDriveService) createFileWithJsonContent(name string, content interface{}) (*drive.File, error) {
+func (s *GoogleDriveService) createFileWithJson(name string, content interface{}) (*drive.File, error) {
 	file := &drive.File{
 		Name:    name,
 		Parents: []string{PARENT_FOLDER},
@@ -100,12 +100,12 @@ func (s *GoogleDriveService) createFileWithJsonContent(name string, content inte
 
 	data, err := json.Marshal(content)
 	if err != nil {
-		slog.Error("GoogleDriveService[createFileWithJsonContent] Marshal content to JSON", "error", err)
+		slog.Error("GoogleDriveService[createFileWithJson] Marshal content to JSON", "error", err)
 		return nil, err
 	}
 
 	if newFile, err := s.service.Files.Create(file).Media(bytes.NewReader(data)).Do(); err != nil {
-		slog.Error("GoogleDriveService[createFileWithJsonContent] Create file", "error", err)
+		slog.Error("GoogleDriveService[createFileWithJson] Create file", "error", err)
 		return nil, err
 	} else {
 		return newFile, nil
@@ -158,7 +158,7 @@ func (s *GoogleDriveService) InitDevice(deviceID string) error {
 			SyncTimeOffset: s.defaultTime(),
 		}
 
-		if err := s.updateFile(file, state); err != nil {
+		if err := s.updateFileWithJson(file, state); err != nil {
 			slog.Error("GoogleDriveService[InitDevice] Update DEVICES_SYNC_STATE_FILE", "error", err)
 			return err
 		}
@@ -167,7 +167,7 @@ func (s *GoogleDriveService) InitDevice(deviceID string) error {
 			SyncTimeOffset: s.defaultTime(),
 		}
 
-		if _, err := s.createFileWithJsonContent(DEVICES_SYNC_STATE_FILE, state); err != nil {
+		if _, err := s.createFileWithJson(DEVICES_SYNC_STATE_FILE, state); err != nil {
 			slog.Error("GoogleDriveService[InitDevice] Create DEVICES_SYNC_STATE_FILE", "error", err)
 			return err
 		}
@@ -207,7 +207,7 @@ func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, syncTim
 			SyncTimeOffset: syncTimeOffset.Format(time.RFC3339),
 		}
 
-		if err := s.updateFile(file, state); err != nil {
+		if err := s.updateFileWithJson(file, state); err != nil {
 			slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Update DEVICES_SYNC_STATE_FILE", "error", err)
 			return err
 		}
@@ -357,7 +357,7 @@ func (s *GoogleDriveService) GetChangeLogsBeforeTimeStamp(timestamp time.Time) (
 
 func (s *GoogleDriveService) UploadChangeLogs(changes []repository.ChangeLog) (*File, error) {
 	fileName := changeLogsFileName(time.Now())
-	file, err := s.createFileWithJsonContent(fileName, changes)
+	file, err := s.createFileWithJson(fileName, changes)
 
 	if err != nil {
 		slog.Error("GoogleDriveService[UploadChangeLogs] Create file", "fileName", fileName, "error", err)
