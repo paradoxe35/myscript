@@ -6,6 +6,7 @@ WORKDIR /usr/src/app
 
 # Update Wails
 RUN wails update
+RUN npm install -g pnpm
 
 COPY go.mod go.sum ./
 RUN go mod download
