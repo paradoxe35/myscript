@@ -4,8 +4,10 @@ FROM ${BASE_IMAGE} as builder
 
 WORKDIR /usr/src/app
 
-COPY go.mod go.sum ./
+# Update Wails
+RUN wails update
 
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
@@ -13,8 +15,9 @@ COPY . .
 
 # Docker injects the value of BUILDARCH into the build process
 ARG BUILDARCH
-
 ARG APP_NAME=MyScript
+
+ENV CGO_CFLAGS_ALLOW="-mfma|-mf16c"
 
 # Needed atm due to https://github.com/wailsapp/wails/issues/1921
 RUN set -exo pipefail; \
