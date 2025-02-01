@@ -61,9 +61,15 @@ func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 		return nil, fmt.Errorf("invalid Google credentials, no token found")
 	}
 
+	authToken := token.AuthToken.Data()
+
 	tokenSource, err := c.config.TokenSource(context.Background(), token.AuthToken.Data()).Token()
 	if err != nil {
 		return nil, err
+	}
+
+	if tokenSource.RefreshToken != authToken.RefreshToken {
+		c.repository.UpdateGoogleAuthToken(tokenSource)
 	}
 
 	client, err := c.GetClient(tokenSource)

@@ -48,6 +48,15 @@ func (r *GoogleAuthTokenRepository) SaveGoogleAuthToken(userInfo *oauth2v2.Useri
 	return gToken
 }
 
+func (r *GoogleAuthTokenRepository) UpdateGoogleAuthToken(token *oauth2.Token) {
+	gToken := r.GetGoogleAuthToken()
+	if gToken != nil {
+		gToken.AuthToken = datatypes.NewJSONType(token)
+		r.db.Save(gToken)
+	}
+
+}
+
 func (r *GoogleAuthTokenRepository) DeleteGoogleAuthToken() {
 	var token GoogleAuthToken
 
