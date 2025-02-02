@@ -10,6 +10,8 @@ import (
 	"myscript/internal/repository"
 	"net/http"
 	"sort"
+	"strings"
+	"sync"
 	"time"
 
 	"google.golang.org/api/drive/v3"
@@ -53,6 +55,26 @@ func (s *GoogleDriveService) defaultTime() string {
 func (s *GoogleDriveService) files() *drive.FilesListCall {
 	return s.service.Files.List().
 		Spaces(PARENT_FOLDER)
+}
+
+func (s *GoogleDriveService) SortFilesAsc(files []*drive.File) []*drive.File {
+	sort.Slice(files, func(i, j int) bool {
+		timeI, _ := time.Parse(time.RFC3339, files[i].ModifiedTime)
+		timeJ, _ := time.Parse(time.RFC3339, files[j].ModifiedTime)
+		return timeI.Before(timeJ)
+	})
+
+	return files
+}
+
+func (s *GoogleDriveService) SortFilesDesc(files []*drive.File) []*drive.File {
+	sort.Slice(files, func(i, j int) bool {
+		timeI, _ := time.Parse(time.RFC3339, files[i].ModifiedTime)
+		timeJ, _ := time.Parse(time.RFC3339, files[j].ModifiedTime)
+		return timeI.After(timeJ)
+	})
+
+	return files
 }
 
 func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
@@ -177,7 +199,7 @@ func (s *GoogleDriveService) InitDevice(deviceID string) error {
 	return nil
 }
 
-func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, syncTimeOffset time.Time) error {
+func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, timeOffset time.Time) error {
 	files, err := s.files().Q(fmt.Sprintf("name='%s'", DEVICES_SYNC_STATE_FILE)).Do()
 	if err != nil {
 		slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Get list DEVICES_SYNC_STATE_FILE", "error", err)
@@ -205,7 +227,7 @@ func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, syncTim
 		}
 
 		state[deviceID] = &DeviceSyncStateValue{
-			SyncTimeOffset: syncTimeOffset.Format(time.RFC3339),
+			SyncTimeOffset: s.formatTime(timeOffset),
 		}
 
 		if err := s.updateFileWithJson(file, state); err != nil {
@@ -219,7 +241,7 @@ func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, syncTim
 	return nil
 }
 
-func (s *GoogleDriveService) GetLatestDBSnapshot() (*DBSnapshot, error) {
+func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 	resp, err := s.files().Q(fmt.Sprintf("name contains '%s'", DB_SNAPSHOT_PREFIX)).Do()
 	if err != nil {
 		slog.Error("GoogleDriveService[GetLatestDBSnapshot] Get list DB_SNAPSHOT_PREFIX", "error", err)
@@ -231,23 +253,15 @@ func (s *GoogleDriveService) GetLatestDBSnapshot() (*DBSnapshot, error) {
 		return nil, fmt.Errorf("no DB snapshot found")
 	}
 
-	sort.Slice(resp.Files, func(i, j int) bool {
-		timeI, _ := time.Parse(time.RFC3339, resp.Files[i].CreatedTime)
-		timeJ, _ := time.Parse(time.RFC3339, resp.Files[j].CreatedTime)
-		return timeI.After(timeJ)
-	})
+	resp.Files = s.SortFilesDesc(resp.Files)
 
 	file := resp.Files[0]
-	fileContent, err := s.geFileContent(file.Id)
-	if err != nil {
-		slog.Error("GoogleDriveService[GetLatestDBSnapshot] Get list DB_SNAPSHOT_PREFIX content", "error", err)
-		return nil, err
-	}
 
-	return &DBSnapshot{
-		Name:        file.Name,
-		CreatedTime: file.CreatedTime,
-		Data:        fileContent,
+	return &File{
+		ID:         file.Id,
+		Name:       file.Name,
+		IsSnapshot: true,
+		ModifiedAt: s.parseTime(file.ModifiedTime),
 	}, nil
 }
 
@@ -267,89 +281,22 @@ func (s *GoogleDriveService) SaveDBSnapshot(content io.ReadSeeker) (*File, error
 	}, nil
 }
 
-func (s *GoogleDriveService) RemoveOldDBSnapshots() error {
-	resp, err := s.files().Q(fmt.Sprintf("name contains '%s'", DB_SNAPSHOT_PREFIX)).Do()
-	if err != nil {
-		slog.Error("GoogleDriveService[RemoveOldDBSnapshots] Get list DB_SNAPSHOT_PREFIX", "error", err)
-		return err
-	}
-
-	if len(resp.Files) == 0 {
-		slog.Debug("GoogleDriveService[RemoveOldDBSnapshots] No files found matching the query")
-		return nil
-	}
-
-	// Sort files by createdTime in descending order
-	sort.Slice(resp.Files, func(i, j int) bool {
-		timeI, _ := time.Parse(time.RFC3339, resp.Files[i].CreatedTime)
-		timeJ, _ := time.Parse(time.RFC3339, resp.Files[j].CreatedTime)
-		return timeI.After(timeJ)
-	})
-
-	if len(resp.Files) == 1 {
-		slog.Debug("GoogleDriveService[RemoveOldDBSnapshots] Only one file found matching the query. Skipping deletion")
-		return nil
-	}
-
-	// Delete all files except the newest one
-	for i, file := range resp.Files {
-		if i == 0 {
-			// Skip the newest file
-			continue
-		}
-
-		// Delete the file
-		err := s.service.Files.Delete(file.Id).Do()
-		if err != nil {
-			slog.Error("GoogleDriveService[RemoveOldDBSnapshots] Unable to delete file", "fileName", file.Name, "error", err)
-		} else {
-			slog.Debug("GoogleDriveService[RemoveOldDBSnapshots] File deleted", "fileName", file.Name)
-		}
-	}
-
-	return nil
-}
-
-func (s *GoogleDriveService) GetChangeLogsAfterSyncTimeOffset(syncTimeOffset time.Time) ([]File, error) {
-	resp, err := s.files().Q(
-		fmt.Sprintf("name contains '%s' and '%s' < modifiedTime",
-			CHANGES_FILE_PREFIX,
-			s.formatTime(syncTimeOffset),
-		)).Do()
+func (s *GoogleDriveService) GetFilesAfterTimeOffset(timeOffset time.Time) ([]File, error) {
+	resp, err := s.files().Q(fmt.Sprintf("modifiedTime > '%s'", s.formatTime(timeOffset))).Do()
 
 	if err != nil {
-		slog.Error("GoogleDriveService[GetChangeLogsAfterSyncTimeOffset] Get list CHANGES_FILE_PREFIX", "error", err)
+		slog.Error("GoogleDriveService[GetFilesAfterTimeOffset] Get list CHANGES_FILE_PREFIX", "error", err)
 		return nil, err
 	}
+
+	resp.Files = s.SortFilesAsc(resp.Files)
 
 	files := make([]File, len(resp.Files))
 	for i, file := range resp.Files {
 		files[i] = File{
 			ID:         file.Id,
 			Name:       file.Name,
-			ModifiedAt: s.parseTime(file.ModifiedTime),
-		}
-	}
-	return files, nil
-}
-
-func (s *GoogleDriveService) GetChangeLogsBeforeTimeStamp(timestamp time.Time) ([]File, error) {
-	resp, err := s.files().Q(
-		fmt.Sprintf("name contains '%s' and '%s' > modifiedTime",
-			CHANGES_FILE_PREFIX,
-			s.formatTime(timestamp),
-		)).Do()
-
-	if err != nil {
-		slog.Error("GoogleDriveService[GetChangeLogsBeforeTimeStamp] Get list CHANGES_FILE_PREFIX", "error", err)
-		return nil, err
-	}
-
-	files := make([]File, len(resp.Files))
-	for i, file := range resp.Files {
-		files[i] = File{
-			ID:         file.Id,
-			Name:       file.Name,
+			IsSnapshot: strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX),
 			ModifiedAt: s.parseTime(file.ModifiedTime),
 		}
 	}
@@ -372,15 +319,32 @@ func (s *GoogleDriveService) UploadChangeLogs(changes []repository.ChangeLog) (*
 	}, nil
 }
 
-func (s *GoogleDriveService) DeleteChangeLogsFiles(ids []string) error {
-	for _, id := range ids {
-		err := s.service.Files.Delete(id).Do()
-		if err != nil {
-			slog.Error("GoogleDriveService[DeleteChangeLogsFile] Unable to delete file", "fileName", id, "error", err)
-		} else {
-			slog.Debug("GoogleDriveService[DeleteChangeLogsFile] File deleted", "fileName", id)
-		}
+func (s *GoogleDriveService) GetFileContent(fileId string) ([]byte, error) {
+	return s.geFileContent(fileId)
+}
+
+func (s *GoogleDriveService) PruneOldChanges(timestamp time.Time) error {
+	resp, err := s.files().Q(fmt.Sprintf("modifiedTime < '%s'", s.formatTime(timestamp))).Do()
+	if err != nil {
+		slog.Error("GoogleDriveService[PruneOldChanges] Get list CHANGES_FILE_PREFIX", "error", err)
+		return err
 	}
+
+	var wg sync.WaitGroup
+	for _, file := range resp.Files {
+		wg.Add(1)
+		go func(file *drive.File) {
+			defer wg.Done()
+			err := s.service.Files.Delete(file.Id).Do()
+			if err != nil {
+				slog.Error("GoogleDriveService[PruneOldChanges] Unable to delete file", "fileName", file.Name, "error", err)
+			} else {
+				slog.Debug("GoogleDriveService[PruneOldChanges] File deleted", "fileName", file.Name)
+			}
+		}(file)
+	}
+
+	wg.Wait()
 
 	return nil
 }

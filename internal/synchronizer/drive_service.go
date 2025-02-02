@@ -21,6 +21,7 @@ type DeviceSyncState map[string]*DeviceSyncStateValue
 
 type File struct {
 	ID         string
+	IsSnapshot bool
 	Name       string
 	ModifiedAt time.Time
 }
@@ -28,12 +29,6 @@ type File struct {
 type UploadFile struct {
 	Name    string
 	Content interface{}
-}
-
-type DBSnapshot struct {
-	Name        string
-	Data        []byte
-	CreatedTime string
 }
 
 func snapshotFileName(timestamp time.Time) string {
@@ -48,12 +43,13 @@ type DriveService interface {
 	InitDevice(deviceId string) error
 	UpdateDeviceSyncTimeOffset(deviceId string, syncTimeOffset time.Time) error
 	// DB Snapshot
-	GetLatestDBSnapshot() (*DBSnapshot, error)
+	GetLatestDBSnapshot() (*File, error)
 	SaveDBSnapshot(content io.ReadSeeker) (*File, error)
-	RemoveOldDBSnapshots() error
 	// Get Changes from Drive
-	GetChangeLogsAfterSyncTimeOffset(syncTimeOffset time.Time) ([]File, error)
-	GetChangeLogsBeforeTimeStamp(timestamp time.Time) ([]File, error)
 	UploadChangeLogs(changes []repository.ChangeLog) (*File, error)
-	DeleteChangeLogsFiles(ids []string) error
+	GetFilesAfterTimeOffset(timeOffset time.Time) ([]File, error)
+	// Drive
+	GetFileContent(fileId string) ([]byte, error)
+	// Prune
+	PruneOldChanges(timestamp time.Time) error
 }

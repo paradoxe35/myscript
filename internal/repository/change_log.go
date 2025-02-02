@@ -12,7 +12,7 @@ import (
 
 type ChangeLog struct {
 	gorm.Model
-	UpdateID  string // UUID (changes every time on hooks are called)
+	ChangeID  string // UUID (changes every time on hooks are called)
 	TableName string
 	RowID     string
 	Operation string
@@ -44,7 +44,7 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{
-		UpdateID:  uuid.NewString(),
+		ChangeID:  uuid.NewString(),
 		TableName: tx.Statement.Table,
 		RowID:     getModelID(model),
 		Operation: operation,
