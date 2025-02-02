@@ -23,8 +23,6 @@ func NewSyncStateRepository(unsyncedDb *gorm.DB) *SyncStateRepository {
 	}
 }
 
-// Functions
-
 func (r *SyncStateRepository) GetSyncState() *SyncState {
 	var syncState SyncState
 

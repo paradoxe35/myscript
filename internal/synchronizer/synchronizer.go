@@ -1,12 +1,14 @@
 package synchronizer
 
-import "myscript/internal/repository"
+import (
+	"myscript/internal/repository"
+	"strings"
+)
 
 type Synchronizer struct {
-	driveService *DriveService
+	driveService DriveService
 
 	// Repository
-	deviceRepository          *repository.DeviceRepository
 	syncStateRepository       *repository.SyncStateRepository
 	changeLogRepository       *repository.ChangeLogRepository
 	processedChangeRepository *repository.ProcessedChangeRepository
@@ -14,12 +16,6 @@ type Synchronizer struct {
 
 // Option
 type Option func(s *Synchronizer)
-
-func WithDeviceRepository(deviceRepository *repository.DeviceRepository) Option {
-	return func(s *Synchronizer) {
-		s.deviceRepository = deviceRepository
-	}
-}
 
 func WithChangeLogRepository(changeLogRepository *repository.ChangeLogRepository) Option {
 	return func(s *Synchronizer) {
@@ -33,7 +29,7 @@ func WithProcessedChangeRepository(processedChangeRepository *repository.Process
 	}
 }
 
-func WithDriveService(driveService *DriveService) Option {
+func WithDriveService(driveService DriveService) Option {
 	return func(s *Synchronizer) {
 		s.driveService = driveService
 	}
@@ -63,19 +59,52 @@ func (s *Synchronizer) StopScheduler() error {
 	return nil
 }
 
-func (s *Synchronizer) applyRemoteChanges() error {
+func (s *Synchronizer) canBeApplied(file File) bool {
+	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasSuffix(file.Name, CHANGES_FILE_PREFIX)
+}
 
+func (s *Synchronizer) applyRemoteChanges() error {
+	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
+	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range changesFiles {
+		if !s.canBeApplied(file) {
+			continue
+		}
+
+		if file.IsSnapshot {
+			if err := s.applyFromSnapshot(file); err != nil {
+				return err
+			}
+		} else {
+			if err := s.applyFromChangeLogs(file); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *Synchronizer) applyFromSnapshot(file File) error {
+	return nil
+}
+
+func (s *Synchronizer) applyFromChangeLogs(file File) error {
 	return nil
 }
 
 func (s *Synchronizer) pruneOldChangeLogs() error {
-	return nil
+	if latestSnapshot, err := s.driveService.GetLatestDBSnapshot(); err != nil {
+		return err
+	} else {
+		return s.driveService.PruneOldChanges(latestSnapshot.CreatedTime)
+	}
 }
 
 func (s *Synchronizer) createDBSnapshot() error {
-	return nil
-}
-
-func (s *Synchronizer) restoreFromSnapshot() error {
 	return nil
 }

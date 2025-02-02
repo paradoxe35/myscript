@@ -48,10 +48,6 @@ func (s *GoogleDriveService) parseTime(t string) time.Time {
 	return parsedTime
 }
 
-func (s *GoogleDriveService) defaultTime() string {
-	return INITIAL_SYNC_TIME.Format(time.RFC3339)
-}
-
 func (s *GoogleDriveService) files() *drive.FilesListCall {
 	return s.service.Files.List().
 		Spaces(PARENT_FOLDER)
@@ -59,8 +55,8 @@ func (s *GoogleDriveService) files() *drive.FilesListCall {
 
 func (s *GoogleDriveService) SortFilesAsc(files []*drive.File) []*drive.File {
 	sort.Slice(files, func(i, j int) bool {
-		timeI, _ := time.Parse(time.RFC3339, files[i].ModifiedTime)
-		timeJ, _ := time.Parse(time.RFC3339, files[j].ModifiedTime)
+		timeI, _ := time.Parse(time.RFC3339, files[i].CreatedTime)
+		timeJ, _ := time.Parse(time.RFC3339, files[j].CreatedTime)
 		return timeI.Before(timeJ)
 	})
 
@@ -69,8 +65,8 @@ func (s *GoogleDriveService) SortFilesAsc(files []*drive.File) []*drive.File {
 
 func (s *GoogleDriveService) SortFilesDesc(files []*drive.File) []*drive.File {
 	sort.Slice(files, func(i, j int) bool {
-		timeI, _ := time.Parse(time.RFC3339, files[i].ModifiedTime)
-		timeJ, _ := time.Parse(time.RFC3339, files[j].ModifiedTime)
+		timeI, _ := time.Parse(time.RFC3339, files[i].CreatedTime)
+		timeJ, _ := time.Parse(time.RFC3339, files[j].CreatedTime)
 		return timeI.After(timeJ)
 	})
 
@@ -99,21 +95,6 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 
 // 	return resp.Body, nil
 // }
-
-func (s *GoogleDriveService) updateFileWithJson(file *drive.File, content interface{}) error {
-	data, err := json.Marshal(content)
-	if err != nil {
-		slog.Error("GoogleDriveService[updateFileWithJson] Marshal content to JSON", "error", err)
-		return err
-	}
-
-	if _, err := s.service.Files.Update(file.Id, file).Media(bytes.NewReader(data)).Do(); err != nil {
-		slog.Error("GoogleDriveService[updateFileWithJson] Update file", "error", err)
-		return err
-	}
-
-	return nil
-}
 
 func (s *GoogleDriveService) createFileWithJson(name string, content interface{}) (*drive.File, error) {
 	file := &drive.File{
@@ -149,98 +130,6 @@ func (s *GoogleDriveService) createRawFile(name string, content io.ReadSeeker) (
 	}
 }
 
-func (s *GoogleDriveService) InitDevice(deviceID string) error {
-	files, err := s.files().Q(fmt.Sprintf("name='%s'", DEVICES_SYNC_STATE_FILE)).Do()
-	if err != nil {
-		slog.Error("GoogleDriveService[InitDevice] Get list DEVICES_SYNC_STATE_FILE", "error", err)
-		return err
-	}
-
-	state := DeviceSyncState{}
-
-	if len(files.Files) > 0 {
-		file := files.Files[0]
-
-		fileContent, err := s.geFileContent(file.Id)
-		if err != nil {
-			slog.Error("GoogleDriveService[InitDevice] Get list DEVICES_SYNC_STATE_FILE content", "error", err)
-			return err
-		}
-
-		if err = json.Unmarshal(fileContent, &state); err != nil {
-			slog.Error("GoogleDriveService[InitDevice] Get list DEVICES_SYNC_STATE_FILE Unmarshal parses the JSON-encoded data", "error", err)
-			return err
-		}
-
-		// Check if the device is already synced
-		if _, ok := state[deviceID]; ok {
-			return nil
-		}
-
-		state[deviceID] = &DeviceSyncStateValue{
-			SyncTimeOffset: s.defaultTime(),
-		}
-
-		if err := s.updateFileWithJson(file, state); err != nil {
-			slog.Error("GoogleDriveService[InitDevice] Update DEVICES_SYNC_STATE_FILE", "error", err)
-			return err
-		}
-	} else {
-		state[deviceID] = &DeviceSyncStateValue{
-			SyncTimeOffset: s.defaultTime(),
-		}
-
-		if _, err := s.createFileWithJson(DEVICES_SYNC_STATE_FILE, state); err != nil {
-			slog.Error("GoogleDriveService[InitDevice] Create DEVICES_SYNC_STATE_FILE", "error", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (s *GoogleDriveService) UpdateDeviceSyncTimeOffset(deviceID string, timeOffset time.Time) error {
-	files, err := s.files().Q(fmt.Sprintf("name='%s'", DEVICES_SYNC_STATE_FILE)).Do()
-	if err != nil {
-		slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Get list DEVICES_SYNC_STATE_FILE", "error", err)
-		return err
-	}
-
-	if len(files.Files) > 0 {
-		file := files.Files[0]
-
-		fileContent, err := s.geFileContent(file.Id)
-		if err != nil {
-			slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Get list DEVICES_SYNC_STATE_FILE content", "error", err)
-			return err
-		}
-
-		state := DeviceSyncState{}
-		if err = json.Unmarshal(fileContent, &state); err != nil {
-			slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Get list DEVICES_SYNC_STATE_FILE Unmarshal parses the JSON-encoded data", "error", err)
-			return err
-		}
-
-		// Check if the device is already synced
-		if _, ok := state[deviceID]; !ok {
-			return fmt.Errorf("device %s is not synced", deviceID)
-		}
-
-		state[deviceID] = &DeviceSyncStateValue{
-			SyncTimeOffset: s.formatTime(timeOffset),
-		}
-
-		if err := s.updateFileWithJson(file, state); err != nil {
-			slog.Error("GoogleDriveService[UpdateDeviceSyncTimeOffset] Update DEVICES_SYNC_STATE_FILE", "error", err)
-			return err
-		}
-	} else {
-		return fmt.Errorf("device %s is not synced", deviceID)
-	}
-
-	return nil
-}
-
 func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 	resp, err := s.files().Q(fmt.Sprintf("name contains '%s'", DB_SNAPSHOT_PREFIX)).Do()
 	if err != nil {
@@ -258,10 +147,10 @@ func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 	file := resp.Files[0]
 
 	return &File{
-		ID:         file.Id,
-		Name:       file.Name,
-		IsSnapshot: true,
-		ModifiedAt: s.parseTime(file.ModifiedTime),
+		ID:          file.Id,
+		Name:        file.Name,
+		IsSnapshot:  true,
+		CreatedTime: s.parseTime(file.CreatedTime),
 	}, nil
 }
 
@@ -275,17 +164,17 @@ func (s *GoogleDriveService) SaveDBSnapshot(content io.ReadSeeker) (*File, error
 	}
 
 	return &File{
-		ID:         file.Id,
-		Name:       file.Name,
-		ModifiedAt: s.parseTime(file.ModifiedTime),
+		ID:          file.Id,
+		Name:        file.Name,
+		CreatedTime: s.parseTime(file.CreatedTime),
 	}, nil
 }
 
-func (s *GoogleDriveService) GetFilesAfterTimeOffset(timeOffset time.Time) ([]File, error) {
-	resp, err := s.files().Q(fmt.Sprintf("modifiedTime > '%s'", s.formatTime(timeOffset))).Do()
+func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]File, error) {
+	resp, err := s.files().Q(fmt.Sprintf("createdTime > '%s'", s.formatTime(timeOffset))).Do()
 
 	if err != nil {
-		slog.Error("GoogleDriveService[GetFilesAfterTimeOffset] Get list CHANGES_FILE_PREFIX", "error", err)
+		slog.Error("GoogleDriveService[GetChangeFilesAfterTimeOffset] Get list CHANGES_FILE_PREFIX", "error", err)
 		return nil, err
 	}
 
@@ -294,10 +183,10 @@ func (s *GoogleDriveService) GetFilesAfterTimeOffset(timeOffset time.Time) ([]Fi
 	files := make([]File, len(resp.Files))
 	for i, file := range resp.Files {
 		files[i] = File{
-			ID:         file.Id,
-			Name:       file.Name,
-			IsSnapshot: strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX),
-			ModifiedAt: s.parseTime(file.ModifiedTime),
+			ID:          file.Id,
+			Name:        file.Name,
+			IsSnapshot:  strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX),
+			CreatedTime: s.parseTime(file.CreatedTime),
 		}
 	}
 	return files, nil
@@ -313,9 +202,9 @@ func (s *GoogleDriveService) UploadChangeLogs(changes []repository.ChangeLog) (*
 	}
 
 	return &File{
-		ID:         file.Id,
-		Name:       file.Name,
-		ModifiedAt: s.parseTime(file.ModifiedTime),
+		ID:          file.Id,
+		Name:        file.Name,
+		CreatedTime: s.parseTime(file.CreatedTime),
 	}, nil
 }
 
@@ -324,7 +213,7 @@ func (s *GoogleDriveService) GetFileContent(fileId string) ([]byte, error) {
 }
 
 func (s *GoogleDriveService) PruneOldChanges(timestamp time.Time) error {
-	resp, err := s.files().Q(fmt.Sprintf("modifiedTime < '%s'", s.formatTime(timestamp))).Do()
+	resp, err := s.files().Q(fmt.Sprintf("createdTime < '%s'", s.formatTime(timestamp))).Do()
 	if err != nil {
 		slog.Error("GoogleDriveService[PruneOldChanges] Get list CHANGES_FILE_PREFIX", "error", err)
 		return err
