@@ -1,7 +1,10 @@
 package synchronizer
 
 import (
+	"log/slog"
+	"myscript/internal/database"
 	"myscript/internal/repository"
+	"os"
 	"strings"
 )
 
@@ -76,11 +79,11 @@ func (s *Synchronizer) applyRemoteChanges() error {
 		}
 
 		if file.IsSnapshot {
-			if err := s.applyFromSnapshot(file); err != nil {
+			if err := s.applyRemoteSnapshot(file); err != nil {
 				return err
 			}
 		} else {
-			if err := s.applyFromChangeLogs(file); err != nil {
+			if err := s.applyRemoteChangeLogs(file); err != nil {
 				return err
 			}
 		}
@@ -89,11 +92,47 @@ func (s *Synchronizer) applyRemoteChanges() error {
 	return nil
 }
 
-func (s *Synchronizer) applyFromSnapshot(file File) error {
+func (s *Synchronizer) applyRemoteSnapshot(file File) error {
+	// Ignore if already applied
+	if isApplied := s.processedChangeRepository.ChangeProcessed("empty", file.ID); isApplied {
+		return nil
+	}
+
+	fileContent, err := s.driveService.GetFileContent(file.ID)
+	if err != nil {
+		return err
+	}
+
+	// Create a temporary directory for decompression
+	tmpDir, err := os.MkdirTemp("", "snapshot")
+	if err != nil {
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to create temporary directory", "error", err)
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Decompress the file and get the path to the SQLite database
+	dbPath, err := DecompressSnapshotFile(fileContent, tmpDir)
+	if err != nil {
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to decompress snapshot file", "error", err)
+		return err
+	}
+
+	// Mount the database
+	db, err := database.MountDatabase(dbPath)
+	if err != nil {
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to mount database", "error", err)
+		return err
+	}
+
+	db.Name()
+
+	// fileArchiver := NewFileArchiver(file.Name)
+
 	return nil
 }
 
-func (s *Synchronizer) applyFromChangeLogs(file File) error {
+func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 	return nil
 }
 

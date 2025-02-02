@@ -1,4 +1,4 @@
-package synchronizer
+package utils
 
 import (
 	"archive/tar"

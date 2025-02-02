@@ -39,6 +39,15 @@ func NewGoogleDriveService(client *http.Client) (*GoogleDriveService, error) {
 	}, nil
 }
 
+func (s *GoogleDriveService) createFileFromGoogleDrive(file *drive.File) *File {
+	return &File{
+		ID:          file.Id,
+		Name:        file.Name,
+		IsSnapshot:  strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX),
+		CreatedTime: s.parseTime(file.CreatedTime),
+	}
+}
+
 func (s *GoogleDriveService) formatTime(t time.Time) string {
 	return t.Format(time.RFC3339)
 }
@@ -144,14 +153,7 @@ func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 
 	resp.Files = s.SortFilesDesc(resp.Files)
 
-	file := resp.Files[0]
-
-	return &File{
-		ID:          file.Id,
-		Name:        file.Name,
-		IsSnapshot:  true,
-		CreatedTime: s.parseTime(file.CreatedTime),
-	}, nil
+	return s.createFileFromGoogleDrive(resp.Files[0]), nil
 }
 
 func (s *GoogleDriveService) SaveDBSnapshot(content io.ReadSeeker) (*File, error) {
@@ -163,14 +165,10 @@ func (s *GoogleDriveService) SaveDBSnapshot(content io.ReadSeeker) (*File, error
 		return nil, err
 	}
 
-	return &File{
-		ID:          file.Id,
-		Name:        file.Name,
-		CreatedTime: s.parseTime(file.CreatedTime),
-	}, nil
+	return s.createFileFromGoogleDrive(file), nil
 }
 
-func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]File, error) {
+func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]*File, error) {
 	resp, err := s.files().Q(fmt.Sprintf("createdTime > '%s'", s.formatTime(timeOffset))).Do()
 
 	if err != nil {
@@ -180,14 +178,9 @@ func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time)
 
 	resp.Files = s.SortFilesAsc(resp.Files)
 
-	files := make([]File, len(resp.Files))
+	files := make([]*File, len(resp.Files))
 	for i, file := range resp.Files {
-		files[i] = File{
-			ID:          file.Id,
-			Name:        file.Name,
-			IsSnapshot:  strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX),
-			CreatedTime: s.parseTime(file.CreatedTime),
-		}
+		files[i] = s.createFileFromGoogleDrive(file)
 	}
 	return files, nil
 }
@@ -201,11 +194,7 @@ func (s *GoogleDriveService) UploadChangeLogs(changes []repository.ChangeLog) (*
 		return nil, err
 	}
 
-	return &File{
-		ID:          file.Id,
-		Name:        file.Name,
-		CreatedTime: s.parseTime(file.CreatedTime),
-	}, nil
+	return s.createFileFromGoogleDrive(file), nil
 }
 
 func (s *GoogleDriveService) GetFileContent(fileId string) ([]byte, error) {

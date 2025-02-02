@@ -2,13 +2,16 @@ package database
 
 import (
 	"myscript/internal/repository"
+	"path/filepath"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func setupDatabase(homeDir, dbName string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(homeDir+"/"+dbName), &gorm.Config{})
+const DB_BASE_NAME = "database.sqlite"
+
+func MountDatabase(dbPath string) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +45,7 @@ func setupDatabase(homeDir, dbName string) (*gorm.DB, error) {
 }
 
 func NewSyncedDatabase(homeDir string) *gorm.DB {
-	db, err := setupDatabase(homeDir, "data.db")
+	db, err := MountDatabase(filepath.Join(homeDir, DB_BASE_NAME))
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}
@@ -56,7 +59,7 @@ func NewSyncedDatabase(homeDir string) *gorm.DB {
 }
 
 func NewUnSyncedDatabase(homeDir string) *gorm.DB {
-	db, err := setupDatabase(homeDir, "unsynced-data.db")
+	db, err := MountDatabase(filepath.Join(homeDir, "unsynced-"+DB_BASE_NAME))
 	if err != nil {
 		panic("failed to connect database: " + err.Error())
 	}

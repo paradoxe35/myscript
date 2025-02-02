@@ -37,7 +37,7 @@ func (r *ProcessedChangeRepository) GetProcessedChange(changeID string, fileID s
 	return &ProcessedChange
 }
 
-func (r *ProcessedChangeRepository) ProcessedChange(changeID string, fileID string) bool {
+func (r *ProcessedChangeRepository) ChangeProcessed(changeID string, fileID string) bool {
 	return r.GetProcessedChange(changeID, fileID) != nil
 }
 
