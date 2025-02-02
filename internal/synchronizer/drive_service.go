@@ -13,6 +13,8 @@ const (
 	CHANGES_FILE_PREFIX     = "changes_"
 )
 
+var INITIAL_SYNC_TIME = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
 type DeviceSyncStateValue struct {
 	SyncTimeOffset string
 }

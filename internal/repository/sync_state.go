@@ -10,7 +10,6 @@ import (
 
 type SyncState struct {
 	gorm.Model
-	Enabled        bool
 	SyncTimeOffset time.Time
 }
 
@@ -29,7 +28,10 @@ func NewSyncStateRepository(unsyncedDb *gorm.DB) *SyncStateRepository {
 func (r *SyncStateRepository) GetSyncState() *SyncState {
 	var syncState SyncState
 
-	r.db.First(&syncState)
+	if r.db.First(&syncState).Error != nil {
+		syncState.SyncTimeOffset = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		r.db.Save(&syncState)
+	}
 
 	return &syncState
 }

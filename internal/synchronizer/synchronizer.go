@@ -7,6 +7,7 @@ type Synchronizer struct {
 
 	// Repository
 	deviceRepository          *repository.DeviceRepository
+	syncStateRepository       *repository.SyncStateRepository
 	changeLogRepository       *repository.ChangeLogRepository
 	processedChangeRepository *repository.ProcessedChangeRepository
 }
@@ -35,6 +36,12 @@ func WithProcessedChangeRepository(processedChangeRepository *repository.Process
 func WithDriveService(driveService *DriveService) Option {
 	return func(s *Synchronizer) {
 		s.driveService = driveService
+	}
+}
+
+func WithSyncStateRepository(syncStateRepository *repository.SyncStateRepository) Option {
+	return func(s *Synchronizer) {
+		s.syncStateRepository = syncStateRepository
 	}
 }
 

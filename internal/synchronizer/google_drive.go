@@ -49,7 +49,7 @@ func (s *GoogleDriveService) parseTime(t string) time.Time {
 }
 
 func (s *GoogleDriveService) defaultTime() string {
-	return time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	return INITIAL_SYNC_TIME.Format(time.RFC3339)
 }
 
 func (s *GoogleDriveService) files() *drive.FilesListCall {

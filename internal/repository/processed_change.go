@@ -9,6 +9,7 @@ import (
 type ProcessedChange struct {
 	gorm.Model
 	ChangeID string
+	FileID   string
 }
 
 type ProcessedChangeRepository struct {
@@ -21,10 +22,12 @@ func NewProcessedChangeRepository(unsyncedDb *gorm.DB) *ProcessedChangeRepositor
 	}
 }
 
-func (r *ProcessedChangeRepository) GetProcessedChange(updateID string) *ProcessedChange {
+func (r *ProcessedChangeRepository) GetProcessedChange(changeID string, fileID string) *ProcessedChange {
 	var ProcessedChange ProcessedChange
 
-	err := r.db.Where("update_id = ?", updateID).
+	err := r.db.
+		Where("change_id = ?", changeID).
+		Or("file_id = ?", fileID).
 		First(&ProcessedChange).Error
 
 	if err != nil {
@@ -34,13 +37,14 @@ func (r *ProcessedChangeRepository) GetProcessedChange(updateID string) *Process
 	return &ProcessedChange
 }
 
-func (r *ProcessedChangeRepository) ProcessedChange(changeID string) bool {
-	return r.GetProcessedChange(changeID) == nil
+func (r *ProcessedChangeRepository) ProcessedChange(changeID string, fileID string) bool {
+	return r.GetProcessedChange(changeID, fileID) != nil
 }
 
-func (r *ProcessedChangeRepository) SaveProcessedChange(changeID string) error {
+func (r *ProcessedChangeRepository) SaveProcessedChange(changeID string, fileID string) error {
 	item := &ProcessedChange{
 		ChangeID: changeID,
+		FileID:   fileID,
 	}
 
 	return r.db.Save(item).Error
