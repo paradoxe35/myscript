@@ -25,6 +25,12 @@ type Synchronizer struct {
 // Option
 type Option func(s *Synchronizer)
 
+func WithSyncedDatabase(syncedDatabase *gorm.DB) Option {
+	return func(s *Synchronizer) {
+		s.syncedDatabase = syncedDatabase
+	}
+}
+
 func WithChangeLogRepository(changeLogRepository *repository.ChangeLogRepository) Option {
 	return func(s *Synchronizer) {
 		s.changeLogRepository = changeLogRepository

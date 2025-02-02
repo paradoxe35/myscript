@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"myscript/internal/repository"
 	"reflect"
+	"sync"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -80,6 +81,8 @@ func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}) error {
 			return err
 		}
 
+		tableName, _ := s.getEntityTableName(entity)
+
 		// Apply custom sync strategy if exists
 		if rules.Strategy != nil {
 			for _, record := range records {
@@ -92,77 +95,104 @@ func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}) error {
 
 		// Default upsert behavior with conflict columns
 		if len(rules.ConflictColumns) > 0 {
-			return tx.Clauses(clause.OnConflict{
-				Columns:   s.getConflictColumns(entity, rules.ConflictColumns),
-				DoUpdates: clause.AssignmentColumns(s.getUpdateColumns(entity)),
-			}).Create(records).Error
+			for _, record := range records {
+				err := tx.Table(tableName).
+					Clauses(clause.OnConflict{
+						Columns:   s.getConflictColumns(entity, rules.ConflictColumns),
+						DoUpdates: clause.AssignmentColumns(s.getUpdateColumns(entity)),
+					}).Create(record).Error
+
+				if err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 
 		// Fallback to basic save
-		return tx.Save(records).Error
+		for _, record := range records {
+			if err := tx.Table(tableName).Save(record).Error; err != nil {
+				return err
+			}
+		}
+		return nil
 	})
+}
+
+func (s *DatabaseSynchronizer) getEntityTableName(model interface{}) (string, error) {
+	// Use the default naming strategy
+	c, err := schema.Parse(model, &sync.Map{}, &schema.NamingStrategy{})
+	if err != nil {
+		return "", err
+	}
+	return c.Table, nil
 }
 
 func (s *DatabaseSynchronizer) areSchemasCompatible(entity interface{}) (bool, error) {
 	sourceMigrator := s.sourceDB.Migrator()
 	targetMigrator := s.targetDB.Migrator()
 
-	// Check if table exists in both databases
+	// 1. Basic table existence check
 	if !sourceMigrator.HasTable(entity) || !targetMigrator.HasTable(entity) {
 		return false, nil
 	}
 
-	// Compare column definitions
-	entityType := reflect.TypeOf(entity).Elem()
-	for i := 0; i < entityType.NumField(); i++ {
-		field := entityType.Field(i)
-		columnName := s.getColumnName(field)
-		if columnName == "" {
-			continue // Skip non-database fields
+	// 2. Get essential column information
+	sourceCols, err := sourceMigrator.ColumnTypes(entity)
+	if err != nil {
+		return false, fmt.Errorf("failed to get source columns: %v", err)
+	}
+
+	targetCols, err := targetMigrator.ColumnTypes(entity)
+	if err != nil {
+		return false, fmt.Errorf("failed to get target columns: %v", err)
+	}
+
+	// 3. Check column compatibility
+	for _, sCol := range sourceCols {
+		var targetCol gorm.ColumnType = nil
+		for _, tCol := range targetCols {
+			if sCol.Name() == tCol.Name() {
+				targetCol = tCol
+				break
+			}
 		}
 
-		// Compare column types
-		sourceColType, _ := sourceMigrator.ColumnTypes(entity)
-		targetColType, _ := targetMigrator.ColumnTypes(entity)
-		if !s.compareColumnTypes(sourceColType, targetColType) {
+		if targetCol == nil || sCol.DatabaseTypeName() != targetCol.DatabaseTypeName() {
 			return false, nil
 		}
 	}
+
 	return true, nil
 }
 
-func (s *DatabaseSynchronizer) getColumnName(field reflect.StructField) string {
-	tagSettings := schema.ParseTagSetting(field.Tag.Get("gorm"), ";")
-	if name, ok := tagSettings["COLUMN"]; ok {
-		return name
-	} else if name, ok := tagSettings["column"]; ok {
-		return name
-	}
-	return field.Name
-}
-
-func (s *DatabaseSynchronizer) compareColumnTypes(source, target []gorm.ColumnType) bool {
-	// Implement detailed column type comparison
-	// This is a simplified version - expand based on your needs
-	if len(source) != len(target) {
-		return false
-	}
-
-	for i := range source {
-		if source[i].Name() != target[i].Name() ||
-			source[i].DatabaseTypeName() != target[i].DatabaseTypeName() {
-			return false
-		}
-	}
-	return true
-}
-
 func (s *DatabaseSynchronizer) getSourceRecords(entity interface{}) ([]interface{}, error) {
-	var records []interface{}
-	result := s.sourceDB.Model(entity).Find(&records)
+	// Dereference pointers to get the underlying type
+	entityValue := reflect.Indirect(reflect.ValueOf(entity))
+	entityType := entityValue.Type()
+
+	// Create a slice of pointers to the actual struct type
+	sliceType := reflect.SliceOf(reflect.PtrTo(entityType))
+	slicePtr := reflect.New(sliceType)
+
+	// Execute query with proper typing
+	result := s.sourceDB.Model(entity).Find(slicePtr.Interface())
 	if result.Error != nil {
 		return nil, fmt.Errorf("failed to fetch records: %v", result.Error)
 	}
+
+	// Convert to []interface{} with pointer elements
+	slice := slicePtr.Elem()
+	records := make([]interface{}, slice.Len())
+	for i := 0; i < slice.Len(); i++ {
+		// Get the pointer value and ensure it's addressable
+		item := slice.Index(i)
+		if item.Kind() == reflect.Ptr && item.IsNil() {
+			continue // Skip nil pointers
+		}
+		records[i] = item.Interface()
+	}
+
 	return records, nil
 }
 
@@ -188,11 +218,17 @@ func (s *DatabaseSynchronizer) syncConfigStrategy(entity interface{}) error {
 }
 
 // Helper to get conflict columns as clauses
-func (s *DatabaseSynchronizer) getConflictColumns(_ interface{}, names []string) []clause.Column {
+func (s *DatabaseSynchronizer) getConflictColumns(entity interface{}, names []string) []clause.Column {
 	columns := make([]clause.Column, len(names))
-	st := s.targetDB.Statement.Schema
+
+	// Create new statement to ensure schema is initialized
+	stmt := &gorm.Statement{DB: s.targetDB}
+	if err := stmt.Parse(entity); err != nil {
+		return columns
+	}
+
 	for i, name := range names {
-		if field := st.LookUpField(name); field != nil {
+		if field := stmt.Schema.LookUpField(name); field != nil {
 			columns[i] = clause.Column{Name: field.DBName}
 		}
 	}
@@ -201,16 +237,30 @@ func (s *DatabaseSynchronizer) getConflictColumns(_ interface{}, names []string)
 
 // Helper to get updatable columns (exclude conflict columns and primary keys)
 func (s *DatabaseSynchronizer) getUpdateColumns(entity interface{}) []string {
-	st := s.targetDB.Statement.Schema
-	var columns []string
+	// Create a temporary statement to parse the entity
+	stmt := &gorm.Statement{DB: s.targetDB}
+	if err := stmt.Parse(entity); err != nil {
+		fmt.Printf("Error parsing schema for update columns: %v", err)
+		return nil
+	}
 
-	for _, field := range st.Fields {
+	var columns []string
+	conflictColumns := s.getSyncRules(entity).ConflictColumns
+
+	for _, field := range stmt.Schema.Fields {
 		// Skip primary keys and conflict columns
-		if field.PrimaryKey || contains(s.getSyncRules(entity).ConflictColumns, field.Name) {
+		if field.PrimaryKey || contains(conflictColumns, field.Name) {
 			continue
 		}
+
+		// Skip created_at timestamp
+		if field.Name == "CreatedAt" {
+			continue
+		}
+
 		columns = append(columns, field.DBName)
 	}
+
 	return columns
 }
 
