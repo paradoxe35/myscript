@@ -6,10 +6,15 @@ import (
 	"myscript/internal/repository"
 	"os"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 type Synchronizer struct {
 	driveService DriveService
+
+	// Synced
+	syncedDatabase *gorm.DB
 
 	// Repository
 	syncStateRepository       *repository.SyncStateRepository
