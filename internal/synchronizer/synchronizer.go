@@ -88,11 +88,7 @@ func (s *Synchronizer) StopScheduler() error {
 	return nil
 }
 
-func (s *Synchronizer) canBeApplied(file File) bool {
-	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasSuffix(file.Name, CHANGES_FILE_PREFIX)
-}
-
-func (s *Synchronizer) applyRemoteChanges() error {
+func (s *Synchronizer) ApplyRemoteChanges() error {
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
 	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
 	if err != nil {
@@ -126,6 +122,10 @@ func (s *Synchronizer) applyRemoteChanges() error {
 	}
 
 	return nil
+}
+
+func (s *Synchronizer) canBeApplied(file File) bool {
+	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasSuffix(file.Name, CHANGES_FILE_PREFIX)
 }
 
 func (s *Synchronizer) canIgnoreRemoteApplyFailure(file File, err error) bool {
