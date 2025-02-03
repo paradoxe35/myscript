@@ -57,13 +57,17 @@ func (s *GoogleDriveService) formatTime(t time.Time) string {
 }
 
 func (s *GoogleDriveService) parseTime(t string) time.Time {
-	parsedTime, _ := time.Parse(time.RFC3339, t)
+	parsedTime, err := time.Parse(time.RFC3339, t)
+	if err != nil {
+		slog.Error("GoogleDriveService[parseTime]: Error parsing time", "time", t)
+	}
 	return parsedTime
 }
 
 func (s *GoogleDriveService) files() *drive.FilesListCall {
 	return s.service.Files.List().
-		Spaces(PARENT_FOLDER)
+		Spaces(PARENT_FOLDER).
+		Fields("files(id, name, createdTime), nextPageToken")
 }
 
 func (s *GoogleDriveService) SortFilesAsc(files []*drive.File) []*drive.File {
@@ -120,7 +124,12 @@ func (s *GoogleDriveService) createFileWithJson(name string, content interface{}
 		return nil, err
 	}
 
-	if newFile, err := s.service.Files.Create(file).Media(bytes.NewReader(data)).Do(); err != nil {
+	newFile, err := s.service.Files.Create(file).
+		Media(bytes.NewReader(data)).
+		Fields("id", "name", "createdTime").
+		Do()
+
+	if err != nil {
 		slog.Error("GoogleDriveService[createFileWithJson] Create file", "error", err)
 		return nil, err
 	} else {
@@ -134,7 +143,12 @@ func (s *GoogleDriveService) createRawFile(name string, content io.ReadSeeker) (
 		Parents: []string{PARENT_FOLDER},
 	}
 
-	if newFile, err := s.service.Files.Create(file).Media(content).Do(); err != nil {
+	newFile, err := s.service.Files.Create(file).
+		Media(content).
+		Fields("id", "name", "createdTime").
+		Do()
+
+	if err != nil {
 		slog.Error("GoogleDriveService[createRawFile] Create file", "error", err)
 		return nil, err
 	} else {

@@ -23,11 +23,13 @@ func NewSyncStateRepository(unSyncedDB *gorm.DB) *SyncStateRepository {
 	}
 }
 
+var DEFAULT_TIME = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+
 func (r *SyncStateRepository) GetSyncState() *SyncState {
 	var syncState SyncState
 
 	if r.db.First(&syncState).Error != nil {
-		syncState.SyncTimeOffset = time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		syncState.SyncTimeOffset = DEFAULT_TIME
 		r.db.Save(&syncState)
 	}
 
@@ -36,7 +38,13 @@ func (r *SyncStateRepository) GetSyncState() *SyncState {
 
 func (r *SyncStateRepository) SaveSyncState(syncTimeOffset time.Time) *SyncState {
 	syncState := r.GetSyncState()
-	syncState.SyncTimeOffset = syncTimeOffset
+
+	if syncTimeOffset.IsZero() || syncTimeOffset.Before(DEFAULT_TIME) {
+		syncState.SyncTimeOffset = DEFAULT_TIME
+	} else {
+		syncState.SyncTimeOffset = syncTimeOffset.Truncate(time.Second)
+	}
+
 	r.db.Save(syncState)
 
 	return syncState

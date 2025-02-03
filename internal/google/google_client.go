@@ -55,6 +55,10 @@ func (c *GoogleClient) GetClient(token *oauth2.Token) (*http.Client, error) {
 	return c.config.Client(context.Background(), token), nil
 }
 
+func (c *GoogleClient) GetSavedToken() *repository.GoogleAuthToken {
+	return c.repository.GetGoogleAuthToken()
+}
+
 func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 	token := c.repository.GetGoogleAuthToken()
 	if token == nil {

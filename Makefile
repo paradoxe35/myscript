@@ -15,12 +15,11 @@ else
     endif
 endif
 
-.PHONY: dev build all
+.PHONY: dev build all cross-env
 
-all: build
+all: cross-env build
 
 dev:
-	@npm install -g cross-env
 ifeq ($(DETECTED_OS),Windows)
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails dev
 else
@@ -28,9 +27,11 @@ else
 endif
 
 build:
-	@npm install -g cross-env
 ifeq ($(DETECTED_OS),Windows)
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails build -clean
 else
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails build -clean ${BUILD_FLAGS}
 endif
+
+cross-env:
+	@npm install -g cross-env

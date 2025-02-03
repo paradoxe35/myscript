@@ -1,10 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"myscript/internal/repository"
 	"myscript/internal/synchronizer"
+	"myscript/internal/utils"
+	"net/http"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -28,12 +31,27 @@ func (a *App) DeleteGoogleAuthToken() {
 
 // This function is being called from the frontend
 func (a *App) StartSynchronizer() error {
-	gClient, err := a.synchronizer.googleClient.GetClientFromSavedToken()
-	if err != nil {
-		return err
+	var httpClient *http.Client
+	var err error
+
+	if utils.HasInternet() {
+		httpClient, err = a.synchronizer.googleClient.GetClientFromSavedToken()
+		if err != nil {
+			return err
+		}
+	} else {
+		token := a.synchronizer.googleClient.GetSavedToken()
+		if token == nil {
+			return errors.New("no token found")
+		}
+
+		httpClient, err = a.synchronizer.googleClient.GetClient(token.AuthToken.Data())
+		if err != nil {
+			return err
+		}
 	}
 
-	googleDriveService, err := synchronizer.NewGoogleDriveService(gClient)
+	googleDriveService, err := synchronizer.NewGoogleDriveService(httpClient)
 	if err != nil {
 		return err
 	}

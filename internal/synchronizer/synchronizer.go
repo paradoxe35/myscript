@@ -177,6 +177,7 @@ func (s *Synchronizer) applyRemoteChanges() error {
 
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
 	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
+
 	if err != nil {
 		return err
 	}
@@ -188,6 +189,9 @@ func (s *Synchronizer) applyRemoteChanges() error {
 
 		// Ignore if already applied
 		if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
+			slog.Info("Synchronizer[applyRemoteChanges]: Applied", "time", file.CreatedTime)
+
+			s.syncStateRepository.SaveSyncState(file.CreatedTime)
 			return nil
 		}
 
@@ -211,7 +215,7 @@ func (s *Synchronizer) applyRemoteChanges() error {
 }
 
 func (s *Synchronizer) canBeApplied(file *File) bool {
-	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasSuffix(file.Name, CHANGES_FILE_PREFIX)
+	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasPrefix(file.Name, CHANGES_FILE_PREFIX)
 }
 
 func (s *Synchronizer) canIgnoreRemoteApplyFailure(file *File, err error) bool {
