@@ -27,6 +27,8 @@ func (a *App) DeleteGoogleAuthToken() {
 	repository.
 		NewGoogleAuthTokenRepository(a.UnSyncedDB).
 		DeleteGoogleAuthToken()
+
+	a.synchronizer.sync.StopScheduler()
 }
 
 // This function is being called from the frontend
