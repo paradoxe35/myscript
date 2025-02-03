@@ -75,7 +75,9 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeL
 		}
 
 		// Unmarshal JSON data into the model
-		json.Unmarshal([]byte(changeLog.NewData), model)
+		if err := json.Unmarshal([]byte(changeLog.NewData), model); err != nil {
+			return err
+		}
 
 		if err := s.synchronizeEntity(model, []interface{}{model}); err != nil {
 			return err
