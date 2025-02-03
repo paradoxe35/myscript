@@ -26,6 +26,7 @@ func (a *App) DeleteGoogleAuthToken() {
 		DeleteGoogleAuthToken()
 }
 
+// This function is being called from the frontend
 func (a *App) StartSynchronizer() error {
 	gClient, err := a.synchronizer.googleClient.GetClientFromSavedToken()
 	if err != nil {
@@ -91,9 +92,6 @@ func (a *App) StartGoogleAuthorization() error {
 			runtime.EventsEmit(a.ctx, "on-google-authorization-error", err.Error())
 			return
 		}
-
-		// Start Synchronizer after authorization
-		a.StartSynchronizer()
 	})
 
 	if authURL, err := googleClient.GenerateAuthURL(addr); err != nil {

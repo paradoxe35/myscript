@@ -20,8 +20,10 @@ import {
   GetGoogleAuthToken,
   IsGoogleAuthEnabled,
   StartGoogleAuthorization,
+  StartSynchronizer,
 } from "~wails/main/App";
 import { EventsOn } from "~wails-runtime";
+import { useDebouncedCallback } from "use-debounce";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
@@ -170,11 +172,21 @@ function useCloudSettings() {
   // Services status
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
+  const cloudEnabled = googleAuthEnabled;
+
   const getGoogleAuthToken = useCallback(() => {
     GetGoogleAuthToken().then((token) => {
       setGoogleAuthToken(token);
     });
   }, []);
+
+  // Start synchronization here
+  const startSynchronizer = useDebouncedCallback(StartSynchronizer, 1000);
+  useEffect(() => {
+    if (cloudEnabled && googleAuthToken) {
+      startSynchronizer();
+    }
+  }, [cloudEnabled, googleAuthToken]);
 
   useEffect(() => {
     getGoogleAuthToken();
@@ -203,7 +215,7 @@ function useCloudSettings() {
     return StartGoogleAuthorization()
       .then(getGoogleAuthToken)
       .finally(() => setAuthorizing(false));
-  }, []);
+  }, [getGoogleAuthToken]);
 
   const deleteGoogleAuthToken = useCallback(() => {
     return DeleteGoogleAuthToken().then(getGoogleAuthToken);
@@ -211,7 +223,7 @@ function useCloudSettings() {
 
   return {
     googleAuthEnabled,
-    cloudEnabled: googleAuthEnabled,
+    cloudEnabled,
     googleAuthToken,
     startGoogleAuthorization,
     deleteGoogleAuthToken,

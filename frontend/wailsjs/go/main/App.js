@@ -142,6 +142,10 @@ export function StartRecording(arg1, arg2) {
   return window['go']['main']['App']['StartRecording'](arg1, arg2);
 }
 
+export function StartSynchronizer() {
+  return window['go']['main']['App']['StartSynchronizer']();
+}
+
 export function StopRecording() {
   return window['go']['main']['App']['StopRecording']();
 }

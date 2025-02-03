@@ -78,6 +78,8 @@ export function StartGoogleAuthorization():Promise<void>;
 
 export function StartRecording(arg1:string,arg2:string):Promise<void>;
 
+export function StartSynchronizer():Promise<void>;
+
 export function StopRecording():Promise<void>;
 
 export function Transcribe(arg1:Array<number>,arg2:string):Promise<string>;
