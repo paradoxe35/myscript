@@ -26,6 +26,22 @@ func (a *App) DeleteGoogleAuthToken() {
 		DeleteGoogleAuthToken()
 }
 
+func (a *App) StartSynchronizer() error {
+	gClient, err := a.synchronizer.googleClient.GetClientFromSavedToken()
+	if err != nil {
+		return err
+	}
+
+	googleDriveService, err := synchronizer.NewGoogleDriveService(gClient)
+	if err != nil {
+		return err
+	}
+
+	a.synchronizer.sync.SetDriveService(googleDriveService)
+
+	return a.synchronizer.sync.StartScheduler()
+}
+
 func (a *App) StartGoogleAuthorization() error {
 	port := 43056
 	addr := fmt.Sprintf("http://localhost:%d", port)
@@ -65,6 +81,9 @@ func (a *App) StartGoogleAuthorization() error {
 			runtime.EventsEmit(a.ctx, "on-google-authorization-error", err.Error())
 			return
 		}
+
+		// Start Synchronizer after authorization
+		a.StartSynchronizer()
 	})
 
 	if authURL, err := googleClient.GenerateAuthURL(addr); err != nil {

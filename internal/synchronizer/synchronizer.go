@@ -130,11 +130,11 @@ func (s *Synchronizer) ApplyRemoteChanges() error {
 	return nil
 }
 
-func (s *Synchronizer) canBeApplied(file File) bool {
+func (s *Synchronizer) canBeApplied(file *File) bool {
 	return strings.HasPrefix(file.Name, DB_SNAPSHOT_PREFIX) || strings.HasSuffix(file.Name, CHANGES_FILE_PREFIX)
 }
 
-func (s *Synchronizer) canIgnoreRemoteApplyFailure(file File, err error) bool {
+func (s *Synchronizer) canIgnoreRemoteApplyFailure(file *File, err error) bool {
 	maxFailures := MAX_CHANGE_LOGS_APPLY_FAILURES
 	if file.IsSnapshot {
 		maxFailures = MAX_SNAPSHOT_APPLY_FAILURES
@@ -155,7 +155,7 @@ func (s *Synchronizer) canIgnoreRemoteApplyFailure(file File, err error) bool {
 	return false
 }
 
-func (s *Synchronizer) applyRemoteSnapshot(file File) error {
+func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	fileContent, err := s.driveService.GetFileContent(file.ID)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 	return nil
 }
 
-func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
+func (s *Synchronizer) applyRemoteChangeLogs(file *File) error {
 	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.mainDB)
 
 	return s.mainDB.Transaction(func(tx *gorm.DB) error {

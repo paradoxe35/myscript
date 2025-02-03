@@ -47,7 +47,7 @@ type DriveService interface {
 	SaveDBSnapshot(content io.ReadSeeker) (*File, error)
 	// Get Changes from Drive
 	UploadChangeLogs(changes []repository.ChangeLog) (*File, error)
-	GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]File, error)
+	GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]*File, error)
 	// Drive
 	GetFileContent(fileId string) ([]byte, error)
 	// Prune
