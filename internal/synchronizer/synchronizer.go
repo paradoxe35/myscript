@@ -123,8 +123,10 @@ func (s *Synchronizer) scheduler() {
 	}
 
 	for range s.schedulerTicker.C {
-		if !s.isSyncing || !utils.HasInternet() {
-			s.schedulerWorker()
+		if !s.isSyncing {
+			if utils.HasInternet() {
+				s.schedulerWorker() // run the sync
+			}
 		}
 	}
 }
