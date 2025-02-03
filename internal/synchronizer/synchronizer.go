@@ -107,6 +107,7 @@ func (s *Synchronizer) StartScheduler() error {
 
 	go s.scheduler()
 
+	slog.Info("Synchronizer[StartScheduler]: scheduler started")
 	return nil
 }
 
