@@ -44,7 +44,6 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{
-		ChangeID:  uuid.NewString(),
 		TableName: tx.Statement.Table,
 		RowID:     getModelID(model),
 		Operation: operation,
@@ -57,8 +56,13 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	if unSyncedDB.Where("table_name = ? AND row_id = ? and operation = ?", change.TableName, change.RowID, operation).
 		First(&existing).Error == nil {
 		change.ID = existing.ID
+		change.ChangeID = existing.ChangeID
+
 		return unSyncedDB.Save(&change).Error
 	}
+
+	// Generate a new change ID
+	change.ChangeID = uuid.NewString()
 
 	return unSyncedDB.Create(&change).Error
 }

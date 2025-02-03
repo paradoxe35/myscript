@@ -58,36 +58,34 @@ func (s *DatabaseSynchronizer) SynchronizeAll() error {
 	return nil
 }
 
-func (s *DatabaseSynchronizer) SynchronizeChangeLogs(changeLogs []repository.ChangeLog) error {
-	for _, change := range changeLogs {
-		switch change.Operation {
-		case repository.OPERATION_CREATE, repository.OPERATION_UPDATE:
-			var model interface{}
+func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeLog) error {
+	switch changeLog.Operation {
+	case repository.OPERATION_CREATE, repository.OPERATION_UPDATE:
+		var model interface{}
 
-			switch change.TableName {
-			case s.GetEntityTableName(&repository.Config{}):
-				model = &repository.Config{}
-			case s.GetEntityTableName(&repository.Page{}):
-				model = &repository.Page{}
-			case s.GetEntityTableName(&repository.Cache{}):
-				model = &repository.Cache{}
-			default:
-				return fmt.Errorf("unsupported table name: %s", change.TableName)
-			}
-
-			// Unmarshal JSON data into the model
-			json.Unmarshal([]byte(change.NewData), model)
-
-			if err := s.synchronizeEntity(model, []interface{}{model}); err != nil {
-				return err
-			}
-
-		case repository.OPERATION_DELETE:
-			s.targetDB.
-				Table(change.TableName).
-				Where("id = ?", change.RowID).
-				Delete(nil)
+		switch changeLog.TableName {
+		case s.GetEntityTableName(&repository.Config{}):
+			model = &repository.Config{}
+		case s.GetEntityTableName(&repository.Page{}):
+			model = &repository.Page{}
+		case s.GetEntityTableName(&repository.Cache{}):
+			model = &repository.Cache{}
+		default:
+			return fmt.Errorf("unsupported table name: %s", changeLog.TableName)
 		}
+
+		// Unmarshal JSON data into the model
+		json.Unmarshal([]byte(changeLog.NewData), model)
+
+		if err := s.synchronizeEntity(model, []interface{}{model}); err != nil {
+			return err
+		}
+
+	case repository.OPERATION_DELETE:
+		s.targetDB.
+			Table(changeLog.TableName).
+			Where("id = ?", changeLog.RowID).
+			Delete(nil)
 	}
 
 	return nil

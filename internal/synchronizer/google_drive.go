@@ -207,12 +207,26 @@ func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time)
 	return files, nil
 }
 
-func (s *GoogleDriveService) UploadChangeLogs(changes []repository.ChangeLog) (*File, error) {
-	fileName := changeLogsFileName(time.Now())
-	file, err := s.createFileWithJson(fileName, changes)
+func (s *GoogleDriveService) DeleteChangeLog(changeLog repository.ChangeLog) error {
+	files, err := s.files().Q(fmt.Sprintf("name contains '%s'", changeLog.ChangeID)).Do()
+	if err != nil {
+		slog.Error("GoogleDriveService[DeleteChangeLog] Get list changeLogs ID", "error", err)
+		return err
+	}
+
+	for _, file := range files.Files {
+		s.service.Files.Delete(file.Id).Do()
+	}
+
+	return nil
+}
+
+func (s *GoogleDriveService) UploadChangeLog(change repository.ChangeLog) (*File, error) {
+	fileName := changeLogsFileName(change)
+	file, err := s.createFileWithJson(fileName, change)
 
 	if err != nil {
-		slog.Error("GoogleDriveService[UploadChangeLogs] Create file", "fileName", fileName, "error", err)
+		slog.Error("GoogleDriveService[UploadChangeLog] Create file", "fileName", fileName, "error", err)
 		return nil, err
 	}
 

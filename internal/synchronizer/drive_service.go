@@ -37,8 +37,8 @@ func snapshotFileName(timestamp time.Time) string {
 	return fmt.Sprintf("%s%d.db.gz", DB_SNAPSHOT_PREFIX, timestamp.Unix())
 }
 
-func changeLogsFileName(timestamp time.Time) string {
-	return fmt.Sprintf("%s%d.json", CHANGES_FILE_PREFIX, timestamp.Unix())
+func changeLogsFileName(changeLog repository.ChangeLog) string {
+	return fmt.Sprintf("%s%s.json", CHANGES_FILE_PREFIX, changeLog.ChangeID)
 }
 
 type DriveService interface {
@@ -46,7 +46,8 @@ type DriveService interface {
 	GetLatestDBSnapshot() (*File, error)
 	SaveDBSnapshot(content io.ReadSeeker) (*File, error)
 	// Get Changes from Drive
-	UploadChangeLogs(changes []repository.ChangeLog) (*File, error)
+	DeleteChangeLog(changeLog repository.ChangeLog) error
+	UploadChangeLog(changeLog repository.ChangeLog) (*File, error)
 	GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]*File, error)
 	// Drive
 	GetFileContent(fileId string) ([]byte, error)

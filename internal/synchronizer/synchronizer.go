@@ -197,7 +197,7 @@ func (s *Synchronizer) applyRemoteChanges() error {
 		if file.IsSnapshot {
 			err = s.applyRemoteSnapshot(file)
 		} else {
-			err = s.applyRemoteChangeLogs(file)
+			err = s.applyRemoteChangeLog(file)
 		}
 
 		if !s.canIgnoreRemoteApplyFailure(file, err) {
@@ -277,7 +277,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	return nil
 }
 
-func (s *Synchronizer) applyRemoteChangeLogs(file *File) error {
+func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.mainDB)
 
 	return s.mainDB.Transaction(func(tx *gorm.DB) error {
@@ -286,44 +286,51 @@ func (s *Synchronizer) applyRemoteChangeLogs(file *File) error {
 			return err
 		}
 
-		var remoteChanges []repository.ChangeLog
-		if err := json.Unmarshal(fileContent, &remoteChanges); err != nil {
+		var remoteChangeLog repository.ChangeLog
+		if err := json.Unmarshal(fileContent, &remoteChangeLog); err != nil {
 			return err
 		}
 
-		err = dbSynchronizer.SynchronizeChangeLogs(remoteChanges)
+		err = dbSynchronizer.SynchronizeChangeLog(remoteChangeLog)
 		if err != nil {
-			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs", "error", err)
+			slog.Error("Synchronizer[applyRemoteChangeLog] Failed to synchronize change logs", "error", err)
 			return err
 		}
 
-		slog.Info("Synchronizer[applyRemoteChangeLogs] Change logs applied successfully", "file", file.Name)
+		slog.Info("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
 
 		return nil
 	})
 }
 
-// func (s *Synchronizer) pruneOldChangeLogs() error {
-// 	if latestSnapshot, err := s.driveService.GetLatestDBSnapshot(); err != nil {
-// 		return err
-// 	} else {
-// 		return s.driveService.PruneOldChanges(latestSnapshot.CreatedTime)
-// 	}
-// }
-
 func (s *Synchronizer) syncChangesLogsToDrive() error {
 	changes := s.changeLogRepository.GetUnSyncedChanges()
-
 	if len(changes) == 0 {
 		return nil
 	}
 
-	if file, err := s.driveService.UploadChangeLogs(changes); err != nil {
-		return err
-	} else {
-		s.processedChangeRepository.SaveProcessedChange(file.ID)
-		s.changeLogRepository.MarkChangeLogsAsSynced(changes)
+	var wg sync.WaitGroup
+	wg.Add(len(changes))
+
+	for _, change := range changes {
+		go func(change repository.ChangeLog) {
+			defer wg.Done()
+
+			// Delete change log from drive
+			s.driveService.DeleteChangeLog(change)
+
+			if file, err := s.driveService.UploadChangeLog(change); err != nil {
+				slog.Error("Synchronizer[syncChangesLogsToDrive] Failed to upload change logs", "error", err, "change", change.ID)
+				return
+			} else {
+				s.processedChangeRepository.SaveProcessedChange(file.ID)
+				s.changeLogRepository.MarkChangeLogsAsSynced(changes)
+			}
+
+		}(change)
 	}
+
+	wg.Wait()
 
 	return nil
 }
