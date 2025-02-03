@@ -11,16 +11,19 @@ import (
 	"gorm.io/gorm"
 )
 
+const MAX_APPLY_FAILURES = 5
+
 type Synchronizer struct {
 	driveService DriveService
 
 	// Synced
 	syncedDatabase *gorm.DB
 
-	// Repository
-	syncStateRepository       *repository.SyncStateRepository
-	changeLogRepository       *repository.ChangeLogRepository
-	processedChangeRepository *repository.ProcessedChangeRepository
+	// Repositories
+	syncStateRepository          *repository.SyncStateRepository
+	changeLogRepository          *repository.ChangeLogRepository
+	remoteApplyFailureRepository *repository.RemoteApplyFailureRepository
+	processedChangeRepository    *repository.ProcessedChangeRepository
 }
 
 // Option
@@ -32,15 +35,15 @@ func WithSyncedDatabase(syncedDatabase *gorm.DB) Option {
 	}
 }
 
-func WithChangeLogRepository(changeLogRepository *repository.ChangeLogRepository) Option {
+func WithChangeLogRepository(repository *repository.ChangeLogRepository) Option {
 	return func(s *Synchronizer) {
-		s.changeLogRepository = changeLogRepository
+		s.changeLogRepository = repository
 	}
 }
 
-func WithProcessedChangeRepository(processedChangeRepository *repository.ProcessedChangeRepository) Option {
+func WithProcessedChangeRepository(repository *repository.ProcessedChangeRepository) Option {
 	return func(s *Synchronizer) {
-		s.processedChangeRepository = processedChangeRepository
+		s.processedChangeRepository = repository
 	}
 }
 
@@ -50,9 +53,15 @@ func WithDriveService(driveService DriveService) Option {
 	}
 }
 
-func WithSyncStateRepository(syncStateRepository *repository.SyncStateRepository) Option {
+func WithSyncStateRepository(repository *repository.SyncStateRepository) Option {
 	return func(s *Synchronizer) {
-		s.syncStateRepository = syncStateRepository
+		s.syncStateRepository = repository
+	}
+}
+
+func WithRemoteApplyFailureRepository(repository *repository.RemoteApplyFailureRepository) Option {
+	return func(s *Synchronizer) {
+		s.remoteApplyFailureRepository = repository
 	}
 }
 
@@ -167,10 +176,17 @@ func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 			return err
 		}
 
-		if err := dbSynchronizer.SynchronizeChangeLogs(remoteChanges); err != nil {
+		failure := s.remoteApplyFailureRepository.GetRemoteApplyFailure(file.ID)
+
+		err = dbSynchronizer.SynchronizeChangeLogs(remoteChanges)
+		if err != nil && failure.Count <= MAX_APPLY_FAILURES {
+			s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, failure.Count+1)
 			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs", "error", err)
 			return err
 		}
+
+		// Reset the failure count
+		s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, 0)
 
 		// Update the sync state
 		s.syncStateRepository.SaveSyncState(file.CreatedTime)

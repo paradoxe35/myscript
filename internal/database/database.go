@@ -65,9 +65,9 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 	}
 
 	// Migrate schemas
-	db.AutoMigrate(&repository.Device{})
 	db.AutoMigrate(&repository.ChangeLog{})
 	db.AutoMigrate(&repository.ProcessedChange{})
+	db.AutoMigrate(&repository.RemoteApplyFailure{})
 	db.AutoMigrate(&repository.GoogleAuthToken{})
 	db.AutoMigrate(&repository.SyncState{})
 
