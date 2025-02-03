@@ -60,7 +60,6 @@ func main() {
 
 	// Repositories
 	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)
-	// deviceRepository := repository.NewDeviceRepository(unSyncedDB)
 
 	app := NewApp(
 		WithMainDB(mainDB),

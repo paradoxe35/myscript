@@ -98,16 +98,16 @@ export function IsDevMode() {
   return window['go']['main']['App']['IsDevMode']();
 }
 
+export function IsGoogleAuthEnabled() {
+  return window['go']['main']['App']['IsGoogleAuthEnabled']();
+}
+
 export function IsLocalWhisperModelDownloading(arg1) {
   return window['go']['main']['App']['IsLocalWhisperModelDownloading'](arg1);
 }
 
 export function IsRecording() {
   return window['go']['main']['App']['IsRecording']();
-}
-
-export function IsGoogleAuthEnabled() {
-  return window['go']['main']['App']['IsGoogleAuthEnabled']();
 }
 
 export function LocalTranscribe(arg1, arg2) {

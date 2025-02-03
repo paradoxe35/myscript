@@ -230,7 +230,7 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 		return err
 	} else {
 		s.processedChangeRepository.SaveProcessedChange(file.ID)
-		s.changeLogRepository.MarkChangeLogAsSynced(changes)
+		s.changeLogRepository.MarkChangeLogsAsSynced(changes)
 	}
 
 	return nil

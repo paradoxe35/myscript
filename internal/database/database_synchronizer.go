@@ -67,7 +67,7 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLogs(changeLogs []repository.Cha
 			// Unmarshal JSON data into the model
 			json.Unmarshal([]byte(change.NewData), model)
 
-			if err := s.SynchronizeEntity(model, []interface{}{model}); err != nil {
+			if err := s.synchronizeEntity(model, []interface{}{model}); err != nil {
 				return err
 			}
 
@@ -82,7 +82,7 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLogs(changeLogs []repository.Cha
 	return nil
 }
 
-func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}, records []interface{}) error {
+func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []interface{}) error {
 	return s.targetDB.Transaction(func(tx *gorm.DB) error {
 
 		tableName := s.GetEntityTableName(entity)
@@ -143,7 +143,7 @@ func (s *DatabaseSynchronizer) synchronizeSourceEntity(entity interface{}) error
 		return err
 	}
 
-	return s.SynchronizeEntity(entity, records)
+	return s.synchronizeEntity(entity, records)
 }
 
 func (s *DatabaseSynchronizer) getSyncRules(entity interface{}) EntitySyncRule {
@@ -152,8 +152,6 @@ func (s *DatabaseSynchronizer) getSyncRules(entity interface{}) EntitySyncRule {
 		return EntitySyncRule{
 			Strategy: s.syncConfigStrategy,
 		}
-	case *repository.Page:
-		return EntitySyncRule{}
 	case *repository.Cache:
 		return EntitySyncRule{
 			ConflictColumns: []string{"key"},

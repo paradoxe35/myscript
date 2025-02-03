@@ -56,11 +56,11 @@ export function GroqTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 
 export function IsDevMode():Promise<boolean>;
 
+export function IsGoogleAuthEnabled():Promise<boolean>;
+
 export function IsLocalWhisperModelDownloading(arg1:local_whisper.LocalWhisperModel):Promise<boolean>;
 
 export function IsRecording():Promise<boolean>;
-
-export function IsGoogleAuthEnabled():Promise<boolean>;
 
 export function LocalTranscribe(arg1:Array<number>,arg2:string):Promise<string>;
 

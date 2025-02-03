@@ -71,7 +71,7 @@ func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
 	return changes
 }
 
-func (r *ChangeLogRepository) MarkChangeLogAsSynced(items []ChangeLog) {
+func (r *ChangeLogRepository) MarkChangeLogsAsSynced(items []ChangeLog) {
 	ids := make([]uint, len(items))
 	for i, item := range items {
 		ids[i] = item.ID
