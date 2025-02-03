@@ -115,7 +115,7 @@ func (s *Synchronizer) applyRemoteChanges() error {
 
 func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 	// Ignore if already applied
-	if isApplied := s.processedChangeRepository.ChangeProcessed("empty", file.ID); isApplied {
+	if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
 		return nil
 	}
 
@@ -155,6 +155,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 
 	// Update the sync state
 	s.syncStateRepository.SaveSyncState(file.CreatedTime)
+	s.processedChangeRepository.SaveProcessedChange(file.ID)
 
 	slog.Info("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
@@ -162,7 +163,11 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 }
 
 func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
-	// Synchronize change logs to target database
+	// Ignore if already applied
+	if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
+		return nil
+	}
+
 	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.syncedDatabase)
 
 	return s.syncedDatabase.Transaction(func(tx *gorm.DB) error {
@@ -179,10 +184,13 @@ func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 		failure := s.remoteApplyFailureRepository.GetRemoteApplyFailure(file.ID)
 
 		err = dbSynchronizer.SynchronizeChangeLogs(remoteChanges)
+		// If the failure count is greater than MAX_APPLY_FAILURES, ignore the error
 		if err != nil && failure.Count <= MAX_APPLY_FAILURES {
 			s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, failure.Count+1)
 			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs", "error", err)
 			return err
+		} else if err != nil {
+			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs (ignoring)", "error", err)
 		}
 
 		// Reset the failure count
@@ -190,6 +198,7 @@ func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 
 		// Update the sync state
 		s.syncStateRepository.SaveSyncState(file.CreatedTime)
+		s.processedChangeRepository.SaveProcessedChange(file.ID)
 
 		return nil
 	})
