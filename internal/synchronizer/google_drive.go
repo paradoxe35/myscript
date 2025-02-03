@@ -64,12 +64,6 @@ func (s *GoogleDriveService) parseTime(t string) time.Time {
 	return parsedTime
 }
 
-func (s *GoogleDriveService) files() *drive.FilesListCall {
-	return s.service.Files.List().
-		Spaces(PARENT_FOLDER).
-		Fields("files(id, name, createdTime), nextPageToken")
-}
-
 func (s *GoogleDriveService) SortFilesAsc(files []*drive.File) []*drive.File {
 	sort.Slice(files, func(i, j int) bool {
 		timeI, _ := time.Parse(time.RFC3339, files[i].CreatedTime)
@@ -112,6 +106,19 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 // 	return resp.Body, nil
 // }
 
+func (s *GoogleDriveService) files() *drive.FilesListCall {
+	return s.service.Files.List().
+		Spaces(PARENT_FOLDER).
+		Fields("files(id, name, createdTime, mimeType), nextPageToken")
+}
+
+func (s *GoogleDriveService) createFile(file *drive.File, data io.Reader) (*drive.File, error) {
+	return s.service.Files.Create(file).
+		Media(data).
+		Fields("id", "name", "createdTime", "mimeType").
+		Do()
+}
+
 func (s *GoogleDriveService) createFileWithJson(name string, content interface{}) (*drive.File, error) {
 	file := &drive.File{
 		Name:    name,
@@ -124,12 +131,7 @@ func (s *GoogleDriveService) createFileWithJson(name string, content interface{}
 		return nil, err
 	}
 
-	newFile, err := s.service.Files.Create(file).
-		Media(bytes.NewReader(data)).
-		Fields("id", "name", "createdTime").
-		Do()
-
-	if err != nil {
+	if newFile, err := s.createFile(file, bytes.NewReader(data)); err != nil {
 		slog.Error("GoogleDriveService[createFileWithJson] Create file", "error", err)
 		return nil, err
 	} else {
@@ -143,12 +145,7 @@ func (s *GoogleDriveService) createRawFile(name string, content io.ReadSeeker) (
 		Parents: []string{PARENT_FOLDER},
 	}
 
-	newFile, err := s.service.Files.Create(file).
-		Media(content).
-		Fields("id", "name", "createdTime").
-		Do()
-
-	if err != nil {
+	if newFile, err := s.createFile(file, content); err != nil {
 		slog.Error("GoogleDriveService[createRawFile] Create file", "error", err)
 		return nil, err
 	} else {
@@ -199,10 +196,14 @@ func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time)
 		return nil, err
 	}
 
-	files := make([]*File, len(resp.Files))
-	for i, file := range resp.Files {
-		files[i] = s.createFileFromGoogleDrive(file)
+	var files []*File
+	for _, file := range resp.Files {
+		iFile := s.createFileFromGoogleDrive(file)
+		if !iFile.CreatedTime.Equal(timeOffset) {
+			files = append(files, iFile)
+		}
 	}
+
 	return files, nil
 }
 

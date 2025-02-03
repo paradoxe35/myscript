@@ -42,7 +42,7 @@ func (r *SyncStateRepository) SaveSyncState(syncTimeOffset time.Time) *SyncState
 	if syncTimeOffset.IsZero() || syncTimeOffset.Before(DEFAULT_TIME) {
 		syncState.SyncTimeOffset = DEFAULT_TIME
 	} else {
-		syncState.SyncTimeOffset = syncTimeOffset.Truncate(time.Second)
+		syncState.SyncTimeOffset = syncTimeOffset
 	}
 
 	r.db.Save(syncState)
