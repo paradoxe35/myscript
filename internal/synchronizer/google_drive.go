@@ -40,6 +40,10 @@ func NewGoogleDriveService(client *http.Client) (*GoogleDriveService, error) {
 }
 
 func (s *GoogleDriveService) createFileFromGoogleDrive(file *drive.File) *File {
+	if file == nil {
+		return nil
+	}
+
 	return &File{
 		ID:          file.Id,
 		Name:        file.Name,
@@ -101,7 +105,6 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-
 // 	return resp.Body, nil
 // }
 
@@ -140,7 +143,12 @@ func (s *GoogleDriveService) createRawFile(name string, content io.ReadSeeker) (
 }
 
 func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
-	resp, err := s.files().Q(fmt.Sprintf("name contains '%s'", DB_SNAPSHOT_PREFIX)).Do()
+	resp, err := s.files().
+		PageSize(1).
+		OrderBy("createdTime desc").
+		Q(fmt.Sprintf("name contains '%s'", DB_SNAPSHOT_PREFIX)).
+		Do()
+
 	if err != nil {
 		slog.Error("GoogleDriveService[GetLatestDBSnapshot] Get list DB_SNAPSHOT_PREFIX", "error", err)
 		return nil, err
@@ -150,8 +158,6 @@ func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 		slog.Error("GoogleDriveService[GetLatestDBSnapshot] No DB snapshot found")
 		return nil, fmt.Errorf("no DB snapshot found")
 	}
-
-	resp.Files = s.SortFilesDesc(resp.Files)
 
 	return s.createFileFromGoogleDrive(resp.Files[0]), nil
 }
@@ -169,14 +175,15 @@ func (s *GoogleDriveService) SaveDBSnapshot(content io.ReadSeeker) (*File, error
 }
 
 func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]*File, error) {
-	resp, err := s.files().Q(fmt.Sprintf("createdTime > '%s'", s.formatTime(timeOffset))).Do()
+	resp, err := s.files().
+		OrderBy("createdTime asc").
+		Q(fmt.Sprintf("createdTime > '%s'", s.formatTime(timeOffset))).
+		Do()
 
 	if err != nil {
 		slog.Error("GoogleDriveService[GetChangeFilesAfterTimeOffset] Get list CHANGES_FILE_PREFIX", "error", err)
 		return nil, err
 	}
-
-	resp.Files = s.SortFilesAsc(resp.Files)
 
 	files := make([]*File, len(resp.Files))
 	for i, file := range resp.Files {

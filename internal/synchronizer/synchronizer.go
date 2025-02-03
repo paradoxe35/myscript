@@ -219,6 +219,25 @@ func (s *Synchronizer) pruneOldChangeLogs() error {
 	}
 }
 
+func (s *Synchronizer) syncChangesLogsToDrive() error {
+	changes := s.changeLogRepository.GetUnSyncedChanges()
+
+	if len(changes) == 0 {
+		return nil
+	}
+
+	if file, err := s.driveService.UploadChangeLogs(changes); err != nil {
+		return err
+	} else {
+		s.processedChangeRepository.SaveProcessedChange(file.ID)
+		s.changeLogRepository.MarkChangeLogAsSynced(changes)
+	}
+
+	return nil
+}
+
 func (s *Synchronizer) createDBSnapshot() error {
+	// Before creating a snapshot,
+	// We should check if
 	return nil
 }
