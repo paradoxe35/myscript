@@ -26,9 +26,20 @@ type EntitySyncRule struct {
 }
 
 func NewDatabaseSynchronizer(sourceDB *gorm.DB, targetDB *gorm.DB) *DatabaseSynchronizer {
+	sourceDb := sourceDB
+	targetDb := targetDB
+
+	if sourceDB != nil {
+		sourceDb = sourceDB.Session(&gorm.Session{SkipHooks: true})
+	}
+
+	if targetDB != nil {
+		targetDb = targetDB.Session(&gorm.Session{SkipHooks: true})
+	}
+
 	return &DatabaseSynchronizer{
-		sourceDB: sourceDB,
-		targetDB: targetDB,
+		sourceDB: sourceDb,
+		targetDB: targetDb,
 	}
 }
 
