@@ -18,6 +18,7 @@ import (
 
 const MAX_CHANGE_LOGS_APPLY_FAILURES = 5
 const MAX_SNAPSHOT_APPLY_FAILURES = 10
+const SCHEDULER_INTERVAL = time.Second * 10
 
 type Synchronizer struct {
 	driveService DriveService
@@ -103,7 +104,7 @@ func (s *Synchronizer) StartScheduler() error {
 		s.schedulerTicker.Stop()
 	}
 
-	s.schedulerTicker = time.NewTicker(time.Second * 10)
+	s.schedulerTicker = time.NewTicker(SCHEDULER_INTERVAL)
 
 	go s.scheduler()
 
