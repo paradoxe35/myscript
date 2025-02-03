@@ -52,19 +52,19 @@ func main() {
 	appUpdater.SetToken(readGitHubToken())
 
 	// Database
-	syncedDb := database.NewSyncedDatabase(filesystem.HOME_DIR)
-	unSyncedDb := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
+	mainDB := database.NewMainDatabase(filesystem.HOME_DIR)
+	unSyncedDB := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 
 	// Set global variable (used in change log repository)
-	repository.SetUnSyncedDB(unSyncedDb)
+	repository.SetUnSyncedDB(unSyncedDB)
 
 	// Repositories
-	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDb)
-	// deviceRepository := repository.NewDeviceRepository(unSyncedDb)
+	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)
+	// deviceRepository := repository.NewDeviceRepository(unSyncedDB)
 
 	app := NewApp(
-		WithSyncedDB(syncedDb),
-		WithUnSyncedDB(unSyncedDb),
+		WithMainDB(mainDB),
+		WithUnSyncedDB(unSyncedDB),
 		WithLocalWhisper(local_whisper.NewLocalWhisperTranscriber()),
 		WithAudioSequencer(microphone.NewAudioSequencer()),
 		WithUpdater(appUpdater),

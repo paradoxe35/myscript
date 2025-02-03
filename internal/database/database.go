@@ -44,7 +44,7 @@ func MountDatabase(dbPath string) (*gorm.DB, error) {
 	return db, nil
 }
 
-func NewSyncedDatabase(homeDir string) *gorm.DB {
+func NewMainDatabase(homeDir string) *gorm.DB {
 	db, err := MountDatabase(filepath.Join(homeDir, DB_BASE_NAME))
 	if err != nil {
 		panic("failed to connect database: " + err.Error())

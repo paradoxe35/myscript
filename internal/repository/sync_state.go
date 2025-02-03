@@ -17,9 +17,9 @@ type SyncStateRepository struct {
 	BaseRepository
 }
 
-func NewSyncStateRepository(unsyncedDb *gorm.DB) *SyncStateRepository {
+func NewSyncStateRepository(unSyncedDB *gorm.DB) *SyncStateRepository {
 	return &SyncStateRepository{
-		BaseRepository: BaseRepository{db: unsyncedDb},
+		BaseRepository: BaseRepository{db: unSyncedDB},
 	}
 }
 

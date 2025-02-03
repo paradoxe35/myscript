@@ -16,9 +16,9 @@ type RemoteApplyFailureRepository struct {
 	BaseRepository
 }
 
-func NewRemoteApplyFailureRepository(unsyncedDb *gorm.DB) *RemoteApplyFailureRepository {
+func NewRemoteApplyFailureRepository(unSyncedDB *gorm.DB) *RemoteApplyFailureRepository {
 	return &RemoteApplyFailureRepository{
-		BaseRepository: BaseRepository{db: unsyncedDb},
+		BaseRepository: BaseRepository{db: unSyncedDB},
 	}
 }
 

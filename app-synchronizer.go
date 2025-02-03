@@ -16,13 +16,13 @@ func (a *App) IsGoogleAuthEnabled() bool {
 
 func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
 	return repository.
-		NewGoogleAuthTokenRepository(a.UnSyncedDb).
+		NewGoogleAuthTokenRepository(a.UnSyncedDB).
 		GetGoogleAuthToken()
 }
 
 func (a *App) DeleteGoogleAuthToken() {
 	repository.
-		NewGoogleAuthTokenRepository(a.UnSyncedDb).
+		NewGoogleAuthTokenRepository(a.UnSyncedDB).
 		DeleteGoogleAuthToken()
 }
 

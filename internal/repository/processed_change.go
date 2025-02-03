@@ -15,9 +15,9 @@ type ProcessedChangeRepository struct {
 	BaseRepository
 }
 
-func NewProcessedChangeRepository(unsyncedDb *gorm.DB) *ProcessedChangeRepository {
+func NewProcessedChangeRepository(unSyncedDB *gorm.DB) *ProcessedChangeRepository {
 	return &ProcessedChangeRepository{
-		BaseRepository: BaseRepository{db: unsyncedDb},
+		BaseRepository: BaseRepository{db: unSyncedDB},
 	}
 }
 

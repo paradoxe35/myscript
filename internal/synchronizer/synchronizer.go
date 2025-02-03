@@ -17,7 +17,7 @@ type Synchronizer struct {
 	driveService DriveService
 
 	// Synced
-	syncedDatabase *gorm.DB
+	mainDB *gorm.DB
 
 	// Repositories
 	syncStateRepository          *repository.SyncStateRepository
@@ -29,9 +29,9 @@ type Synchronizer struct {
 // Option
 type Option func(s *Synchronizer)
 
-func WithSyncedDatabase(syncedDatabase *gorm.DB) Option {
+func WithMainDatabase(mainDB *gorm.DB) Option {
 	return func(s *Synchronizer) {
-		s.syncedDatabase = syncedDatabase
+		s.mainDB = mainDB
 	}
 }
 
@@ -147,7 +147,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 	}
 
 	// Synchronize the databases
-	dbSynchronizer := database.NewDatabaseSynchronizer(sourceDB, s.syncedDatabase)
+	dbSynchronizer := database.NewDatabaseSynchronizer(sourceDB, s.mainDB)
 	if err := dbSynchronizer.SynchronizeAll(); err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to synchronize databases", "error", err)
 		return err
@@ -168,9 +168,9 @@ func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 		return nil
 	}
 
-	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.syncedDatabase)
+	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.mainDB)
 
-	return s.syncedDatabase.Transaction(func(tx *gorm.DB) error {
+	return s.mainDB.Transaction(func(tx *gorm.DB) error {
 		fileContent, err := s.driveService.GetFileContent(file.ID)
 		if err != nil {
 			return err
