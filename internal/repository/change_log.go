@@ -75,11 +75,6 @@ func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
 	return changes
 }
 
-func (r *ChangeLogRepository) MarkChangeLogsAsSynced(items []ChangeLog) {
-	ids := make([]uint, len(items))
-	for i, item := range items {
-		ids[i] = item.ID
-	}
-
-	r.db.Model(&ChangeLog{}).Where("id IN (?)", ids).Update("synced", true)
+func (r *ChangeLogRepository) MarkChangeLogAsSynced(item ChangeLog) {
+	r.db.Model(&ChangeLog{}).Where("id = ?", item.ID).Update("synced", true)
 }
