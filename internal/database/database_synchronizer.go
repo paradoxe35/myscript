@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"fmt"
 	"myscript/internal/repository"
 	"reflect"
@@ -39,49 +40,58 @@ func (s *DatabaseSynchronizer) SynchronizeAll() error {
 	}
 
 	for _, entity := range entities {
-		if err := s.SynchronizeEntity(entity); err != nil {
+		if err := s.synchronizeSourceEntity(entity); err != nil {
 			return fmt.Errorf("synchronization failed for %T: %v", entity, err)
 		}
 	}
 	return nil
 }
 
-func (s *DatabaseSynchronizer) getSyncRules(entity interface{}) EntitySyncRule {
-	switch entity.(type) {
-	case *repository.Config:
-		return EntitySyncRule{
-			Strategy: s.syncConfigStrategy,
+func (s *DatabaseSynchronizer) SynchronizeChangeLogs(changeLogs []repository.ChangeLog) error {
+	for _, change := range changeLogs {
+		switch change.Operation {
+		case repository.OPERATION_CREATE, repository.OPERATION_UPDATE:
+			var model interface{}
+
+			switch change.TableName {
+			case s.GetEntityTableName(&repository.Config{}):
+				model = &repository.Config{}
+			case s.GetEntityTableName(&repository.Page{}):
+				model = &repository.Page{}
+			case s.GetEntityTableName(&repository.Cache{}):
+				model = &repository.Cache{}
+			default:
+				return fmt.Errorf("unsupported table name: %s", change.TableName)
+			}
+
+			// Unmarshal JSON data into the model
+			json.Unmarshal([]byte(change.NewData), model)
+
+			if err := s.SynchronizeEntity(model, []interface{}{model}); err != nil {
+				return err
+			}
+
+		case repository.OPERATION_DELETE:
+			s.targetDB.
+				Table(change.TableName).
+				Where("id = ?", change.RowID).
+				Delete(nil)
 		}
-	case *repository.Page:
-		return EntitySyncRule{}
-	case *repository.Cache:
-		return EntitySyncRule{
-			ConflictColumns: []string{"key"},
-		}
-	default:
-		return EntitySyncRule{}
 	}
+
+	return nil
 }
 
-func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}) error {
-	// Get sync rules based on entity type
-	rules := s.getSyncRules(entity)
-
-	// Schema compatibility check
-	if compatible, err := s.areSchemasCompatible(entity); !compatible || err != nil {
-		if err != nil {
-			return fmt.Errorf("schema check error: %v", err)
-		}
-		return fmt.Errorf("schemas are incompatible for %T", entity)
-	}
-
+func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}, records []interface{}) error {
 	return s.targetDB.Transaction(func(tx *gorm.DB) error {
-		records, err := s.getSourceRecords(entity)
-		if err != nil {
-			return err
+
+		tableName := s.GetEntityTableName(entity)
+		if tableName == "" {
+			return fmt.Errorf("failed to get table name for %T", entity)
 		}
 
-		tableName, _ := s.getEntityTableName(entity)
+		// Get sync rules based on entity type
+		rules := s.getSyncRules(entity)
 
 		// Apply custom sync strategy if exists
 		if rules.Strategy != nil {
@@ -119,13 +129,47 @@ func (s *DatabaseSynchronizer) SynchronizeEntity(entity interface{}) error {
 	})
 }
 
-func (s *DatabaseSynchronizer) getEntityTableName(model interface{}) (string, error) {
+func (s *DatabaseSynchronizer) synchronizeSourceEntity(entity interface{}) error {
+	// Schema compatibility check
+	if compatible, err := s.areSchemasCompatible(entity); !compatible || err != nil {
+		if err != nil {
+			return fmt.Errorf("schema check error: %v", err)
+		}
+		return fmt.Errorf("schemas are incompatible for %T", entity)
+	}
+
+	records, err := s.getSourceRecords(entity)
+	if err != nil {
+		return err
+	}
+
+	return s.SynchronizeEntity(entity, records)
+}
+
+func (s *DatabaseSynchronizer) getSyncRules(entity interface{}) EntitySyncRule {
+	switch entity.(type) {
+	case *repository.Config:
+		return EntitySyncRule{
+			Strategy: s.syncConfigStrategy,
+		}
+	case *repository.Page:
+		return EntitySyncRule{}
+	case *repository.Cache:
+		return EntitySyncRule{
+			ConflictColumns: []string{"key"},
+		}
+	default:
+		return EntitySyncRule{}
+	}
+}
+
+func (s *DatabaseSynchronizer) GetEntityTableName(model interface{}) string {
 	// Use the default naming strategy
 	c, err := schema.Parse(model, &sync.Map{}, &schema.NamingStrategy{})
 	if err != nil {
-		return "", err
+		return ""
 	}
-	return c.Table, nil
+	return c.Table
 }
 
 func (s *DatabaseSynchronizer) areSchemasCompatible(entity interface{}) (bool, error) {

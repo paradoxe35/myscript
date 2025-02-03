@@ -19,15 +19,15 @@ type Cache struct {
 
 // Hooks
 func (n *Cache) AfterCreate(tx *gorm.DB) error {
-	return logChange(tx, n, "CREATE")
+	return logChange(tx, n, OPERATION_CREATE)
 }
 
 func (n *Cache) AfterUpdate(tx *gorm.DB) error {
-	return logChange(tx, n, "UPDATE")
+	return logChange(tx, n, OPERATION_UPDATE)
 }
 
 func (n *Cache) AfterDelete(tx *gorm.DB) error {
-	return logChange(tx, n, "DELETE")
+	return logChange(tx, n, OPERATION_DELETE)
 }
 
 type CacheRepository struct {

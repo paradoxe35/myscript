@@ -1,6 +1,7 @@
 package synchronizer
 
 import (
+	"encoding/json"
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/repository"
@@ -130,21 +131,52 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 	}
 
 	// Mount the database
-	db, err := database.MountDatabase(dbPath)
+	sourceDB, err := database.MountDatabase(dbPath)
 	if err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to mount database", "error", err)
 		return err
 	}
 
-	db.Name()
+	// Synchronize the databases
+	dbSynchronizer := database.NewDatabaseSynchronizer(sourceDB, s.syncedDatabase)
+	if err := dbSynchronizer.SynchronizeAll(); err != nil {
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to synchronize databases", "error", err)
+		return err
+	}
 
-	// fileArchiver := NewFileArchiver(file.Name)
+	// Update the sync state
+	s.syncStateRepository.SaveSyncState(file.CreatedTime)
+
+	slog.Info("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
 	return nil
 }
 
 func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
-	return nil
+	// Synchronize change logs to target database
+	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.syncedDatabase)
+
+	return s.syncedDatabase.Transaction(func(tx *gorm.DB) error {
+		fileContent, err := s.driveService.GetFileContent(file.ID)
+		if err != nil {
+			return err
+		}
+
+		var remoteChanges []repository.ChangeLog
+		if err := json.Unmarshal(fileContent, &remoteChanges); err != nil {
+			return err
+		}
+
+		if err := dbSynchronizer.SynchronizeChangeLogs(remoteChanges); err != nil {
+			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs", "error", err)
+			return err
+		}
+
+		// Update the sync state
+		s.syncStateRepository.SaveSyncState(file.CreatedTime)
+
+		return nil
+	})
 }
 
 func (s *Synchronizer) pruneOldChangeLogs() error {

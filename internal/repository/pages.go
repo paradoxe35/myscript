@@ -23,15 +23,15 @@ type Page struct {
 
 // Hooks
 func (n *Page) AfterCreate(tx *gorm.DB) error {
-	return logChange(tx, n, "CREATE")
+	return logChange(tx, n, OPERATION_CREATE)
 }
 
 func (n *Page) AfterUpdate(tx *gorm.DB) error {
-	return logChange(tx, n, "UPDATE")
+	return logChange(tx, n, OPERATION_UPDATE)
 }
 
 func (n *Page) AfterDelete(tx *gorm.DB) error {
-	return logChange(tx, n, "DELETE")
+	return logChange(tx, n, OPERATION_DELETE)
 }
 
 type PageRepository struct {

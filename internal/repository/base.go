@@ -10,6 +10,12 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	OPERATION_CREATE = "CREATE"
+	OPERATION_UPDATE = "UPDATE"
+	OPERATION_DELETE = "DELETE"
+)
+
 type BaseRepository struct {
 	db *gorm.DB
 }
