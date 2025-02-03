@@ -11,7 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
-const MAX_APPLY_FAILURES = 5
+const MAX_CHANGE_LOGS_APPLY_FAILURES = 5
+const MAX_SNAPSHOT_APPLY_FAILURES = 10
 
 type Synchronizer struct {
 	driveService DriveService
@@ -99,26 +100,52 @@ func (s *Synchronizer) applyRemoteChanges() error {
 			continue
 		}
 
-		if file.IsSnapshot {
-			if err := s.applyRemoteSnapshot(file); err != nil {
-				return err
-			}
-		} else {
-			if err := s.applyRemoteChangeLogs(file); err != nil {
-				return err
-			}
+		// Ignore if already applied
+		if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
+			return nil
 		}
+
+		var err error
+		if file.IsSnapshot {
+			err = s.applyRemoteSnapshot(file)
+		} else {
+			err = s.applyRemoteChangeLogs(file)
+		}
+
+		if !s.canIgnoreRemoteApplyFailure(file, err) {
+			return err
+		}
+
+		s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, 0) // Reset failure count
+		s.syncStateRepository.SaveSyncState(file.CreatedTime)             // Update the sync state
+		s.processedChangeRepository.SaveProcessedChange(file.ID)          // Update the processed change
 	}
 
 	return nil
 }
 
-func (s *Synchronizer) applyRemoteSnapshot(file File) error {
-	// Ignore if already applied
-	if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
-		return nil
+func (s *Synchronizer) canIgnoreRemoteApplyFailure(file File, err error) bool {
+	maxFailures := MAX_CHANGE_LOGS_APPLY_FAILURES
+	if file.IsSnapshot {
+		maxFailures = MAX_SNAPSHOT_APPLY_FAILURES
 	}
 
+	if err == nil {
+		return true
+	}
+
+	failure := s.remoteApplyFailureRepository.GetRemoteApplyFailure(file.ID)
+	if failure.Count > maxFailures {
+		slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes (Ignored, too many failures)", "error", err)
+		return true
+	}
+
+	slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes", "error", err)
+	s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, failure.Count+1)
+	return false
+}
+
+func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 	fileContent, err := s.driveService.GetFileContent(file.ID)
 	if err != nil {
 		return err
@@ -153,21 +180,12 @@ func (s *Synchronizer) applyRemoteSnapshot(file File) error {
 		return err
 	}
 
-	// Update the sync state
-	s.syncStateRepository.SaveSyncState(file.CreatedTime)
-	s.processedChangeRepository.SaveProcessedChange(file.ID)
-
 	slog.Info("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
 	return nil
 }
 
 func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
-	// Ignore if already applied
-	if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
-		return nil
-	}
-
 	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.mainDB)
 
 	return s.mainDB.Transaction(func(tx *gorm.DB) error {
@@ -181,24 +199,13 @@ func (s *Synchronizer) applyRemoteChangeLogs(file File) error {
 			return err
 		}
 
-		failure := s.remoteApplyFailureRepository.GetRemoteApplyFailure(file.ID)
-
 		err = dbSynchronizer.SynchronizeChangeLogs(remoteChanges)
-		// If the failure count is greater than MAX_APPLY_FAILURES, ignore the error
-		if err != nil && failure.Count <= MAX_APPLY_FAILURES {
-			s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, failure.Count+1)
+		if err != nil {
 			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs", "error", err)
 			return err
-		} else if err != nil {
-			slog.Error("Synchronizer[applyRemoteChangeLogs] Failed to synchronize change logs (ignoring)", "error", err)
 		}
 
-		// Reset the failure count
-		s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, 0)
-
-		// Update the sync state
-		s.syncStateRepository.SaveSyncState(file.CreatedTime)
-		s.processedChangeRepository.SaveProcessedChange(file.ID)
+		slog.Info("Synchronizer[applyRemoteChangeLogs] Change logs applied successfully", "file", file.Name)
 
 		return nil
 	})
