@@ -79,11 +79,11 @@ function useSettingsHook() {
   const configStore = useConfigStore();
 
   useEffect(() => {
-    configStore.fetchConfig();
+    GetAppVersion().then((v) => setAppVersion(v));
   }, []);
 
   useEffect(() => {
-    GetAppVersion().then((v) => setAppVersion(v));
+    configStore.fetchConfig();
   }, []);
 
   useEffect(() => {
