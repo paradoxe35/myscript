@@ -24,6 +24,7 @@ import {
 import { LocalWhisperInputs } from "./settings-local-whisper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { SettingsCloud } from "./settings-cloud";
+import { cn } from "@/lib/utils";
 
 export function SettingsModal(props: PropsWithChildren) {
   const { state, cloud, appVersion, configModified, handleSave } =
@@ -42,7 +43,12 @@ export function SettingsModal(props: PropsWithChildren) {
         </DialogHeader>
 
         <Tabs defaultValue="api-keys" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList
+            className={cn(
+              "grid w-full grid-cols-3",
+              !cloud.cloudEnabled && "grid-cols-2"
+            )}
+          >
             <TabsTrigger value="api-keys">API Keys</TabsTrigger>
 
             <TabsTrigger value="speech-recognition">
