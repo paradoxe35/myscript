@@ -1,6 +1,7 @@
 package synchronizer
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"myscript/internal/repository"
@@ -15,6 +16,8 @@ const (
 type DeviceSyncStateValue struct {
 	SyncTimeOffset string
 }
+
+var ErrSnapshotNotFound = errors.New("no DB snapshot found")
 
 type DeviceSyncState map[string]*DeviceSyncStateValue
 

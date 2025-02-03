@@ -156,7 +156,7 @@ func (s *GoogleDriveService) GetLatestDBSnapshot() (*File, error) {
 
 	if len(resp.Files) == 0 {
 		slog.Error("GoogleDriveService[GetLatestDBSnapshot] No DB snapshot found")
-		return nil, fmt.Errorf("no DB snapshot found")
+		return nil, ErrSnapshotNotFound
 	}
 
 	return s.createFileFromGoogleDrive(resp.Files[0]), nil

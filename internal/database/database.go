@@ -1,6 +1,7 @@
 package database
 
 import (
+	"fmt"
 	"myscript/internal/repository"
 	"path/filepath"
 
@@ -72,4 +73,29 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 	db.AutoMigrate(&repository.SyncState{})
 
 	return db
+}
+
+type DatabaseInfo struct {
+	Seq  int
+	Name string
+	File string
+}
+
+func GetSQLitePath(db *gorm.DB) (string, error) {
+	var databases []DatabaseInfo
+
+	// Execute PRAGMA query to get database list
+	result := db.Raw("PRAGMA database_list;").Scan(&databases)
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	// Find the main database (where name is 'main')
+	for _, dbInfo := range databases {
+		if dbInfo.Name == "main" {
+			return dbInfo.File, nil
+		}
+	}
+
+	return "", fmt.Errorf("main database not found")
 }

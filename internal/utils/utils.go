@@ -66,3 +66,9 @@ func HasInternet() bool {
 	}
 	return true
 }
+
+func IsAOlderThanBByOneWeek(a, b time.Time) bool {
+	duration := b.Sub(a)
+	// Check if duration is >= 7 days
+	return duration >= 7*24*time.Hour
+}

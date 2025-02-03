@@ -1,12 +1,16 @@
 package synchronizer
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"myscript/internal/database"
 	"myscript/internal/repository"
+	"myscript/internal/utils"
 	"os"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -237,7 +241,58 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 }
 
 func (s *Synchronizer) createDBSnapshot() error {
-	// Before creating a snapshot,
-	// We should check if
+	dbSnapshot, err := s.driveService.GetLatestDBSnapshot()
+	if err != nil && !errors.Is(err, ErrSnapshotNotFound) {
+		return err
+	}
+
+	// The latest snapshot should older than 1 week
+	if dbSnapshot != nil && !utils.IsAOlderThanBByOneWeek(dbSnapshot.CreatedTime, time.Now()) {
+		return nil
+	}
+
+	// Check if there is any pending changes to be applied
+	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
+	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
+	if err != nil {
+		return err
+	}
+
+	// If there are pending changes, we should not create a snapshot
+	if len(changesFiles) > 0 {
+		return nil
+	}
+
+	// Get main database path
+	dbPath, err := database.GetSQLitePath(s.mainDB)
+	if err != nil {
+		slog.Error("Synchronizer[createSnapshot]: failed to get SQLite path", "error", err)
+		return err
+	}
+
+	buf, err := utils.NewFileArchiver(dbPath + "*").Archive()
+	if err != nil {
+		slog.Error("Synchronizer[createSnapshot]: failed to archive database", "error", err)
+		return err
+	}
+
+	newSnapshot, err := s.driveService.SaveDBSnapshot(bytes.NewReader(buf.Bytes()))
+	if err != nil {
+		slog.Error("Synchronizer[createSnapshot]: failed to save snapshot", "error", err)
+		return err
+	}
+
+	s.syncStateRepository.SaveSyncState(newSnapshot.CreatedTime)
+	s.processedChangeRepository.SaveProcessedChange(newSnapshot.ID)
+
+	// Prune old changes
+	if err := s.driveService.PruneOldChanges(newSnapshot.CreatedTime); err != nil {
+		slog.Error("Synchronizer[createSnapshot]: failed to prune old changes (retry again)", "error", err)
+
+		// Retry again after 5 seconds
+		time.Sleep(time.Second * 5)
+		return s.driveService.PruneOldChanges(newSnapshot.CreatedTime)
+	}
+
 	return nil
 }
