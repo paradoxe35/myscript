@@ -141,7 +141,7 @@ func (s *Synchronizer) schedulerWorker() {
 	go func() {
 		defer wg.Done()
 		var failure error
-		if err := s.ApplyRemoteChanges(); err != nil {
+		if err := s.applyRemoteChanges(); err != nil {
 			failure = err
 		}
 		// This should come after ApplyRemoteChanges
@@ -169,7 +169,7 @@ func (s *Synchronizer) schedulerWorker() {
 	s.isSyncing = false
 }
 
-func (s *Synchronizer) ApplyRemoteChanges() error {
+func (s *Synchronizer) applyRemoteChanges() error {
 	if s.driveService == nil {
 		return errors.New("drive service is not initialized")
 	}
