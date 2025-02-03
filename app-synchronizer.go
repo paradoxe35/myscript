@@ -39,6 +39,16 @@ func (a *App) StartSynchronizer() error {
 
 	a.synchronizer.sync.SetDriveService(googleDriveService)
 
+	// Set on sync success callback
+	a.synchronizer.sync.SetOnSyncSuccess(func() {
+		runtime.EventsEmit(a.ctx, "on-sync-success")
+	})
+
+	// Set on sync failure callback
+	a.synchronizer.sync.SetOnSyncFailure(func(err error) {
+		runtime.EventsEmit(a.ctx, "on-sync-failure", err.Error())
+	})
+
 	return a.synchronizer.sync.StartScheduler()
 }
 

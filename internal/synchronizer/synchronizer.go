@@ -10,6 +10,7 @@ import (
 	"myscript/internal/utils"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"gorm.io/gorm"
@@ -29,6 +30,13 @@ type Synchronizer struct {
 	changeLogRepository          *repository.ChangeLogRepository
 	remoteApplyFailureRepository *repository.RemoteApplyFailureRepository
 	processedChangeRepository    *repository.ProcessedChangeRepository
+
+	// Synced
+	isSyncing               bool
+	schedulerTicker         *time.Ticker
+	onSyncSuccess           func()
+	onSyncFailure           func(err error)
+	lastSnapshotCreatedTime *time.Time
 }
 
 // Option
@@ -66,7 +74,7 @@ func WithRemoteApplyFailureRepository(repository *repository.RemoteApplyFailureR
 
 // Init
 func NewSynchronizer(options ...Option) *Synchronizer {
-	s := &Synchronizer{}
+	s := &Synchronizer{isSyncing: false}
 
 	for _, option := range options {
 		option(s)
@@ -78,16 +86,85 @@ func (s *Synchronizer) SetDriveService(driveService DriveService) {
 	s.driveService = driveService
 }
 
+func (s *Synchronizer) SetOnSyncSuccess(onSyncSuccess func()) {
+	s.onSyncSuccess = onSyncSuccess
+}
+
+func (s *Synchronizer) SetOnSyncFailure(onSyncFailure func(err error)) {
+	s.onSyncFailure = onSyncFailure
+}
+
 func (s *Synchronizer) StartScheduler() error {
 	if s.driveService == nil {
 		return errors.New("drive service is not initialized")
 	}
 
+	if s.schedulerTicker != nil {
+		s.schedulerTicker.Stop()
+	}
+
+	s.schedulerTicker = time.NewTicker(time.Second * 10)
+
+	go s.scheduler()
+
 	return nil
 }
 
 func (s *Synchronizer) StopScheduler() error {
+	if s.schedulerTicker != nil {
+		s.schedulerTicker.Stop()
+	}
 	return nil
+}
+
+func (s *Synchronizer) scheduler() {
+	if s.schedulerTicker == nil {
+		return
+	}
+
+	for range s.schedulerTicker.C {
+		if !s.isSyncing || !utils.HasInternet() {
+			s.schedulerWorker()
+		}
+	}
+}
+
+func (s *Synchronizer) schedulerWorker() {
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	s.isSyncing = true
+
+	// Apply remote changes and create snapshots
+	go func() {
+		defer wg.Done()
+		var failure error
+		if err := s.ApplyRemoteChanges(); err != nil {
+			failure = err
+		}
+		// This should come after ApplyRemoteChanges
+		if err := s.createDBSnapshot(); err != nil {
+			failure = err
+		}
+
+		if failure != nil {
+			if s.onSyncFailure != nil {
+				s.onSyncFailure(failure)
+			}
+		} else if s.onSyncSuccess != nil {
+			s.onSyncSuccess()
+		}
+	}()
+
+	// Synchronize changes
+	go func() {
+		defer wg.Done()
+		s.syncChangesLogsToDrive()
+	}()
+
+	wg.Wait()
+
+	s.isSyncing = false
 }
 
 func (s *Synchronizer) ApplyRemoteChanges() error {
@@ -221,13 +298,13 @@ func (s *Synchronizer) applyRemoteChangeLogs(file *File) error {
 	})
 }
 
-func (s *Synchronizer) pruneOldChangeLogs() error {
-	if latestSnapshot, err := s.driveService.GetLatestDBSnapshot(); err != nil {
-		return err
-	} else {
-		return s.driveService.PruneOldChanges(latestSnapshot.CreatedTime)
-	}
-}
+// func (s *Synchronizer) pruneOldChangeLogs() error {
+// 	if latestSnapshot, err := s.driveService.GetLatestDBSnapshot(); err != nil {
+// 		return err
+// 	} else {
+// 		return s.driveService.PruneOldChanges(latestSnapshot.CreatedTime)
+// 	}
+// }
 
 func (s *Synchronizer) syncChangesLogsToDrive() error {
 	changes := s.changeLogRepository.GetUnSyncedChanges()
@@ -247,14 +324,25 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 }
 
 func (s *Synchronizer) createDBSnapshot() error {
+	// We cache the last snapshot created time
+	// To avoid calling GetLatestDBSnapshot too often
+	if s.lastSnapshotCreatedTime != nil {
+		if !utils.IsAOlderThanBByOneWeek(*s.lastSnapshotCreatedTime, time.Now()) {
+			return nil
+		}
+	}
+
 	dbSnapshot, err := s.driveService.GetLatestDBSnapshot()
 	if err != nil && !errors.Is(err, ErrSnapshotNotFound) {
 		return err
 	}
 
-	// The latest snapshot should older than 1 week
-	if dbSnapshot != nil && !utils.IsAOlderThanBByOneWeek(dbSnapshot.CreatedTime, time.Now()) {
-		return nil
+	if dbSnapshot != nil {
+		s.lastSnapshotCreatedTime = &dbSnapshot.CreatedTime
+		// The latest snapshot should older than 1 week
+		if !utils.IsAOlderThanBByOneWeek(dbSnapshot.CreatedTime, time.Now()) {
+			return nil
+		}
 	}
 
 	// Check if there is any pending changes to be applied
@@ -290,6 +378,8 @@ func (s *Synchronizer) createDBSnapshot() error {
 
 	s.syncStateRepository.SaveSyncState(newSnapshot.CreatedTime)
 	s.processedChangeRepository.SaveProcessedChange(newSnapshot.ID)
+
+	slog.Info("Synchronizer[createSnapshot]: snapshot created successfully", "file", newSnapshot.Name)
 
 	// Prune old changes
 	if err := s.driveService.PruneOldChanges(newSnapshot.CreatedTime); err != nil {
