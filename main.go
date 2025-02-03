@@ -7,6 +7,7 @@ import (
 	"myscript/internal/filesystem"
 	"myscript/internal/google"
 	"myscript/internal/repository"
+	"myscript/internal/synchronizer"
 	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
@@ -60,6 +61,22 @@ func main() {
 
 	// Repositories
 	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)
+	syncStateRepository := repository.NewSyncStateRepository(unSyncedDB)
+	changeLogRepository := repository.NewChangeLogRepository(unSyncedDB)
+	remoteApplyFailureRepository := repository.NewRemoteApplyFailureRepository(unSyncedDB)
+	processedChangeRepository := repository.NewProcessedChangeRepository(unSyncedDB)
+
+	// Google
+	googleClient := google.NewGoogleClient(readGoogleCredentials(), googleAuthTokenRepository)
+
+	// Synchronizer
+	sync := synchronizer.NewSynchronizer(
+		synchronizer.WithMainDatabase(mainDB),
+		synchronizer.WithRemoteApplyFailureRepository(remoteApplyFailureRepository),
+		synchronizer.WithSyncStateRepository(syncStateRepository),
+		synchronizer.WithChangeLogRepository(changeLogRepository),
+		synchronizer.WithProcessedChangeRepository(processedChangeRepository),
+	)
 
 	app := NewApp(
 		WithMainDB(mainDB),
@@ -70,12 +87,8 @@ func main() {
 
 		// Synchronizer
 		WithSynchronizer(
-			WithGoogleClient(
-				google.NewGoogleClient(
-					readGoogleCredentials(),
-					googleAuthTokenRepository,
-				),
-			),
+			WithSync(sync),
+			WithGoogleClient(googleClient),
 		),
 	)
 

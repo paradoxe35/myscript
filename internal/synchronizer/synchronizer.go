@@ -52,12 +52,6 @@ func WithProcessedChangeRepository(repository *repository.ProcessedChangeReposit
 	}
 }
 
-func WithDriveService(driveService DriveService) Option {
-	return func(s *Synchronizer) {
-		s.driveService = driveService
-	}
-}
-
 func WithSyncStateRepository(repository *repository.SyncStateRepository) Option {
 	return func(s *Synchronizer) {
 		s.syncStateRepository = repository
@@ -80,7 +74,15 @@ func NewSynchronizer(options ...Option) *Synchronizer {
 	return s
 }
 
+func (s *Synchronizer) SetDriveService(driveService DriveService) {
+	s.driveService = driveService
+}
+
 func (s *Synchronizer) StartScheduler() error {
+	if s.driveService == nil {
+		return errors.New("drive service is not initialized")
+	}
+
 	return nil
 }
 
@@ -89,6 +91,10 @@ func (s *Synchronizer) StopScheduler() error {
 }
 
 func (s *Synchronizer) ApplyRemoteChanges() error {
+	if s.driveService == nil {
+		return errors.New("drive service is not initialized")
+	}
+
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
 	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
 	if err != nil {
