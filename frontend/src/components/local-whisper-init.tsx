@@ -1,7 +1,7 @@
+import { Progress } from "@/components/ui/progress";
 import { useLocalWhisperStore } from "@/store/local-whisper";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { Progress } from "./ui/progress";
 
 export function LocalWhisperInit() {
   const localWhisperStore = useLocalWhisperStore();
