@@ -74,11 +74,23 @@ func (u *Updater) CheckForUpdate() (string, error) {
 		return "", err
 	}
 
-	if latestVersion.GreaterThan(currentVersion) {
+	if latestVersion.GreaterThan(currentVersion) && u.ItHasReleaseAssets(release) {
 		return release.GetTagName(), nil
 	}
 
 	return "", nil
+}
+
+func (u *Updater) ItHasReleaseAssets(release *github.RepositoryRelease) bool {
+	var myReleaseAssets []string
+
+	for _, asset := range release.Assets {
+		if strings.Contains(asset.GetName(), ASSET_NAME) {
+			myReleaseAssets = append(myReleaseAssets, asset.GetName())
+		}
+	}
+
+	return len(myReleaseAssets) > 0
 }
 
 // PerformUpdate executes the update process
