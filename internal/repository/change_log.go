@@ -77,6 +77,22 @@ func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
 	return changes
 }
 
+func (r *ChangeLogRepository) GetChangeLogByChangeID(ID uint) *ChangeLog {
+	var change ChangeLog
+	r.db.Where("id = ?", ID).Find(&change)
+	return &change
+}
+
+func (r *ChangeLogRepository) MarkChangeLogAsSyncedIfNotChanged(item ChangeLog) {
+	changeLog := r.GetChangeLogByChangeID(item.ID)
+
+	if changeLog.ChangeID == item.ChangeID && changeLog.UpdatedAt.After(item.UpdatedAt) {
+		return
+	}
+
+	r.db.Model(&ChangeLog{}).Where("id = ?", item.ID).Update("synced", true)
+}
+
 func (r *ChangeLogRepository) MarkChangeLogAsSynced(item ChangeLog) {
 	r.db.Model(&ChangeLog{}).Where("id = ?", item.ID).Update("synced", true)
 }

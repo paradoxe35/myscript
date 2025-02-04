@@ -329,10 +329,9 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 				slog.Error("Synchronizer[syncChangesLogsToDrive] Failed to upload change logs", "error", err, "change", change.ID)
 				return
 			} else {
-				s.changeLogRepository.MarkChangeLogAsSynced(change)
 				s.processedChangeRepository.SaveProcessedChange(file.ID)
+				s.changeLogRepository.MarkChangeLogAsSyncedIfNotChanged(change)
 			}
-
 		}(change)
 	}
 
