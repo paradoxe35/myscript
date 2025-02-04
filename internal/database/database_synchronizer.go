@@ -92,6 +92,9 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeL
 			Table(changeLog.TableName).
 			Where("id = ?", changeLog.RowID).
 			Delete(nil)
+
+		s.addAffectedTable(changeLog.TableName, nil)
+
 	}
 
 	return nil
@@ -159,6 +162,11 @@ func (s *DatabaseSynchronizer) GetAffectedTables() map[string][]string {
 func (s *DatabaseSynchronizer) addAffectedTable(tableName string, record interface{}) {
 	if s.affectedTables == nil {
 		s.affectedTables = make(map[string][]string)
+	}
+
+	if record == nil {
+		s.affectedTables[tableName] = []string{}
+		return
 	}
 
 	if _, ok := s.affectedTables[tableName]; !ok {
