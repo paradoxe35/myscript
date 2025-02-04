@@ -52,7 +52,7 @@ export function SynchronizerInit() {
         }
       }
     );
-  }, []);
+  }, [activePageStore.getPageId()]);
 
   useEffect(() => {
     return EventsOn("on-sync-failure", (error) => {
