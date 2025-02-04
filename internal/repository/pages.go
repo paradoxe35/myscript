@@ -61,7 +61,7 @@ func (r *PageRepository) GetPage(ID string) *Page {
 }
 
 func (r *PageRepository) UpdatePageOrder(ID string, ParentID *string, order int) {
-	r.db.Model(&Page{}).
+	r.db.Model(r.GetPage(ID)).
 		Where("id = ?", ID).
 		Updates(MapUpdate{
 			"order":    order,
