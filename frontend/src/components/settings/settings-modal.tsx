@@ -25,6 +25,8 @@ import { LocalWhisperInputs } from "./settings-local-whisper";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { SettingsCloud } from "./settings-cloud";
 import { cn } from "@/lib/utils";
+import { useTheme } from "../theme-provider";
+import { MoonIcon, SunIcon } from "lucide-react";
 
 export function SettingsModal(props: PropsWithChildren) {
   const { state, cloud, appVersion, configModified, handleSave } =
@@ -106,13 +108,29 @@ export function SettingsModal(props: PropsWithChildren) {
           )}
         </Tabs>
 
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between items-center">
+          <ThemeSwitch />
+
           <Button type="submit" disabled={!configModified} onClick={handleSave}>
             Save changes
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ThemeSwitch() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="secondary"
+      size="icon"
+      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+    >
+      {theme === "dark" ? <MoonIcon /> : <SunIcon />}
+    </Button>
   );
 }
 
