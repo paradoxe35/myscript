@@ -6,6 +6,7 @@ import {
 } from "@/store/google-auth-token";
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { EventsOn } from "~wails-runtime";
 import { StopSynchronizer } from "~wails/main/App";
 
@@ -38,12 +39,17 @@ export function SynchronizerInit() {
           await StopSynchronizer().catch(console.error);
 
           googleAuthTokenStore.refreshToken().catch(() => {
-            console.log("Failed to refresh Google auth token, deleting it");
             googleAuthTokenStore.deleteToken();
+            toast.warning("Google auth token expired, please re-authorize");
+            console.log("Failed to refresh Google auth token, deleting it");
           });
         }
       }
 
+      console.log(
+        "Is Invalid Grant Error:",
+        isGoogleAPIInvalidGrantError(error)
+      );
       console.error("Synchronization failed:", error);
     });
   }, []);
