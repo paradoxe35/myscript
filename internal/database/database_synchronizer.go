@@ -21,8 +21,9 @@ type DatabaseSynchronizer struct {
 type SyncStrategy func(entity interface{}) error
 
 type EntitySyncRule struct {
-	ConflictColumns []string
-	Strategy        SyncStrategy
+	OnConflictOmitColumns []string
+	ConflictColumns       []string
+	Strategy              SyncStrategy
 }
 
 func NewDatabaseSynchronizer(sourceDB *gorm.DB, targetDB *gorm.DB) *DatabaseSynchronizer {
@@ -121,7 +122,9 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 					Clauses(clause.OnConflict{
 						Columns:   s.getConflictColumns(entity, rules.ConflictColumns),
 						DoUpdates: clause.AssignmentColumns(s.getUpdateColumns(entity)),
-					}).Create(record).Error
+					}).
+					Omit(rules.OnConflictOmitColumns...).
+					Create(record).Error
 
 				if err != nil {
 					return err
@@ -165,7 +168,8 @@ func (s *DatabaseSynchronizer) getSyncRules(entity interface{}) EntitySyncRule {
 		}
 	case *repository.Cache:
 		return EntitySyncRule{
-			ConflictColumns: []string{"key"},
+			ConflictColumns:       []string{"key"},
+			OnConflictOmitColumns: []string{"id"},
 		}
 	default:
 		return EntitySyncRule{}

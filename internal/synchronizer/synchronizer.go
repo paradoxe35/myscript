@@ -288,6 +288,7 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 
 		var remoteChangeLog repository.ChangeLog
 		if err := json.Unmarshal(fileContent, &remoteChangeLog); err != nil {
+			slog.Error("Synchronizer[applyRemoteChangeLog] Failed to unmarshal remote change log", "error", err)
 			return err
 		}
 
