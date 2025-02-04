@@ -189,12 +189,11 @@ function useCloudSettings() {
       if (isGoogleAPIInvalidGrantError(error)) {
         deleteGoogleAuthToken();
         toast.warning("Google auth token expired, please re-authorize");
-      }else {
+      } else {
         console.log("Error starting synchronizer");
       }
     });
   }, 1000);
-
 
   useEffect(() => {
     if (cloudEnabled && googleAuthToken) {
@@ -227,7 +226,13 @@ function useCloudSettings() {
     setAuthorizing(true);
 
     return StartGoogleAuthorization()
-      .then(getGoogleAuthToken)
+      .then(() => {
+        getGoogleAuthToken();
+
+        toast.info("We are restoring your data from your drive...", {
+          duration: 15 * 1000,
+        });
+      })
       .finally(() => setAuthorizing(false));
   }, [getGoogleAuthToken]);
 
