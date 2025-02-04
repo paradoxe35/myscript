@@ -68,7 +68,10 @@ export function MoreOptionButton({ page }: { page: repository.Page }) {
             Rename
           </DropdownMenuItem>
 
-          <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
+          <DropdownMenuItem
+            className="dark:text-red-300 text-red-500"
+            onClick={handleDeletePage}
+          >
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -8,7 +8,7 @@ export function GoogleAuth() {
 
   return (
     <>
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         Store your data in your Google Drive account and sync it seamlessly
         across all your devices.
       </p>
@@ -43,7 +43,7 @@ function UserAuthorizedContent() {
       </Avatar>
 
       <h3 className="text-lg font-medium">{user_info?.name}</h3>
-      <p className="text-xs text-white/50">Synchronization is enabled.</p>
+      <p className="text-xs dark:text-white/50 text-dark/50">Synchronization is enabled.</p>
 
       <Button
         variant="secondary"

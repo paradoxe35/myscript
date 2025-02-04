@@ -37,7 +37,7 @@ export function LocalWhisperInputs() {
   return (
     <>
       <div className="flex flex-col gap-3 relative">
-        <Label className="text-xs text-white/70">{"Local Whisper Model"}</Label>
+        <Label className="text-xs dark:text-white/70 text-dark/70">{"Local Whisper Model"}</Label>
 
         <Select
           value={modelName}
@@ -64,7 +64,7 @@ export function LocalWhisperInputs() {
         </Select>
       </div>
 
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         Best model based on available resources: <b>{bestWhisperModel}</b>
         <br />
         <em>Doesn't require Internet connection</em>
@@ -75,7 +75,7 @@ export function LocalWhisperInputs() {
       {/* <ModelsRamRequirements />
         <Separator />
 
-        <p className="text-xs text-white/50">
+        <p className="text-xs dark:text-white/50 text-dark/50">
           <b>GPU acceleration:</b> This feature is currently not supported.
         </p>  */}
 
@@ -146,7 +146,7 @@ function LocalWhisperModelsDownload() {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         Choose the models you want to use for speech recognition. If some of
         your scripts are in English, consider downloading the English-only
         model.
@@ -285,7 +285,7 @@ function ModelsRamRequirements() {
 
   return (
     <>
-      <p className="text-xs text-white/50 flex items-center gap-1">
+      <p className="text-xs dark:text-white/50 text-dark/50 flex items-center gap-1">
         Here are the available models and their RAM requirements{" "}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -297,7 +297,7 @@ function ModelsRamRequirements() {
           <DropdownMenuContent className="w-56">
             <Table>
               <TableHeader>
-                <TableRow className="text-xs text-white/50">
+                <TableRow className="text-xs dark:text-white/50 text-dark/50">
                   <TableHead>Model</TableHead>
                   <TableHead>RAM (GB)</TableHead>
                 </TableRow>

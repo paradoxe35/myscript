@@ -64,7 +64,10 @@ export function DeletePageButton({ page }: { page: repository.Page }) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem className="text-red-300" onClick={handleDeletePage}>
+        <DropdownMenuItem
+          className="dark:text-red-300 text-red-500"
+          onClick={handleDeletePage}
+        >
           Delete
         </DropdownMenuItem>
 

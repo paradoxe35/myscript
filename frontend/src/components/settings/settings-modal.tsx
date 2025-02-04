@@ -37,7 +37,7 @@ export function SettingsModal(props: PropsWithChildren) {
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription className="text-xs text-white/50">
+          <DialogDescription className="text-xs dark:text-white/50 text-dark/50">
             Version: {appVersion}
           </DialogDescription>
         </DialogHeader>
@@ -135,12 +135,12 @@ function NotionInputs() {
 function WitAIHint() {
   return (
     <>
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         <b>Wit.ai</b> doesn't require any extra configuration. However, it may
         not be as accurate as OpenAI.
       </p>
 
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         <em>Internet connection is required</em>
       </p>
     </>
@@ -161,7 +161,7 @@ function OpenAIApiKey() {
         onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
       />
 
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         <em>For speech recognition and text generation.</em>
       </p>
     </div>
@@ -184,7 +184,7 @@ function GroqApiKey() {
         onChange={(e) => dispatch({ GroqApiKey: e.target.value })}
       />
 
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         <em>It uses the {GROQ_TRANSCRIBE_MODEL} model.</em>
       </p>
     </div>
@@ -194,7 +194,7 @@ function GroqApiKey() {
 function OpenAIApiKeyTranscriber() {
   return (
     <>
-      <p className="text-xs text-white/50">
+      <p className="text-xs dark:text-white/50 text-dark/50">
         <em>Internet connection is required</em>
       </p>
     </>
