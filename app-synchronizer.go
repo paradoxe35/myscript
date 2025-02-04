@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"myscript/internal/database"
 	"myscript/internal/repository"
 	"myscript/internal/synchronizer"
 	"myscript/internal/utils"
@@ -62,8 +63,8 @@ func (a *App) StartSynchronizer() error {
 	a.synchronizer.sync.SetDriveService(googleDriveService)
 
 	// Set on sync success callback
-	a.synchronizer.sync.SetOnSyncSuccess(func() {
-		runtime.EventsEmit(a.ctx, "on-sync-success")
+	a.synchronizer.sync.SetOnSyncSuccess(func(affectedTables database.AffectedTables) {
+		runtime.EventsEmit(a.ctx, "on-sync-success", affectedTables)
 	})
 
 	// Set on sync failure callback
@@ -72,6 +73,11 @@ func (a *App) StartSynchronizer() error {
 	})
 
 	return a.synchronizer.sync.StartScheduler()
+}
+
+// Just to get the affected tables binding generated
+func (a *App) AffectedTablesPlaceholder() database.AffectedTables {
+	return nil
 }
 
 func (a *App) StartGoogleAuthorization() error {

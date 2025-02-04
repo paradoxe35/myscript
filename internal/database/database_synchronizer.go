@@ -12,9 +12,12 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+type AffectedTables map[string][]string
+
 type DatabaseSynchronizer struct {
-	sourceDB *gorm.DB
-	targetDB *gorm.DB
+	sourceDB       *gorm.DB
+	targetDB       *gorm.DB
+	affectedTables AffectedTables
 }
 
 // Add these types to DatabaseSynchronizer
@@ -111,6 +114,8 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 				if err := rules.Strategy(record); err != nil {
 					return err
 				}
+
+				s.addAffectedTable(tableName, record)
 			}
 			return nil
 		}
@@ -129,6 +134,8 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 				if err != nil {
 					return err
 				}
+
+				s.addAffectedTable(tableName, record)
 			}
 			return nil
 		}
@@ -138,9 +145,28 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 			if err := tx.Table(tableName).Save(record).Error; err != nil {
 				return err
 			}
+
+			s.addAffectedTable(tableName, record)
 		}
 		return nil
 	})
+}
+
+func (s *DatabaseSynchronizer) GetAffectedTables() map[string][]string {
+	return s.affectedTables
+}
+
+func (s *DatabaseSynchronizer) addAffectedTable(tableName string, record interface{}) {
+	if s.affectedTables == nil {
+		s.affectedTables = make(map[string][]string)
+	}
+
+	if _, ok := s.affectedTables[tableName]; !ok {
+		s.affectedTables[tableName] = []string{}
+	}
+
+	recordId := repository.GetModelID(record)
+	s.affectedTables[tableName] = append(s.affectedTables[tableName], recordId)
 }
 
 func (s *DatabaseSynchronizer) synchronizeSourceEntity(entity interface{}) error {

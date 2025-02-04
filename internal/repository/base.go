@@ -36,7 +36,7 @@ func (base *BaseUUIDModel) BeforeCreate(tx *gorm.DB) error {
 
 type MapUpdate = map[string]interface{}
 
-func getModelID(model interface{}) string {
+func GetModelID(model interface{}) string {
 	val := reflect.ValueOf(model)
 
 	// Dereference pointer if needed

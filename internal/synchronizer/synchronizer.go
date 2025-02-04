@@ -35,7 +35,8 @@ type Synchronizer struct {
 	// Synced
 	isSyncing               bool
 	schedulerTicker         *time.Ticker
-	onSyncSuccess           func()
+	affectedTables          database.AffectedTables
+	onSyncSuccess           func(affectedTables database.AffectedTables)
 	onSyncFailure           func(err error)
 	lastSnapshotCreatedTime *time.Time
 }
@@ -87,7 +88,7 @@ func (s *Synchronizer) SetDriveService(driveService DriveService) {
 	s.driveService = driveService
 }
 
-func (s *Synchronizer) SetOnSyncSuccess(onSyncSuccess func()) {
+func (s *Synchronizer) SetOnSyncSuccess(onSyncSuccess func(affectedTables database.AffectedTables)) {
 	s.onSyncSuccess = onSyncSuccess
 }
 
@@ -136,6 +137,9 @@ func (s *Synchronizer) scheduler() {
 func (s *Synchronizer) schedulerWorker() {
 	s.isSyncing = true
 
+	// Reset affected tables
+	s.resetAffectedTables()
+
 	// Apply remote changes and create snapshots
 	var failure error
 	if err := s.applyRemoteChanges(); err != nil {
@@ -151,13 +155,17 @@ func (s *Synchronizer) schedulerWorker() {
 			s.onSyncFailure(failure)
 		}
 	} else if s.onSyncSuccess != nil {
-		s.onSyncSuccess()
+		s.onSyncSuccess(s.affectedTables)
 	}
 
 	// Synchronize changes (this should be the last step)
 	s.syncChangesLogsToDrive()
 
 	s.isSyncing = false
+}
+
+func (s *Synchronizer) resetAffectedTables() {
+	s.affectedTables = nil
 }
 
 func (s *Synchronizer) applyRemoteChanges() error {
@@ -263,6 +271,9 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
+	// Save affected tables
+	s.affectedTables = dbSynchronizer.GetAffectedTables()
+
 	slog.Debug("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
 	return nil
@@ -288,6 +299,9 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 			slog.Error("Synchronizer[applyRemoteChangeLog] Failed to synchronize change logs", "error", err)
 			return err
 		}
+
+		// Save affected tables
+		s.affectedTables = dbSynchronizer.GetAffectedTables()
 
 		slog.Debug("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
 

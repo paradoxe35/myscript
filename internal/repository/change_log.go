@@ -41,7 +41,7 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 		return nil
 	}
 
-	rowId := getModelID(model)
+	rowId := GetModelID(model)
 	if rowId == "" {
 		return nil
 	}

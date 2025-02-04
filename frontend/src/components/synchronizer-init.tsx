@@ -4,6 +4,8 @@ import { useLocalPagesStore } from "@/store/local-pages";
 import { useEffect } from "react";
 import { EventsOn } from "~wails-runtime";
 
+type AffectedTables = Record<string, string[]>;
+
 export function SynchronizerInit() {
   const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
@@ -11,18 +13,23 @@ export function SynchronizerInit() {
 
   useEffect(() => {
     // Update UI on sync success
-    return EventsOn("on-sync-success", () => {
-      // Refresh local pages
-      localPagesStore.getPages();
+    return EventsOn(
+      "on-sync-success",
+      (affectedTables: AffectedTables | null) => {
+        console.log("Synchronization succeeded:", affectedTables);
 
-      // Refresh active page blocks
-      if (activePageStore.page?.__typename === "local_page") {
-        activePageStore.fetchPageBlocks();
+        // Refresh local pages
+        localPagesStore.getPages();
+
+        // Refresh active page blocks
+        if (activePageStore.page?.__typename === "local_page") {
+          activePageStore.fetchPageBlocks();
+        }
+
+        // Refresh config
+        configStore.fetchConfig();
       }
-
-      // Refresh config
-      configStore.fetchConfig();
-    });
+    );
   }, []);
 
   useEffect(() => {
