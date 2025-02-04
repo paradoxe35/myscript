@@ -40,7 +40,10 @@ func (r *ProcessedChangeRepository) ChangeProcessed(fileID string) bool {
 }
 
 func (r *ProcessedChangeRepository) DeleteProcessedChange(fileID string) error {
-	return r.db.Where("file_id = ?", fileID).Delete(&ProcessedChange{}).Error
+	return r.db.
+		Unscoped().
+		Where("file_id = ?", fileID).
+		Delete(&ProcessedChange{}).Error
 }
 
 func (r *ProcessedChangeRepository) SaveProcessedChange(fileID string) error {
