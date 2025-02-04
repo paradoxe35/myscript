@@ -2,8 +2,8 @@ package repository
 
 import (
 	"encoding/json"
+	"fmt"
 
-	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -12,7 +12,7 @@ import (
 
 type ChangeLog struct {
 	gorm.Model
-	ChangeID  string // UUID (changes every time on hooks are called)
+	ChangeID  string `gorm:"uniqueIndex"`
 	TableName string
 	RowID     string
 	Operation string
@@ -49,6 +49,7 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{
+		ChangeID:  fmt.Sprintf("%s-%s-%s", tx.Statement.Table, rowId, operation),
 		TableName: tx.Statement.Table,
 		RowID:     rowId,
 		Operation: operation,
@@ -58,16 +59,12 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 
 	// Check if the change already exists
 	var existing ChangeLog
-	if unSyncedDB.Where("table_name = ? AND row_id = ? and operation = ?", change.TableName, change.RowID, operation).
+	if unSyncedDB.Where("change_id = ?", change.ChangeID).
 		First(&existing).Error == nil {
 		change.ID = existing.ID
-		change.ChangeID = existing.ChangeID
 
 		return unSyncedDB.Save(&change).Error
 	}
-
-	// Generate a new change ID
-	change.ChangeID = uuid.NewString()
 
 	return unSyncedDB.Create(&change).Error
 }
