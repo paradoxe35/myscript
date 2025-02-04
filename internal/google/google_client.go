@@ -73,7 +73,7 @@ func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 		return nil, err
 	}
 
-	if tokenSource.RefreshToken != authToken.RefreshToken {
+	if tokenSource.AccessToken != authToken.AccessToken {
 		c.repository.UpdateGoogleAuthToken(tokenSource)
 	}
 

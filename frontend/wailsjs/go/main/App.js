@@ -126,6 +126,10 @@ export function PerformUpdate() {
   return window['go']['main']['App']['PerformUpdate']();
 }
 
+export function RefreshGoogleAuthToken() {
+  return window['go']['main']['App']['RefreshGoogleAuthToken']();
+}
+
 export function SaveCache(arg1, arg2) {
   return window['go']['main']['App']['SaveCache'](arg1, arg2);
 }
@@ -152,6 +156,10 @@ export function StartSynchronizer() {
 
 export function StopRecording() {
   return window['go']['main']['App']['StopRecording']();
+}
+
+export function StopSynchronizer() {
+  return window['go']['main']['App']['StopSynchronizer']();
 }
 
 export function Transcribe(arg1, arg2) {

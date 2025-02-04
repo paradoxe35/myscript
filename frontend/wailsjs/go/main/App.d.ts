@@ -71,6 +71,8 @@ export function OpenAITranscribe(arg1:Array<number>,arg2:string):Promise<string>
 
 export function PerformUpdate():Promise<void>;
 
+export function RefreshGoogleAuthToken():Promise<repository.GoogleAuthToken>;
+
 export function SaveCache(arg1:string,arg2:any):Promise<repository.Cache>;
 
 export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
@@ -84,6 +86,8 @@ export function StartRecording(arg1:string,arg2:string):Promise<void>;
 export function StartSynchronizer():Promise<void>;
 
 export function StopRecording():Promise<void>;
+
+export function StopSynchronizer():Promise<void>;
 
 export function Transcribe(arg1:Array<number>,arg2:string):Promise<string>;
 

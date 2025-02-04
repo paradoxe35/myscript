@@ -15,15 +15,17 @@ import { repository, whisper } from "~wails/models";
 import isEqual from "lodash/isEqual";
 import { useLocalWhisperStore } from "@/store/local-whisper";
 import {
-  DeleteGoogleAuthToken,
   GetAppVersion,
-  GetGoogleAuthToken,
   IsGoogleAuthEnabled,
   StartGoogleAuthorization,
   StartSynchronizer,
 } from "~wails/main/App";
 import { EventsOn } from "~wails-runtime";
 import { useDebouncedCallback } from "use-debounce";
+import {
+  isGoogleAPIInvalidGrantError,
+  useGoogleAuthTokenStore,
+} from "@/store/google-auth-token";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
@@ -165,26 +167,33 @@ function useSettingsHook() {
 }
 
 function useCloudSettings() {
-  const [googleAuthToken, setGoogleAuthToken] =
-    useState<repository.GoogleAuthToken | null>(null);
+  // Google auth token
+  const googleAuthToken = useGoogleAuthTokenStore((state) => state.token);
+  const getGoogleAuthToken = useGoogleAuthTokenStore((state) => state.getToken);
+  const deleteGoogleAuthToken = useGoogleAuthTokenStore(
+    (state) => state.deleteToken
+  );
 
   const [authorizing, setAuthorizing] = useState(false);
+
   // Services status
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
   const cloudEnabled = googleAuthEnabled;
 
-  const getGoogleAuthToken = useCallback(() => {
-    GetGoogleAuthToken().then((token) => {
-      setGoogleAuthToken(token);
-    });
-  }, []);
-
   // Start synchronization here
   const startSynchronizer = useDebouncedCallback(StartSynchronizer, 1000);
+
   useEffect(() => {
     if (cloudEnabled && googleAuthToken) {
-      startSynchronizer();
+      startSynchronizer()?.catch((error) => {
+        // If the error is due to an expired token,
+        // delete it and show a toast
+        if (isGoogleAPIInvalidGrantError(error)) {
+          deleteGoogleAuthToken();
+          toast.warning("Google auth token expired, please re-authorize");
+        }
+      });
     }
   }, [cloudEnabled, googleAuthToken]);
 
@@ -216,10 +225,6 @@ function useCloudSettings() {
       .then(getGoogleAuthToken)
       .finally(() => setAuthorizing(false));
   }, [getGoogleAuthToken]);
-
-  const deleteGoogleAuthToken = useCallback(() => {
-    return DeleteGoogleAuthToken().then(getGoogleAuthToken);
-  }, []);
 
   return {
     googleAuthEnabled,

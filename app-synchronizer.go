@@ -33,6 +33,19 @@ func (a *App) DeleteGoogleAuthToken() {
 	a.synchronizer.sync.StopScheduler()
 }
 
+func (a *App) RefreshGoogleAuthToken() (*repository.GoogleAuthToken, error) {
+	_, err := a.synchronizer.googleClient.GetClientFromSavedToken()
+	if err != nil {
+		return nil, err
+	}
+
+	return a.GetGoogleAuthToken(), nil
+}
+
+func (a *App) StopSynchronizer() {
+	a.synchronizer.sync.StopScheduler()
+}
+
 // This function is being called from the frontend
 func (a *App) StartSynchronizer() error {
 	var httpClient *http.Client

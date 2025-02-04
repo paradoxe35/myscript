@@ -1,8 +1,13 @@
 import { useActivePageStore } from "@/store/active-page";
 import { useConfigStore } from "@/store/config";
+import {
+  isGoogleAPIInvalidGrantError,
+  useGoogleAuthTokenStore,
+} from "@/store/google-auth-token";
 import { useLocalPagesStore } from "@/store/local-pages";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EventsOn } from "~wails-runtime";
+import { StopSynchronizer } from "~wails/main/App";
 
 type AffectedTables = Record<string, string[]>;
 
@@ -13,9 +18,35 @@ enum TABLES {
 }
 
 export function SynchronizerInit() {
+  const googleAuthTokenStore = useGoogleAuthTokenStore();
+
   const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
   const configStore = useConfigStore();
+
+  const syncFailures = useRef(0);
+
+  useEffect(() => {
+    return EventsOn("on-sync-failure", async (error) => {
+      if (isGoogleAPIInvalidGrantError(error)) {
+        syncFailures.current += 1;
+
+        if (syncFailures.current === 4) {
+          console.log("Too many sync attempts, refreshing Google auth token");
+
+          // Stop the Scheduler
+          await StopSynchronizer().catch(console.error);
+
+          googleAuthTokenStore.refreshToken().catch(() => {
+            console.log("Failed to refresh Google auth token, deleting it");
+            googleAuthTokenStore.deleteToken();
+          });
+        }
+      }
+
+      console.error("Synchronization failed:", error);
+    });
+  }, []);
 
   useEffect(() => {
     // Update UI on sync success
@@ -53,12 +84,6 @@ export function SynchronizerInit() {
       }
     );
   }, [activePageStore.getPageId()]);
-
-  useEffect(() => {
-    return EventsOn("on-sync-failure", (error) => {
-      console.error("Synchronization failed:", error);
-    });
-  }, []);
 
   return <></>;
 }
