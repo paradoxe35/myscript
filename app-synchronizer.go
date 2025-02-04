@@ -54,6 +54,7 @@ func (a *App) StartSynchronizer() error {
 	if utils.HasInternet() {
 		httpClient, err = a.synchronizer.googleClient.GetClientFromSavedToken()
 		if err != nil {
+			slog.Error("[StartSynchronizer] Error getting Google client", "error", err)
 			return err
 		}
 	} else {

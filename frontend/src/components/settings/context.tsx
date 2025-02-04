@@ -182,18 +182,23 @@ function useCloudSettings() {
   const cloudEnabled = googleAuthEnabled;
 
   // Start synchronization here
-  const startSynchronizer = useDebouncedCallback(StartSynchronizer, 1000);
+  const startSynchronizer = useDebouncedCallback(() => {
+    StartSynchronizer().catch((error) => {
+      // If the error is due to an expired token,
+      // delete it and show a toast
+      if (isGoogleAPIInvalidGrantError(error)) {
+        deleteGoogleAuthToken();
+        toast.warning("Google auth token expired, please re-authorize");
+      }else {
+        console.log("Error starting synchronizer");
+      }
+    });
+  }, 1000);
+
 
   useEffect(() => {
     if (cloudEnabled && googleAuthToken) {
-      startSynchronizer()?.catch((error) => {
-        // If the error is due to an expired token,
-        // delete it and show a toast
-        if (isGoogleAPIInvalidGrantError(error)) {
-          deleteGoogleAuthToken();
-          toast.warning("Google auth token expired, please re-authorize");
-        }
-      });
+      startSynchronizer();
     }
   }, [cloudEnabled, googleAuthToken]);
 

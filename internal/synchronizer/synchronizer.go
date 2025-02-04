@@ -117,6 +117,8 @@ func (s *Synchronizer) StopScheduler() error {
 	if s.schedulerTicker != nil {
 		s.schedulerTicker.Stop()
 	}
+
+	slog.Error("Synchronizer[StopScheduler]: scheduler stopped")
 	return nil
 }
 
