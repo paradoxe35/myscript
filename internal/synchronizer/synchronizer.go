@@ -323,8 +323,14 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 			defer wg.Done()
 
 			// Delete change log from drive
-			s.driveService.DeleteChangeLog(change)
+			deletedFiles, err := s.driveService.DeleteChangeLog(change)
+			if err == nil && len(deletedFiles) > 0 {
+				for _, file := range deletedFiles {
+					s.processedChangeRepository.DeleteProcessedChange(file.ID)
+				}
+			}
 
+			// Upload change log to drive
 			if file, err := s.driveService.UploadChangeLog(change); err != nil {
 				slog.Error("Synchronizer[syncChangesLogsToDrive] Failed to upload change logs", "error", err, "change", change.ID)
 				return

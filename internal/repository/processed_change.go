@@ -39,6 +39,10 @@ func (r *ProcessedChangeRepository) ChangeProcessed(fileID string) bool {
 	return r.GetProcessedChange(fileID) != nil
 }
 
+func (r *ProcessedChangeRepository) DeleteProcessedChange(fileID string) error {
+	return r.db.Where("file_id = ?", fileID).Delete(&ProcessedChange{}).Error
+}
+
 func (r *ProcessedChangeRepository) SaveProcessedChange(fileID string) error {
 	item := &ProcessedChange{
 		FileID: fileID,

@@ -207,18 +207,26 @@ func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time)
 	return files, nil
 }
 
-func (s *GoogleDriveService) DeleteChangeLog(changeLog repository.ChangeLog) error {
+func (s *GoogleDriveService) DeleteChangeLog(changeLog repository.ChangeLog) ([]*File, error) {
 	files, err := s.files().Q(fmt.Sprintf("name contains '%s'", changeLog.ChangeID)).Do()
 	if err != nil {
 		slog.Error("GoogleDriveService[DeleteChangeLog] Get list changeLogs ID", "error", err)
-		return err
+		return nil, err
 	}
 
-	for _, file := range files.Files {
-		s.service.Files.Delete(file.Id).Do()
+	var failure error
+
+	deletedFiles := make([]*File, len(files.Files))
+
+	for i, file := range files.Files {
+		if err = s.service.Files.Delete(file.Id).Do(); err != nil {
+			failure = err
+		}
+
+		deletedFiles[i] = s.createFileFromGoogleDrive(file)
 	}
 
-	return nil
+	return deletedFiles, failure
 }
 
 func (s *GoogleDriveService) UploadChangeLog(change repository.ChangeLog) (*File, error) {
