@@ -45,11 +45,11 @@ jobs:
         env:
           REPOSITORY_TOKEN: "${{ secrets.REPOSITORY_TOKEN }}"
 
-      # - name: Create Google OAuth Credentials File
-      #   run: |
-      #     node -e "require('fs').writeFileSync('credentials/google-credentials.json', process.env.GOOGLE_CREDENTIALS)"
-      #   env:
-      #     GOOGLE_CREDENTIALS: "${{ secrets.GOOGLE_CREDENTIALS }}"
+      - name: Create Google OAuth Credentials File
+        run: |
+          node -e "require('fs').writeFileSync('credentials/google-credentials.json', process.env.GOOGLE_CREDENTIALS)"
+        env:
+          GOOGLE_CREDENTIALS: "${{ secrets.GOOGLE_CREDENTIALS }}"
 
       - name: Set App Version
         run: |
