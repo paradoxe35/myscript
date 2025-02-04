@@ -8,7 +8,7 @@ import (
 
 type ProcessedChange struct {
 	gorm.Model
-	FileID string
+	FileID string `gorm:"index"`
 }
 
 type ProcessedChangeRepository struct {

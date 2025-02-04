@@ -62,6 +62,7 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	if unSyncedDB.Where("change_id = ?", change.ChangeID).
 		First(&existing).Error == nil {
 		change.ID = existing.ID
+		change.CreatedAt = existing.CreatedAt
 
 		return unSyncedDB.Save(&change).Error
 	}
