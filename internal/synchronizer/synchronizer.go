@@ -171,8 +171,6 @@ func (s *Synchronizer) applyRemoteChanges() error {
 		return err
 	}
 
-	slog.Debug("[applyRemoteChanges] Applying remote changes", "changes", len(changesFiles))
-
 	for _, file := range changesFiles {
 		if !s.canBeApplied(file) ||
 			file.CreatedTime.Equal(timeOffset) ||
