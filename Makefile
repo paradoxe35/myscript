@@ -23,6 +23,7 @@ dev:
 ifeq ($(DETECTED_OS),Windows)
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails dev
 else
+	@rm -rf ~/.cache/MyScript*
 	@cross-env CGO_CFLAGS_ALLOW="-mfma|-mf16c" wails dev -tags webkit2_41
 endif
 

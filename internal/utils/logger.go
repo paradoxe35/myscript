@@ -47,9 +47,9 @@ func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 	var ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
 	if devMode {
 		ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
-			// if a.Key == slog.TimeKey {
-			// 	return slog.Attr{}
-			// }
+			if a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
 			return a
 		}
 	} else {

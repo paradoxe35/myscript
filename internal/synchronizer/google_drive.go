@@ -199,7 +199,7 @@ func (s *GoogleDriveService) GetChangeFilesAfterTimeOffset(timeOffset time.Time)
 	var files []*File
 	for _, file := range resp.Files {
 		iFile := s.createFileFromGoogleDrive(file)
-		if !iFile.CreatedTime.Equal(timeOffset) {
+		if iFile.CreatedTime.After(timeOffset) && !iFile.CreatedTime.Equal(timeOffset) {
 			files = append(files, iFile)
 		}
 	}
@@ -249,6 +249,12 @@ func (s *GoogleDriveService) PruneOldChanges(timestamp time.Time) error {
 		wg.Add(1)
 		go func(file *drive.File) {
 			defer wg.Done()
+
+			fileTime := s.parseTime(file.CreatedTime)
+			if fileTime.After(timestamp) || fileTime.Equal(timestamp) {
+				return
+			}
+
 			err := s.service.Files.Delete(file.Id).Do()
 			if err != nil {
 				slog.Error("GoogleDriveService[PruneOldChanges] Unable to delete file", "fileName", file.Name, "error", err)

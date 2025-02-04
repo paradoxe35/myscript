@@ -108,7 +108,7 @@ func (s *Synchronizer) StartScheduler() error {
 
 	go s.scheduler()
 
-	slog.Info("Synchronizer[StartScheduler]: scheduler started")
+	slog.Debug("Synchronizer[StartScheduler]: scheduler started")
 	return nil
 }
 
@@ -134,39 +134,28 @@ func (s *Synchronizer) scheduler() {
 }
 
 func (s *Synchronizer) schedulerWorker() {
-	var wg sync.WaitGroup
-	wg.Add(2)
-
 	s.isSyncing = true
 
 	// Apply remote changes and create snapshots
-	go func() {
-		defer wg.Done()
-		var failure error
-		if err := s.applyRemoteChanges(); err != nil {
-			failure = err
-		}
-		// This should come after ApplyRemoteChanges
-		if err := s.createDBSnapshot(); err != nil {
-			failure = err
-		}
+	var failure error
+	if err := s.applyRemoteChanges(); err != nil {
+		failure = err
+	}
+	// This should come after ApplyRemoteChanges
+	if err := s.createDBSnapshot(); err != nil {
+		failure = err
+	}
 
-		if failure != nil {
-			if s.onSyncFailure != nil {
-				s.onSyncFailure(failure)
-			}
-		} else if s.onSyncSuccess != nil {
-			s.onSyncSuccess()
+	if failure != nil {
+		if s.onSyncFailure != nil {
+			s.onSyncFailure(failure)
 		}
-	}()
+	} else if s.onSyncSuccess != nil {
+		s.onSyncSuccess()
+	}
 
-	// Synchronize changes
-	go func() {
-		defer wg.Done()
-		s.syncChangesLogsToDrive()
-	}()
-
-	wg.Wait()
+	// Synchronize changes (this should be the last step)
+	s.syncChangesLogsToDrive()
 
 	s.isSyncing = false
 }
@@ -182,8 +171,12 @@ func (s *Synchronizer) applyRemoteChanges() error {
 		return err
 	}
 
+	slog.Debug("[applyRemoteChanges] Applying remote changes", "changes", len(changesFiles))
+
 	for _, file := range changesFiles {
-		if !s.canBeApplied(file) {
+		if !s.canBeApplied(file) ||
+			file.CreatedTime.Equal(timeOffset) ||
+			file.CreatedTime.Before(timeOffset) {
 			continue
 		}
 
@@ -272,7 +265,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
-	slog.Info("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
+	slog.Debug("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
 	return nil
 }
@@ -298,7 +291,7 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 			return err
 		}
 
-		slog.Info("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
+		slog.Debug("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
 
 		return nil
 	})
@@ -392,15 +385,16 @@ func (s *Synchronizer) createDBSnapshot() error {
 	s.syncStateRepository.SaveSyncState(newSnapshot.CreatedTime)
 	s.processedChangeRepository.SaveProcessedChange(newSnapshot.ID)
 
-	slog.Info("Synchronizer[createSnapshot]: snapshot created successfully", "file", newSnapshot.Name)
+	slog.Debug("Synchronizer[createSnapshot]: snapshot created successfully", "file", newSnapshot.Name)
 
 	// Prune old changes
-	if err := s.driveService.PruneOldChanges(newSnapshot.CreatedTime); err != nil {
+	pruneTimeOffset := newSnapshot.CreatedTime.Add(-time.Second) // Prune one second before the snapshot
+	if err := s.driveService.PruneOldChanges(pruneTimeOffset); err != nil {
 		slog.Error("Synchronizer[createSnapshot]: failed to prune old changes (retry again)", "error", err)
 
 		// Retry again after 5 seconds
 		time.Sleep(time.Second * 5)
-		return s.driveService.PruneOldChanges(newSnapshot.CreatedTime)
+		return s.driveService.PruneOldChanges(pruneTimeOffset)
 	}
 
 	return nil

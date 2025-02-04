@@ -39,7 +39,7 @@ func MeasureExec(name string) func() {
 	start := time.Now()
 
 	return func() {
-		slog.Info(fmt.Sprintf("%s took %v", name, time.Since(start)))
+		slog.Debug(fmt.Sprintf("%s took %v", name, time.Since(start)))
 	}
 }
 
@@ -55,8 +55,7 @@ func B64toBytes(s string) ([]byte, error) {
 }
 
 func IsDevMode() bool {
-	winDev := strings.HasSuffix(os.Args[0], "-dev.exe")
-	return strings.HasSuffix(os.Args[0], "-dev") || winDev
+	return strings.Contains(os.Args[0], "-dev")
 }
 
 func HasInternet() bool {
