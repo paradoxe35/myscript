@@ -7,12 +7,14 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 )
 
 type FileLogger struct {
-	logger *slog.Logger
-	file   *os.File
+	devMode bool
+	logger  *slog.Logger
+	file    *os.File
 }
 
 type CustomLogger struct {
@@ -45,9 +47,9 @@ func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 	var ReplaceAttr func(groups []string, a slog.Attr) slog.Attr
 	if devMode {
 		ReplaceAttr = func(groups []string, a slog.Attr) slog.Attr {
-			if a.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
+			// if a.Key == slog.TimeKey {
+			// 	return slog.Attr{}
+			// }
 			return a
 		}
 	} else {
@@ -66,8 +68,9 @@ func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 	logger := slog.New(handler)
 
 	fileLogger := &FileLogger{
-		logger: logger,
-		file:   file,
+		devMode: devMode,
+		logger:  logger,
+		file:    file,
 	}
 
 	return &CustomLogger{
@@ -77,13 +80,15 @@ func NewFileLogger(homeDir string, devMode bool) (*CustomLogger, error) {
 }
 
 func (l *FileLogger) log(level slog.Level, message string) {
-	// _, file, line, _ := runtime.Caller(2)
-	// attrs := []slog.Attr{
-	// 	slog.String("file", filepath.Base(file)),
-	// 	slog.Int("line", line),
-	// }
+	attrs := []slog.Attr{}
 
-	l.logger.LogAttrs(context.TODO(), level, message)
+	if l.devMode {
+		_, file, line, _ := runtime.Caller(2)
+		attrs = append(attrs, slog.String("file", filepath.Base(file)))
+		attrs = append(attrs, slog.Int("line", line))
+	}
+
+	l.logger.LogAttrs(context.TODO(), level, message, attrs...)
 }
 
 func (l *FileLogger) Print(message string) {
