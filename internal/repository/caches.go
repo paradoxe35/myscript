@@ -74,5 +74,5 @@ func (r *CacheRepository) DeleteCache(key string) {
 	var cache Cache
 
 	r.db.Where("key = ?", key).First(&cache)
-	r.db.Delete(&cache)
+	r.db.Unscoped().Delete(&cache)
 }
