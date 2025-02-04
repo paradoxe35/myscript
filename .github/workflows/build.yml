@@ -109,7 +109,7 @@ jobs:
           zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-${{ matrix.arch }}-build
           path: build/bin/*
@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
 
