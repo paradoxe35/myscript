@@ -19,11 +19,11 @@ type Cache struct {
 
 // Hooks
 func (n *Cache) AfterCreate(tx *gorm.DB) error {
-	return logChange(tx, n, OPERATION_CREATE)
+	return logChange(tx, n, OPERATION_SAVE)
 }
 
 func (n *Cache) AfterUpdate(tx *gorm.DB) error {
-	return logChange(tx, n, OPERATION_UPDATE)
+	return logChange(tx, n, OPERATION_SAVE)
 }
 
 func (n *Cache) AfterDelete(tx *gorm.DB) error {

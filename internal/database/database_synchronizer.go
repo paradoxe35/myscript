@@ -61,7 +61,7 @@ func (s *DatabaseSynchronizer) SynchronizeAll() error {
 
 func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeLog) error {
 	switch changeLog.Operation {
-	case repository.OPERATION_CREATE, repository.OPERATION_UPDATE:
+	case repository.OPERATION_SAVE: // Handle both CREATE and UPDATE
 		var model interface{}
 
 		switch changeLog.TableName {

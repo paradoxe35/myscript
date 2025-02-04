@@ -17,11 +17,11 @@ type Config struct {
 
 // Hooks
 func (n *Config) AfterCreate(tx *gorm.DB) error {
-	return logChange(tx, n, OPERATION_CREATE)
+	return logChange(tx, n, OPERATION_SAVE)
 }
 
 func (n *Config) AfterUpdate(tx *gorm.DB) error {
-	return logChange(tx, n, OPERATION_UPDATE)
+	return logChange(tx, n, OPERATION_SAVE)
 }
 
 func (n *Config) AfterDelete(tx *gorm.DB) error {
