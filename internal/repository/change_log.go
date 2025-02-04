@@ -41,11 +41,16 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 		return nil
 	}
 
+	rowId := getModelID(model)
+	if rowId == "" {
+		return nil
+	}
+
 	newData, _ := json.Marshal(model)
 
 	change := ChangeLog{
 		TableName: tx.Statement.Table,
-		RowID:     getModelID(model),
+		RowID:     rowId,
 		Operation: operation,
 		NewData:   datatypes.JSON(newData),
 		Synced:    false,
