@@ -114,7 +114,7 @@ export function AppUpdater() {
       const inDevMode = await IsDevMode();
       if (!inDevMode) {
         checkForUpdates();
-        intervalID = setInterval(checkForUpdates, 2000);
+        intervalID = setInterval(checkForUpdates, 5000);
       }
     })();
 
