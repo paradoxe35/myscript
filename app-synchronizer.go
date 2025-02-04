@@ -8,6 +8,7 @@ import (
 	"myscript/internal/synchronizer"
 	"myscript/internal/utils"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -105,6 +106,10 @@ func (a *App) StartGoogleAuthorization() error {
 		}()
 
 		slog.Debug("Google authorization received", "code", authorizationCode)
+
+		if strings.TrimSpace(authorizationCode) == "" {
+			return
+		}
 
 		_, err := googleClient.SaveAuthToken(authorizationCode, addr)
 		if err != nil {

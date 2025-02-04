@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"myscript/internal/repository"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -118,6 +119,11 @@ func (c *GoogleClient) SaveAuthToken(code, redirectURI string) (*oauth2.Token, e
 		return nil, err
 	}
 
+	if err := c.verifyScopes(token); err != nil {
+		slog.Error("Unable to verify scopes", "error", err)
+		return nil, err
+	}
+
 	userInfo, err := c.getUserInfo(token)
 	if err != nil {
 		slog.Error("Unable to retrieve user info", "error", err)
@@ -129,6 +135,34 @@ func (c *GoogleClient) SaveAuthToken(code, redirectURI string) (*oauth2.Token, e
 	slog.Debug("Authentication successful and token saved", "user", userInfo.Email)
 
 	return token, nil
+}
+
+func (c *GoogleClient) verifyScopes(token *oauth2.Token) error {
+	rawToken, ok := token.Extra("scope").(string)
+	if !ok {
+		slog.Error("Unable to extract scopes from token")
+	}
+
+	// Check if the token has all required scopes
+	grantedScopes := strings.Fields(rawToken)
+	grantedSet := make(map[string]struct{})
+	for _, s := range grantedScopes {
+		grantedSet[s] = struct{}{}
+	}
+
+	var missingScopes []string
+	for _, required := range SCOPES {
+		if _, exists := grantedSet[required]; !exists {
+			missingScopes = append(missingScopes, required)
+		}
+	}
+
+	if len(missingScopes) > 0 {
+		slog.Error("Token is missing required scopes", "missing", missingScopes)
+		return fmt.Errorf("authorization is incomplete due to missing scopes")
+	}
+
+	return nil
 }
 
 func (c *GoogleClient) getConfig() (*oauth2.Config, error) {
