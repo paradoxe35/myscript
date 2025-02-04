@@ -7,7 +7,7 @@ import {
 import { useLocalPagesStore } from "@/store/local-pages";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { EventsOn } from "~wails-runtime";
+import { EventsOn, LogDebug } from "~wails-runtime";
 import { StopSynchronizer } from "~wails/main/App";
 
 type AffectedTables = Record<string, string[]>;
@@ -61,6 +61,13 @@ export function SynchronizerInit() {
       (affectedTables: AffectedTables | null) => {
         if (!affectedTables) {
           return;
+        }
+
+        if ("all" in affectedTables) {
+          LogDebug(
+            "Snapshot detected, affectedTables: " +
+              JSON.stringify(affectedTables)
+          );
         }
 
         // Refresh local pages
