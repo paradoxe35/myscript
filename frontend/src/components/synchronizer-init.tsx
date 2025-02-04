@@ -6,6 +6,12 @@ import { EventsOn } from "~wails-runtime";
 
 type AffectedTables = Record<string, string[]>;
 
+enum TABLES {
+  PAGES = "pages",
+  CONFIG = "configs",
+  CACHE = "caches",
+}
+
 export function SynchronizerInit() {
   const activePageStore = useActivePageStore();
   const localPagesStore = useLocalPagesStore();
@@ -16,18 +22,34 @@ export function SynchronizerInit() {
     return EventsOn(
       "on-sync-success",
       (affectedTables: AffectedTables | null) => {
-        console.log("Synchronization succeeded:", affectedTables);
+        if (!affectedTables) {
+          return;
+        }
 
         // Refresh local pages
-        localPagesStore.getPages();
-
-        // Refresh active page blocks
-        if (activePageStore.page?.__typename === "local_page") {
-          activePageStore.fetchPageBlocks();
+        if (TABLES.PAGES in affectedTables) {
+          localPagesStore.getPages();
         }
 
         // Refresh config
-        configStore.fetchConfig();
+        if (TABLES.CONFIG in affectedTables) {
+          configStore.fetchConfig();
+        }
+
+        // Refresh active page blocks
+        if (
+          activePageStore.page?.__typename === "local_page" &&
+          TABLES.PAGES in affectedTables
+        ) {
+          const activePage = activePageStore.page;
+          const canRefreshBlocks = affectedTables[TABLES.PAGES].includes(
+            activePage.page.ID
+          );
+
+          if (canRefreshBlocks) {
+            activePageStore.fetchPageBlocks();
+          }
+        }
       }
     );
   }, []);
