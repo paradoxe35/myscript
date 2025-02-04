@@ -170,6 +170,21 @@ func (s *Synchronizer) resetAffectedTables() {
 	s.affectedTables = nil
 }
 
+func (s *Synchronizer) mergeAffectedTables(affectedTables database.AffectedTables) {
+	if s.affectedTables == nil {
+		s.affectedTables = affectedTables
+		return
+	}
+
+	for table, columns := range affectedTables {
+		if _, ok := s.affectedTables[table]; !ok {
+			s.affectedTables[table] = columns
+		} else {
+			s.affectedTables[table] = append(s.affectedTables[table], columns...)
+		}
+	}
+}
+
 func (s *Synchronizer) applyRemoteChanges() error {
 	if s.driveService == nil {
 		return errors.New("drive service is not initialized")
@@ -274,7 +289,7 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	}
 
 	// Save affected tables
-	s.affectedTables = dbSynchronizer.GetAffectedTables()
+	s.mergeAffectedTables(dbSynchronizer.GetAffectedTables())
 
 	slog.Debug("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
 
@@ -303,8 +318,7 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 		}
 
 		// Save affected tables
-		s.affectedTables = dbSynchronizer.GetAffectedTables()
-		s.affectedTables["all"] = []string{}
+		s.mergeAffectedTables(dbSynchronizer.GetAffectedTables())
 
 		slog.Debug("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
 

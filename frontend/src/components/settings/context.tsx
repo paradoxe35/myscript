@@ -20,12 +20,13 @@ import {
   StartGoogleAuthorization,
   StartSynchronizer,
 } from "~wails/main/App";
-import { EventsOn } from "~wails-runtime";
+import { EventsOn, EventsOnce } from "~wails-runtime";
 import { useDebouncedCallback } from "use-debounce";
 import {
   isGoogleAPIInvalidGrantError,
   useGoogleAuthTokenStore,
 } from "@/store/google-auth-token";
+import { Loader2 } from "lucide-react";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
@@ -222,19 +223,51 @@ function useCloudSettings() {
     });
   }, []);
 
+  const onGoogleAuthorizationSuccess = useCallback(async () => {
+    const token = await getGoogleAuthToken();
+
+    if (!token) {
+      return;
+    }
+
+    const toastID = toast.message(
+      <div className="flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Restoring your data from drive</span>
+      </div>,
+      {
+        description: "This might take a few moments...",
+        duration: Infinity,
+      }
+    );
+
+    let onSuccessEvent: VoidFunction | undefined;
+    let onFailureEvent: VoidFunction | undefined;
+
+    // Dismiss toast when sync is completed
+    onSuccessEvent = EventsOnce("on-sync-success", () => {
+      toast.dismiss(toastID);
+
+      onSuccessEvent?.();
+      onFailureEvent?.();
+    });
+
+    // Dismiss toast when sync fails
+    onFailureEvent = EventsOnce("on-sync-failure", (error) => {
+      toast.dismiss(toastID);
+
+      onSuccessEvent?.();
+      onFailureEvent?.();
+    });
+  }, [getGoogleAuthToken]);
+
   const startGoogleAuthorization = useCallback(() => {
     setAuthorizing(true);
 
     return StartGoogleAuthorization()
-      .then(() => {
-        getGoogleAuthToken();
-
-        toast.info("We are restoring your data from your drive...", {
-          duration: 15 * 1000,
-        });
-      })
+      .then(onGoogleAuthorizationSuccess)
       .finally(() => setAuthorizing(false));
-  }, [getGoogleAuthToken]);
+  }, [onGoogleAuthorizationSuccess]);
 
   return {
     googleAuthEnabled,

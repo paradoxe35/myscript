@@ -63,13 +63,6 @@ export function SynchronizerInit() {
           return;
         }
 
-        if ("all" in affectedTables) {
-          LogDebug(
-            "Snapshot detected, affectedTables: " +
-              JSON.stringify(affectedTables)
-          );
-        }
-
         // Refresh local pages
         if (TABLES.PAGES in affectedTables) {
           localPagesStore.getPages();

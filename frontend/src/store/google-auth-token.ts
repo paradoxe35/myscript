@@ -8,7 +8,7 @@ import {
 
 type GoogleAuthTokenState = {
   token: repository.GoogleAuthToken | null;
-  getToken: () => Promise<void>;
+  getToken: () => Promise<repository.GoogleAuthToken | null>;
   refreshToken: () => Promise<void>;
   deleteToken: () => Promise<void>;
 };
@@ -29,6 +29,8 @@ export const useGoogleAuthTokenStore = create<GoogleAuthTokenState>((set) => ({
   getToken: async () => {
     const token = await GetGoogleAuthToken();
     set({ token });
+
+    return token;
   },
 
   deleteToken: async () => {
