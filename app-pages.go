@@ -11,7 +11,7 @@ import (
 
 func (a *App) getNotionClient() *notion.NotionClient {
 	config := a.GetConfig()
-	if config == nil || config.NotionApiKey == nil {
+	if config == nil || config.NotionApiKey == nil || *config.NotionApiKey == "" {
 		return nil
 	}
 

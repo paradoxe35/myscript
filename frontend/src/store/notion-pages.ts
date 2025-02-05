@@ -8,6 +8,7 @@ type NotionPagesStore = {
   pages: Array<NotionPage>;
   getSimplifiedPages(): Array<NotionSimplePage>;
   getPages: () => Promise<void>;
+  resetPages: () => Promise<void>;
 };
 
 export const useNotionPagesStore = create(
@@ -18,6 +19,10 @@ export const useNotionPagesStore = create(
       getPages: async () => {
         const pages = await GetNotionPages();
         set({ pages });
+      },
+
+      resetPages: async () => {
+        set({ pages: [] });
       },
 
       getSimplifiedPages() {
@@ -39,4 +44,12 @@ export const useNotionPagesStore = create(
   )
 );
 
-useConfigStore.subscribe(() => useNotionPagesStore.getState().getPages());
+useConfigStore.subscribe((state) => {
+  const notionPagesState = useNotionPagesStore.getState();
+  if (!state.config?.NotionApiKey) {
+    notionPagesState.resetPages();
+    return;
+  }
+
+  notionPagesState.getPages();
+});
