@@ -29,7 +29,7 @@ export function NotionPages() {
           <SidebarGroupLabel>{"Notion pages"}</SidebarGroupLabel>
 
           <SidebarGroupLabel
-            className="opacity-0 group-hover/notion-refresh:opacity-100 transition hover:bg-white/10"
+            className="opacity-0 group-hover/notion-refresh:opacity-100 transition dark:hover:bg-white/10 hover:bg-slate-900/10"
             onClick={refreshNotionPages}
           >
             <RotateCw />

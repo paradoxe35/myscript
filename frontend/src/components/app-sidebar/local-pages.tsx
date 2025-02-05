@@ -49,13 +49,17 @@ export function LocalPages() {
 
         <div className="flex items-center gap-1">
           <NewFolderModal>
-            <SidebarGroupLabel className={"transition hover:bg-white/10"}>
+            <SidebarGroupLabel
+              className={
+                "transition dark:hover:bg-white/10 hover:bg-slate-900/10"
+              }
+            >
               <FolderPlusIcon />
             </SidebarGroupLabel>
           </NewFolderModal>
 
           <SidebarGroupLabel
-            className="transition hover:bg-white/10"
+            className="transition dark:hover:bg-white/10 hover:bg-slate-900/10"
             onClick={createNewPage}
           >
             <Plus />
