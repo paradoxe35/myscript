@@ -44,22 +44,18 @@ export function LocalPages() {
 
   return (
     <SidebarGroup>
-      <div className="group/local-add px-0 justify-between transition cursor-default flex mb-1">
+      <div className="px-0 justify-between transition cursor-default flex mb-1">
         <SidebarGroupLabel>{"Local pages"}</SidebarGroupLabel>
 
         <div className="flex items-center gap-1">
           <NewFolderModal>
-            <SidebarGroupLabel
-              className={cn(
-                "opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
-              )}
-            >
+            <SidebarGroupLabel className={"transition hover:bg-white/10"}>
               <FolderPlusIcon />
             </SidebarGroupLabel>
           </NewFolderModal>
 
           <SidebarGroupLabel
-            className="opacity-0 group-hover/local-add:opacity-100 transition hover:bg-white/10"
+            className="transition hover:bg-white/10"
             onClick={createNewPage}
           >
             <Plus />
