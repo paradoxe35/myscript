@@ -103,6 +103,13 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeL
 
 func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []interface{}) error {
 	return s.targetDB.Transaction(func(tx *gorm.DB) error {
+		// Disable foreign key enforcement for SQLite
+		tx.Exec("PRAGMA foreign_keys = OFF")
+
+		defer func() {
+			// Re-enable foreign keys after operation
+			tx.Exec("PRAGMA foreign_keys = ON")
+		}()
 
 		tableName := s.GetEntityTableName(entity)
 		if tableName == "" {
