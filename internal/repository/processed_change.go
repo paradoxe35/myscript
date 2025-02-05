@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -44,6 +46,10 @@ func (r *ProcessedChangeRepository) DeleteProcessedChange(fileID string) error {
 		Unscoped().
 		Where("file_id = ?", fileID).
 		Delete(&ProcessedChange{}).Error
+}
+
+func (r *ProcessedChangeRepository) DeleteOldProcessedChanges(timeOffset time.Time) error {
+	return r.db.Unscoped().Where("created_at < ?", timeOffset).Delete(&ProcessedChange{}).Error
 }
 
 func (r *ProcessedChangeRepository) SaveProcessedChange(fileID string) error {

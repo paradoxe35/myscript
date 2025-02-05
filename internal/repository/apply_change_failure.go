@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -28,6 +30,10 @@ func (r *RemoteApplyFailureRepository) GetRemoteApplyFailure(fileID string) *Rem
 	r.db.Where("file_id = ?", fileID).First(&remoteApplyFailure)
 
 	return &remoteApplyFailure
+}
+
+func (r *RemoteApplyFailureRepository) DeleteOldRemoteApplyFailures(timeOffset time.Time) error {
+	return r.db.Unscoped().Where("created_at < ?", timeOffset).Delete(&RemoteApplyFailure{}).Error
 }
 
 func (r *RemoteApplyFailureRepository) SaveRemoteApplyFailure(fileID string, count int) *RemoteApplyFailure {

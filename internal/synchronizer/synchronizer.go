@@ -244,11 +244,15 @@ func (s *Synchronizer) canIgnoreRemoteApplyFailure(file *File, err error) bool {
 
 	failure := s.remoteApplyFailureRepository.GetRemoteApplyFailure(file.ID)
 	if failure.Count > maxFailures {
-		slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes (Ignored, too many failures)", "error", err)
+		slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes (Ignored, too many failures)",
+			"filename", file.Name, "error", err,
+		)
 		return true
 	}
 
-	slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes", "error", err)
+	slog.Error("Synchronizer[applyRemoteChanges] Failed to apply remote changes",
+		"filename", file.Name, "error", err,
+	)
 	s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, failure.Count+1)
 	return false
 }
@@ -262,7 +266,9 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	// Create a temporary directory for decompression
 	tmpDir, err := os.MkdirTemp("", "snapshot")
 	if err != nil {
-		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to create temporary directory", "error", err)
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to create temporary directory",
+			"filename", file.Name, "error", err,
+		)
 		return err
 	}
 	defer os.RemoveAll(tmpDir)
@@ -270,21 +276,27 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	// Decompress the file and get the path to the SQLite database
 	dbPath, err := DecompressSnapshotFile(fileContent, tmpDir)
 	if err != nil {
-		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to decompress snapshot file", "error", err)
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to decompress snapshot file",
+			"filename", file.Name, "error", err,
+		)
 		return err
 	}
 
 	// Mount the database
 	sourceDB, err := database.MountDatabase(dbPath)
 	if err != nil {
-		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to mount database", "error", err)
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to mount database",
+			"filename", file.Name, "error", err,
+		)
 		return err
 	}
 
 	// Synchronize the databases
 	dbSynchronizer := database.NewDatabaseSynchronizer(sourceDB, s.mainDB)
 	if err := dbSynchronizer.SynchronizeAll(); err != nil {
-		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to synchronize databases", "error", err)
+		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to synchronize databases",
+			"filename", file.Name, "error", err,
+		)
 		return err
 	}
 
@@ -423,13 +435,28 @@ func (s *Synchronizer) createDBSnapshot() error {
 
 	// Prune old changes
 	pruneTimeOffset := newSnapshot.CreatedTime.Add(-time.Second) // Prune one second before the snapshot
+	s.clearupAfterSnapshot(pruneTimeOffset)
+
+	return nil
+}
+
+func (s *Synchronizer) clearupAfterSnapshot(pruneTimeOffset time.Time) error {
 	if err := s.driveService.PruneOldChanges(pruneTimeOffset); err != nil {
-		slog.Error("Synchronizer[createSnapshot]: failed to prune old changes (retry again)", "error", err)
+		slog.Error("Synchronizer[clearupAfterSnapshot]: failed to prune old changes (retry again)", "error", err)
 
 		// Retry again after 5 seconds
 		time.Sleep(time.Second * 5)
-		return s.driveService.PruneOldChanges(pruneTimeOffset)
+		s.driveService.PruneOldChanges(pruneTimeOffset)
 	}
+
+	// Prune old apply failures
+	s.remoteApplyFailureRepository.DeleteOldRemoteApplyFailures(pruneTimeOffset)
+
+	// Prune old processed changes
+	s.processedChangeRepository.DeleteOldProcessedChanges(pruneTimeOffset)
+
+	// prune old change logs
+	s.changeLogRepository.DeleteOldChangeLogs(pruneTimeOffset)
 
 	return nil
 }

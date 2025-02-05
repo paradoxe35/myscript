@@ -3,6 +3,7 @@ package repository
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -96,4 +97,8 @@ func (r *ChangeLogRepository) MarkChangeLogAsSyncedIfNotChanged(item ChangeLog) 
 
 func (r *ChangeLogRepository) MarkChangeLogAsSynced(item ChangeLog) {
 	r.db.Model(&ChangeLog{}).Where("id = ?", item.ID).Update("synced", true)
+}
+
+func (r *ChangeLogRepository) DeleteOldChangeLogs(timeOffset time.Time) error {
+	return r.db.Unscoped().Where("created_at < ? and synced = ?", timeOffset, true).Delete(&ChangeLog{}).Error
 }

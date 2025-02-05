@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"myscript/internal/repository"
 	"reflect"
 	"sync"
@@ -105,7 +106,7 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 
 		tableName := s.GetEntityTableName(entity)
 		if tableName == "" {
-			return fmt.Errorf("failed to get table name for %T", entity)
+			return fmt.Errorf("databaseSynchronizer[synchronizeEntity] Failed to get table name for %T", entity)
 		}
 
 		// Get sync rules based on entity type
@@ -115,6 +116,9 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 		if rules.Strategy != nil {
 			for _, record := range records {
 				if err := rules.Strategy(record); err != nil {
+					slog.Error("DatabaseSynchronizer[synchronizeEntity] Failed to apply custom sync strategy",
+						"table", tableName, "error", err,
+					)
 					return err
 				}
 
@@ -135,6 +139,9 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 					Create(record).Error
 
 				if err != nil {
+					slog.Error("DatabaseSynchronizer[synchronizeEntity] Failed to create record with conflict columns",
+						"table", tableName, "error", err,
+					)
 					return err
 				}
 
@@ -146,6 +153,9 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 		// Fallback to basic save
 		for _, record := range records {
 			if err := tx.Table(tableName).Save(record).Error; err != nil {
+				slog.Error("DatabaseSynchronizer[synchronizeEntity] Failed to save record",
+					"table", tableName, "error", err,
+				)
 				return err
 			}
 
@@ -188,6 +198,7 @@ func (s *DatabaseSynchronizer) synchronizeSourceEntity(entity interface{}) error
 
 	records, err := s.getSourceRecords(entity)
 	if err != nil {
+		slog.Error("DatabaseSynchronizer[synchronizeSourceEntity] Failed to get source records", "error", err)
 		return err
 	}
 
