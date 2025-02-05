@@ -21,13 +21,13 @@ func (a *App) IsGoogleAuthEnabled() bool {
 
 func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
 	return repository.
-		NewGoogleAuthTokenRepository(a.UnSyncedDB).
+		NewGoogleAuthTokenRepository(a.unSyncedDB).
 		GetGoogleAuthToken()
 }
 
 func (a *App) DeleteGoogleAuthToken() {
 	repository.
-		NewGoogleAuthTokenRepository(a.UnSyncedDB).
+		NewGoogleAuthTokenRepository(a.unSyncedDB).
 		DeleteGoogleAuthToken()
 
 	a.synchronizer.sync.StopScheduler()

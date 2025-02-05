@@ -17,7 +17,7 @@ type App struct {
 	ctx context.Context
 
 	mainDB         *gorm.DB
-	UnSyncedDB     *gorm.DB
+	unSyncedDB     *gorm.DB
 	audioSequencer *microphone.AudioSequencer
 	lwt            *local_whisper.LocalWhisperTranscriber
 	updater        *updater.Updater
@@ -41,7 +41,7 @@ func WithMainDB(db *gorm.DB) AppOption {
 
 func WithUnSyncedDB(db *gorm.DB) AppOption {
 	return func(app *App) {
-		app.UnSyncedDB = db
+		app.unSyncedDB = db
 	}
 }
 
