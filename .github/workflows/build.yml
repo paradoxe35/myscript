@@ -11,7 +11,7 @@ jobs:
     name: Build for all platforms
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false  # Continue with other builds even if one fails
+      fail-fast: false # Continue with other builds even if one fails
       matrix:
         include:
           # Docker builds for Windows and Linux
@@ -78,20 +78,28 @@ jobs:
             --build-arg BUILDARCH=${{ matrix.arch }} \
             --build-arg APP_NAME=${{ github.event.repository.name }} \
             -t builder .
-          
+
           # Create artifacts directory
           mkdir -p build/bin
-          
+
           # Run container and copy artifacts
           docker run --rm -v ${{ github.workspace }}/build/bin:/artifacts builder
 
       - name: Process Windows Artifacts
         if: matrix.build-type == 'docker'
         run: |
-          if [ -f "build/bin/*-installer.exe" ]; then
-            mv build/bin/*-installer.exe build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe
-            find build/bin -type f -name "*.exe" -not -name "*-installer.exe" -exec mv {} build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe \;
-          fi
+          shopt -s nullglob  # Avoid errors if no matching files
+
+          # Rename installer files (if any)
+          for file in build/bin/*-installer.exe; do
+            mv "$file" "build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe"
+          done
+
+          # Rename other .exe files
+          for file in build/bin/*.exe; do
+            [[ "$file" == *"-installer.exe" ]] && continue  # Skip installer files
+            mv "$file" "build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
+          done
 
       - name: Process Linux Artifacts
         if: matrix.build-type == 'docker'
