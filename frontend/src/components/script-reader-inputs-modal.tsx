@@ -122,9 +122,19 @@ function useLanguages() {
 
   // Set page language
   useEffect(() => {
-    if (activePageID && selectedLanguageCode) {
-      transcriberStore.setPageLanguage(activePageID, selectedLanguageCode);
-    }
+    const cacheSelectedLanguageCode = async () => {
+      if (activePageID && selectedLanguageCode) {
+        const cachedLanguage = await transcriberStore.getPageLanguage(
+          activePageID
+        );
+
+        if (cachedLanguage !== selectedLanguageCode) {
+          transcriberStore.setPageLanguage(activePageID, selectedLanguageCode);
+        }
+      }
+    };
+
+    cacheSelectedLanguageCode();
   }, [activePageID, selectedLanguageCode]);
 
   useEffect(() => {
