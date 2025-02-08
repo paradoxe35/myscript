@@ -131,7 +131,7 @@ jobs:
       - name: Build macOS
         if: matrix.build-type == 'native'
         run: |
-          wails build -platform darwin/${{ matrix.arch }}
+          wails build -platform darwin/${{ matrix.arch }} -skipbindings
           cd build/bin
           zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
