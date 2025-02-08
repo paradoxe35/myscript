@@ -71,3 +71,16 @@ func IsAOlderThanBByOneWeek(a, b time.Time) bool {
 	// Check if duration is >= 7 days
 	return duration >= 7*24*time.Hour
 }
+
+func UniqueStrings(input []string) []string {
+	seen := make(map[string]bool)
+	result := []string{}
+
+	for _, value := range input {
+		if !seen[value] {
+			seen[value] = true
+			result = append(result, value)
+		}
+	}
+	return result
+}

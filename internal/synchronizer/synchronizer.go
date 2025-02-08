@@ -182,6 +182,8 @@ func (s *Synchronizer) mergeAffectedTables(affectedTables database.AffectedTable
 		} else {
 			s.affectedTables[table] = append(s.affectedTables[table], columns...)
 		}
+
+		s.affectedTables[table] = utils.UniqueStrings(s.affectedTables[table])
 	}
 }
 
