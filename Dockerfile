@@ -22,15 +22,8 @@ ENV CGO_CFLAGS_ALLOW="-mfma|-mf16c"
 
 # Needed atm due to https://github.com/wailsapp/wails/issues/1921
 RUN set -exo pipefail; \
-    if [ "${BUILDARCH}" = "amd64" ]; then \
     GOOS=linux GOARCH=amd64 CC=x86_64-linux-gnu-gcc wails build -platform linux/amd64 -o ${APP_NAME}-amd64; \
-    GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc wails build -skipbindings -s -platform linux/arm64 -o ${APP_NAME}-arm64; \
-    GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc wails build -skipbindings -s -platform windows/amd64; \
-    else \
-    GOOS=linux GOARCH=arm64 CC=aarch64-linux-gnu-gcc wails build -platform linux/arm64 -o ${APP_NAME}-arm64; \
-    GOOS=linux GOARCH=amd64 CC=x86_64-linux-gnu-gcc wails build -skipbindings -s -platform linux/amd64 -o ${APP_NAME}-amd64; \
-    GOOS=windows GOARCH=amd64 CC=x86_64-w64-mingw32-gcc wails build -skipbindings -s -platform windows/amd64 -nsis; \
-    fi;
+    GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc-posix CXX=x86_64-w64-mingw32-g++-posix wails build -skipbindings -s -platform windows/amd64 -webview2 embed -nsis;
 
 ENTRYPOINT [ "/bin/bash" ]
 

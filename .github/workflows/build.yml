@@ -8,19 +8,24 @@ on:
 
 jobs:
   build:
+    name: Build for all platforms
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false  # Continue with other builds even if one fails
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-        arch: [amd64, arm64]
-        exclude:
-          # Windows ARM64 needs special handling
-          - os: windows-latest
-            arch: arm64
-          # Linux ARM64 builds might need specific runners
+        include:
+          # Docker builds for Windows and Linux
           - os: ubuntu-latest
+            build-type: docker
+            arch: amd64
+          # macOS builds
+          - os: macos-latest
+            build-type: native
+            arch: amd64
+          - os: macos-latest
+            build-type: native
             arch: arm64
 
-    runs-on: ${{ matrix.os }}
     env:
       CGO_CFLAGS_ALLOW: "-mfma|-mf16c"
       NODE_OPTIONS: "--max-old-space-size=4096"
@@ -28,6 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Common setup steps
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -60,58 +66,80 @@ jobs:
           cd internal/transcribe/wait.ai
           node keys.js ${{ secrets.WAIT_API_KEYS }}
 
+      # Docker-specific steps
+      - name: Set up Docker Buildx
+        if: matrix.build-type == 'docker'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build with Docker
+        if: matrix.build-type == 'docker'
+        run: |
+          docker build \
+            --build-arg BUILDARCH=${{ matrix.arch }} \
+            --build-arg APP_NAME=${{ github.event.repository.name }} \
+            -t builder .
+          
+          # Create artifacts directory
+          mkdir -p build/bin
+          
+          # Run container and copy artifacts
+          docker run --rm -v ${{ github.workspace }}/build/bin:/artifacts builder
+
+      - name: Process Windows Artifacts
+        if: matrix.build-type == 'docker'
+        run: |
+          if [ -f "build/bin/*-installer.exe" ]; then
+            mv build/bin/*-installer.exe build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe
+            find build/bin -type f -name "*.exe" -not -name "*-installer.exe" -exec mv {} build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe \;
+          fi
+
+      - name: Process Linux Artifacts
+        if: matrix.build-type == 'docker'
+        run: |
+          if [ -f "build/bin/${{ github.event.repository.name }}-amd64" ] || [ -f "build/bin/${{ github.event.repository.name }}" ]; then
+            cd build/bin
+            # Create a temporary directory for Linux files
+            mkdir linux_files
+            # Move Linux binaries to temp directory (excluding .exe files)
+            find . -type f -not -name "*.exe" -not -name "*.zip" -exec mv {} linux_files/ \;
+            # Create tarball from Linux files only
+            cd linux_files
+            tar czf ../${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz *
+            cd ..
+            # Clean up the temporary directory
+            rm -rf linux_files
+          fi
+
+      # macOS-specific steps
       - name: Set up Go
+        if: matrix.build-type == 'native'
         uses: actions/setup-go@v5
         with:
           go-version: "1.23"
 
-      - name: Install Wails and garble
+      - name: Install Wails
+        if: matrix.build-type == 'native'
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Install Dependencies (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install mingw cmake nsis -y
-
-      - name: Install Dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libsdl2-dev libwebkit2gtk-4.1-dev
-
-      - name: Install Dependencies (macOS)
-        if: matrix.os == 'macos-latest'
+      - name: Install macOS Dependencies
+        if: matrix.build-type == 'native'
         run: |
           brew update
           brew install sdl2 cmake gcc
 
-      - name: Build Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          wails build -platform windows/${{ matrix.arch }} -nsis -webview2 embed
-          mv build/bin/*-installer.exe build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe
-          Get-ChildItem -Path build/bin -Exclude *-installer.exe | Rename-Item -NewName "${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
-
-      - name: Build Linux
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          wails build -platform linux/${{ matrix.arch }} -tags webkit2_41 -webview2 embed
-          cd build/bin
-          tar czf ${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz *
-
       - name: Build macOS
-        if: matrix.os == 'macos-latest'
+        if: matrix.build-type == 'native'
         run: |
-          wails build -platform darwin/${{ matrix.arch }} -webview2 embed
-          # Create zip archive
+          wails build -platform darwin/${{ matrix.arch }}
           cd build/bin
           zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
+      # Common upload step
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-${{ matrix.arch }}-build
+          name: ${{ matrix.os }}-${{ matrix.arch }}-build
           path: build/bin/*
           retention-days: 1
 
