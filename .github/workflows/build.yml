@@ -85,10 +85,35 @@ jobs:
           # Run container and copy artifacts
           docker run --rm -v ${{ github.workspace }}/build/bin:/artifacts builder
 
+      # Add this step before "Process Linux Artifacts"
+      - name: Create .deb Package with nFPM
+        if: matrix.build-type == 'docker'
+        run: |
+          # Ensure target directory exists
+          mkdir -p build/bin
+
+          # Create .deb package using nFPM Docker image
+          docker run --rm \
+            -v "$PWD:/tmp" \
+            -w /tmp \
+            goreleaser/nfpm package \
+            --config /tmp/nfpm.yaml \
+            --target /tmp/build/bin \
+            --packager deb
+
+      - name: Process .deb Package Artifacts
+        if: matrix.build-type == 'docker'
+        run: |
+          shopt -s nullglob
+
+          for file in build/bin/*.deb; do
+            mv "$file" "build/bin/${{ github.event.repository.name }}-linux-${{ matrix.arch }}.deb"
+          done
+
       - name: Process Windows Artifacts
         if: matrix.build-type == 'docker'
         run: |
-          shopt -s nullglob  # Avoid errors if no matching files
+          shopt -s nullglob
 
           # Rename installer files (if any)
           for file in build/bin/*-installer.exe; do
@@ -108,8 +133,8 @@ jobs:
             cd build/bin
             # Create a temporary directory for Linux files
             mkdir linux_files
-            # Move Linux binaries to temp directory (excluding .exe files)
-            find . -type f -not -name "*.exe" -not -name "*.zip" -exec mv {} linux_files/ \;
+            # Move Linux binaries to temp directory (Exclude .exe, .zip, and .deb files from tarball)
+            find . -type f -not -name "*.exe" -not -name "*.zip" -not -name "*.deb" -exec mv {} linux_files/ \;
             # Create tarball from Linux files only
             cd linux_files
             tar czf ../${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz *
@@ -171,6 +196,7 @@ jobs:
             artifacts/**/*.exe
             artifacts/**/*.tar.gz
             artifacts/**/*.zip
+            artifacts/**/*.deb
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
