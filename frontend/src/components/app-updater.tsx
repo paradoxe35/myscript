@@ -43,7 +43,9 @@ export function AppUpdater() {
       toast.success("Update completed successfully! Restarting...");
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
-      toast.error("Update failed. Please try again.");
+      toast.error("Update failed: " + errorMessage(error), {
+        duration: 15 * 1000,
+      });
       LogError("Update error: " + errorMessage(error));
     } finally {
       setIsUpdating(false);

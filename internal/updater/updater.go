@@ -101,7 +101,13 @@ func (u *Updater) PerformUpdate() error {
 		return err
 	}
 
-	assetName := u.getAssetName()
+	var assetName string
+	if runtime.GOOS == "linux" && u.isDebian() {
+		assetName = u.getDebianAssetName(release)
+	} else {
+		assetName = u.getAssetName()
+	}
+
 	var asset *github.ReleaseAsset
 	for _, a := range release.Assets {
 		if a.GetName() == assetName {
@@ -139,6 +145,23 @@ func (u *Updater) getAssetName() string {
 	}
 
 	return fmt.Sprintf(ASSET_NAME+"-%s-%s.%s", os, arch, ext)
+}
+
+func (u *Updater) getDebianAssetName(r *github.RepositoryRelease) string {
+	arch := runtime.GOARCH
+	// Map Go architecture names to Debian architecture names
+	archMap := map[string]string{
+		"amd64": "amd64",
+		"386":   "i386",
+		"arm64": "arm64",
+		"arm":   "armhf",
+	}
+	debArch, ok := archMap[arch]
+	if !ok {
+		debArch = arch
+	}
+
+	return fmt.Sprintf("%s_%s_%s.deb", ASSET_NAME, r.GetTagName(), debArch)
 }
 
 func (u *Updater) downloadFile(client *github.Client, asset *github.ReleaseAsset, downloadPath string) error {
@@ -181,6 +204,8 @@ func (u *Updater) handleWindowsUpdate(installerPath string) error {
 func (u *Updater) handleUnixUpdate(archivePath string) error {
 	var err error
 	switch {
+	case strings.HasSuffix(archivePath, ".deb"):
+		err = u.handleDebianUpdate(archivePath)
 	case strings.HasSuffix(archivePath, ".zip"):
 		err = u.extractZip(archivePath)
 	case strings.HasSuffix(archivePath, ".tar.gz"):
@@ -194,6 +219,60 @@ func (u *Updater) handleUnixUpdate(archivePath string) error {
 	}
 
 	return u.restartApplication()
+}
+
+func (u *Updater) handleDebianUpdate(debPath string) error {
+	// Check if running as root
+	if os.Geteuid() != 0 {
+		return fmt.Errorf("debian package installation requires root privileges")
+	}
+
+	// Install the .deb package using dpkg
+	cmd := exec.Command("dpkg", "-i", debPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		// If dpkg fails, try to fix dependencies
+		fixCmd := exec.Command("apt-get", "install", "-f", "-y")
+		fixCmd.Stdout = os.Stdout
+		fixCmd.Stderr = os.Stderr
+		if fixErr := fixCmd.Run(); fixErr != nil {
+			return fmt.Errorf("failed to install package and fix dependencies: %v", fixErr)
+		}
+
+		// Retry the installation
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("failed to install package: %v", err)
+		}
+	}
+
+	// Clean up the downloaded .deb file
+	if err := os.Remove(debPath); err != nil {
+		fmt.Printf("Warning: failed to remove temporary file %s: %v\n", debPath, err)
+	}
+
+	return nil
+}
+
+func (u *Updater) isDebian() bool {
+	// Check for the existence of /etc/debian_version
+	if _, err := os.Stat("/etc/debian_version"); err == nil {
+		return true
+	}
+
+	// Alternative check using lsb_release command
+	cmd := exec.Command("lsb_release", "-i")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+
+	id := strings.ToLower(string(output))
+	return strings.Contains(id, "debian") ||
+		strings.Contains(id, "ubuntu") ||
+		strings.Contains(id, "mint") ||
+		strings.Contains(id, "elementary") ||
+		strings.Contains(id, "pop")
 }
 
 func (u *Updater) extractZip(archivePath string) error {
