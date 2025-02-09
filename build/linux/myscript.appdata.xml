@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+    <id>myscript.desktop</id>
+    <metadata_license>MIT</metadata_license>
+    <name>MyScript</name>
+    <summary>A Notion-like application for content producers</summary>
+    <description>
+        <p>Professional writing environment with advanced organization features...</p>
+    </description>
+    <categories>
+        <category>Office</category>
+        <category>Productivity</category>
+    </categories>
+    <url type="homepage">https://myscript.app</url>
+</component>

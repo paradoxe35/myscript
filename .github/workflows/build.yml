@@ -96,6 +96,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/tmp" \
             -w /tmp \
+            -e VERSION="${{ github.ref_name }}" \
             goreleaser/nfpm package \
             --config /tmp/nfpm.yaml \
             --target /tmp/build/bin \

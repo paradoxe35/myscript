@@ -1,12 +1,49 @@
 name: "myscript"
-version: "{{.Env.VERSION}}"
+version: "${VERSION}"
 arch: "amd64"
 platform: "linux"
 maintainer: "Paradoxe Ngwasi <paradoxngwasi@gmail.com>"
 description: "A Notion-like application tailored for content producers."
 license: "MIT"
+homepage: "https://myscript.app"
+vendor: "Paradoxe Ngwasi"
 contents:
-  - src: build/bin/myscript
-    dst: /usr/local/bin/myscript
+  # Binary
+  - src: build/bin/myscript-amd64
+    dst: /usr/bin/myscript
     file_info:
       mode: 0755
+
+  # Desktop Entry
+  - src: build/linux/myscript.desktop
+    dst: /usr/share/applications/myscript.desktop
+    file_info:
+      mode: 0644
+
+  # Application Icon
+  - src: build/appicon.png
+    dst: /usr/share/icons/hicolor/256x256/apps/myscript.png
+    file_info:
+      mode: 0644
+
+  # AppStream Metadata
+  - src: build/linux/myscript.appdata.xml
+    dst: /usr/share/metainfo/myscript.appdata.xml
+    file_info:
+      mode: 0644
+
+# Desktop integration dependencies
+depends:
+  - libgtk-3-0
+  - libnotify4
+  - libnss3
+  - libxss1
+  - libxtst6
+  - xdg-utils
+  - libatspi2.0-0
+  - libappindicator3-1
+
+# Maintainer scripts (create these in build/linux/)
+scripts:
+  postinstall: build/linux/postinst.sh
+  preremove: build/linux/prerm.sh

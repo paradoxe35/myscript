@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=MyScript
+Comment=A Notion-like application for content producers
+Exec=/usr/bin/myscript
+Icon=myscript
+Terminal=false
+Type=Application
+Categories=Office;Productivity;
+Keywords=Notion;Content;Writing;
