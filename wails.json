@@ -9,5 +9,8 @@
   "author": {
     "name": "Paradoxe Ng",
     "email": "contact@pngwasi.me"
+  },
+  "info": {
+    "productVersion": "1.0.0"
   }
 }
