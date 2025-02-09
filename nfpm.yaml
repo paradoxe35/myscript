@@ -4,7 +4,7 @@ arch: "amd64"
 platform: "linux"
 maintainer: "Paradoxe Ngwasi <paradoxngwasi@gmail.com>"
 description: "A Notion-like application tailored for content producers."
-license: "Proprietary"
+license: "MIT"
 contents:
   - src: build/bin/myscript
     dst: /usr/local/bin/myscript
