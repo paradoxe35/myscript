@@ -101,12 +101,7 @@ func (u *Updater) PerformUpdate() error {
 		return err
 	}
 
-	var assetName string
-	if runtime.GOOS == "linux" && u.isDebian() {
-		assetName = u.getDebianAssetName(release)
-	} else {
-		assetName = u.getAssetName()
-	}
+	assetName := u.getAssetName()
 
 	var asset *github.ReleaseAsset
 	for _, a := range release.Assets {
@@ -142,26 +137,11 @@ func (u *Updater) getAssetName() string {
 	ext := "tar.gz"
 	if os == "darwin" {
 		ext = "zip"
+	} else if os == "linux" && u.isDebian() {
+		ext = "deb"
 	}
 
 	return fmt.Sprintf(ASSET_NAME+"-%s-%s.%s", os, arch, ext)
-}
-
-func (u *Updater) getDebianAssetName(r *github.RepositoryRelease) string {
-	arch := runtime.GOARCH
-	// Map Go architecture names to Debian architecture names
-	archMap := map[string]string{
-		"amd64": "amd64",
-		"386":   "i386",
-		"arm64": "arm64",
-		"arm":   "armhf",
-	}
-	debArch, ok := archMap[arch]
-	if !ok {
-		debArch = arch
-	}
-
-	return fmt.Sprintf("%s_%s_%s.deb", ASSET_NAME, r.GetTagName(), debArch)
 }
 
 func (u *Updater) downloadFile(client *github.Client, asset *github.ReleaseAsset, downloadPath string) error {
