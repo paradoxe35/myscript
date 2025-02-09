@@ -63,7 +63,12 @@ jobs:
 
       - name: Update version wails.json
         run: |
-          sed -i "s/1.0.0/${GITHUB_REF_NAME#v}/g" wails.json
+          case "$(uname -s)" in
+            Darwin*) sed -i '' "s/1.0.0/${GITHUB_REF_NAME#v}/g" wails.json ;;
+            *) sed -i "s/1.0.0/${GITHUB_REF_NAME#v}/g" wails.json ;;
+          esac
+
+          cat wails.json
 
       - name: Create API Keys file
         run: |
