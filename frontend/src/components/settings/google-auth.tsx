@@ -43,7 +43,9 @@ function UserAuthorizedContent() {
       </Avatar>
 
       <h3 className="text-lg font-medium">{user_info?.name}</h3>
-      <p className="text-xs dark:text-white/50 text-slate-900/50">Synchronization is enabled.</p>
+      <p className="text-xs dark:text-white/50 text-slate-900/50">
+        Backup is enabled.
+      </p>
 
       <Button
         variant="secondary"

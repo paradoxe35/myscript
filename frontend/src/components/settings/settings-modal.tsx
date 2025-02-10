@@ -58,7 +58,7 @@ export function SettingsModal(props: PropsWithChildren) {
             </TabsTrigger>
 
             {cloud.cloudEnabled && (
-              <TabsTrigger value="cloud">Cloud</TabsTrigger>
+              <TabsTrigger value="cloud">Backup</TabsTrigger>
             )}
           </TabsList>
 
