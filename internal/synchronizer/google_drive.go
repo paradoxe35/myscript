@@ -257,21 +257,34 @@ func (s *GoogleDriveService) PruneOldChanges(timestamp time.Time) error {
 	}
 
 	var wg sync.WaitGroup
+	sem := make(chan struct{}, 20)
+
 	for _, file := range resp.Files {
+		// Acquire a semaphore slot (blocks if all 20 are in use)
+		sem <- struct{}{}
 		wg.Add(1)
+
 		go func(file *drive.File) {
 			defer wg.Done()
+			defer func() { <-sem }() // Release the semaphore slot when done
 
 			fileTime := s.parseTime(file.CreatedTime)
 			if fileTime.After(timestamp) || fileTime.Equal(timestamp) {
-				return
+				return // Skip deletion if the file is newer or equal to the threshold
 			}
 
 			err := s.service.Files.Delete(file.Id).Do()
 			if err != nil {
-				slog.Error("GoogleDriveService[PruneOldChanges] Unable to delete file", "fileName", file.Name, "error", err)
+				slog.Error(
+					"GoogleDriveService[PruneOldChanges] Unable to delete file",
+					"fileName", file.Name,
+					"error", err,
+				)
 			} else {
-				slog.Debug("GoogleDriveService[PruneOldChanges] File deleted", "fileName", file.Name)
+				slog.Debug(
+					"GoogleDriveService[PruneOldChanges] File deleted",
+					"fileName", file.Name,
+				)
 			}
 		}(file)
 	}
