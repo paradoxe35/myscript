@@ -112,6 +112,7 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 func (s *GoogleDriveService) files() *drive.FilesListCall {
 	return s.service.Files.List().
 		Spaces(PARENT_FOLDER).
+		PageSize(1000).
 		Fields("files(id, name, createdTime, mimeType), nextPageToken")
 }
 
