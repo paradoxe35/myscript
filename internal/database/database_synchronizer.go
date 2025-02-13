@@ -175,13 +175,13 @@ func (s *DatabaseSynchronizer) synchronizeEntity(entity interface{}, records []i
 	})
 }
 
-func (s *DatabaseSynchronizer) GetAffectedTables() map[string][]string {
+func (s *DatabaseSynchronizer) GetAffectedTables() AffectedTables {
 	return s.affectedTables
 }
 
 func (s *DatabaseSynchronizer) addAffectedTable(tableName string, record interface{}) {
 	if s.affectedTables == nil {
-		s.affectedTables = make(map[string][]string)
+		s.affectedTables = make(AffectedTables)
 	}
 
 	if record == nil {
@@ -194,6 +194,7 @@ func (s *DatabaseSynchronizer) addAffectedTable(tableName string, record interfa
 	}
 
 	recordId := repository.GetModelID(record)
+
 	s.affectedTables[tableName] = append(s.affectedTables[tableName], recordId)
 }
 
