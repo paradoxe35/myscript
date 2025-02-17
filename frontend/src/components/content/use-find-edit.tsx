@@ -43,8 +43,8 @@ export function FindReplaceWidget() {
 
         setShowReplace(false);
 
-        toastId = toast.custom(
-          (id) => (
+        toastId = toast.message("", {
+          description: (
             <TooltipProvider>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
@@ -142,7 +142,7 @@ export function FindReplaceWidget() {
                         size="sm"
                         onClick={() => {
                           setSearchTerm("");
-                          toast.dismiss(id);
+                          toast.dismiss(toastId);
                         }}
                       >
                         <X className="h-4 w-4" />
@@ -154,10 +154,8 @@ export function FindReplaceWidget() {
               </div>
             </TooltipProvider>
           ),
-          {
-            duration: Infinity,
-          }
-        );
+          duration: Infinity,
+        });
       } else if (e.key === "Escape") {
         setSearchTerm("");
         toast.dismiss(toastId);
