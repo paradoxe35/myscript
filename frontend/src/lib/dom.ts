@@ -1,9 +1,9 @@
 /**
- * @param {Node} element
+ * @param {Node} container
  * @returns
  */
-export const createTreeTextWalker = (element: Node) => {
-  return document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
+export const createTreeTextWalker = (container: Node) => {
+  return document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
     acceptNode: function (node) {
       if (!node.nodeValue || !node.nodeValue.length) {
         return NodeFilter.FILTER_SKIP;

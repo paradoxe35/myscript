@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,244 +18,134 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { createTreeTextWalker } from "@/lib/dom";
+import { useDebouncedCallback } from "use-debounce";
+import { useSyncRef } from "@/hooks/use-sync-ref";
 
-export function FindReplaceWidget() {
+const highlightClass = "bg-yellow-200";
+const matchClass = "bg-slate-700/45";
+
+type SearchMatch = {
+  node: Node;
+  start: number;
+  end: number;
+};
+
+type Hook = ReturnType<typeof useFindEditMatcher>;
+
+function useFindEditMatcher() {
   const [searchTerm, setSearchTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
-  const [matches, setMatches] = useState<{ node: Node; index: number }[]>([]);
+
+  const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
-  const [showReplace, setShowReplace] = useState(false);
+
   const highlightsRef = useRef<HTMLElement[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const cleanupHighlights = () => {
-    highlightsRef.current.forEach((highlight) => {
-      const text = document.createTextNode(highlight.textContent || "");
-      highlight.parentNode?.replaceChild(text, highlight);
-    });
-    highlightsRef.current = [];
-  };
+  const handleSearch = useDebouncedCallback((searchTerm: string) => {
+    if (!containerRef.current) {
+      return;
+    }
 
-  useEffect(() => {
-    let toastId: number | string | undefined;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        e.preventDefault();
-
-        setShowReplace(false);
-
-        toastId = toast.message("", {
-          description: (
-            <TooltipProvider>
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Find"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-8 w-48"
-                  />
-                  {showReplace && (
-                    <Input
-                      placeholder="Replace"
-                      value={replaceTerm}
-                      onChange={(e) => setReplaceTerm(e.target.value)}
-                      className="h-8 w-48"
-                    />
-                  )}
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground text-xs">
-                    {matches.length
-                      ? `${currentMatchIndex + 1} of ${matches.length}`
-                      : "No results"}
-                  </span>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handlePrevious}
-                        disabled={!matches.length}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Previous</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleNext}
-                        disabled={!matches.length}
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Next</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowReplace(!showReplace)}
-                      >
-                        <ArrowRightLeft className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {showReplace ? "Hide replace" : "Show replace"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleReplace}
-                        disabled={!matches.length}
-                      >
-                        <Replace className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Replace</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleReplaceAll}
-                        disabled={!matches.length}
-                      >
-                        <ClipboardCopy className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Replace all</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSearchTerm("");
-                          toast.dismiss(toastId);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Close</TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            </TooltipProvider>
-          ),
-          duration: Infinity,
-        });
-      } else if (e.key === "Escape") {
-        setSearchTerm("");
-        toast.dismiss(toastId);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [searchTerm, matches, currentMatchIndex, showReplace]);
-
-  useEffect(() => {
     cleanupHighlights();
 
+    const matchesArray: SearchMatch[] = [];
+    const walker = createTreeTextWalker(containerRef.current!);
+
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+
+      if (!node.textContent) {
+        continue;
+      }
+
+      const idx = node.textContent
+        .toLowerCase()
+        .indexOf(searchTerm.toLowerCase());
+
+      if (idx > -1) {
+        matchesArray.push({ node, start: idx, end: idx + searchTerm.length });
+      }
+    }
+
+    const highlights: HTMLElement[] = [];
+
+    matchesArray.forEach((match, idx) => {
+      const highlight = document.createElement("span");
+      highlight.classList.add(matchClass, `match-${idx}`);
+
+      const range = document.createRange();
+      range.setStart(match.node, match.start);
+      range.setEnd(match.node, match.end);
+      range.surroundContents(highlight);
+
+      highlights.push(highlight);
+    });
+
+    highlightsRef.current = highlights;
+    setMatches(matchesArray);
+    setCurrentMatchIndex(matchesArray.length > 0 ? 0 : -1);
+
+    if (matchesArray.length > 0) {
+      scrollToMatch(0);
+    }
+  }, 500);
+
+  useEffect(() => {
     if (!searchTerm) {
       setMatches([]);
       setCurrentMatchIndex(-1);
       return;
     }
 
-    const textNodes: Node[] = [];
-    const walker = document.createTreeWalker(
-      document.body,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
-
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      if (node.textContent?.includes(searchTerm)) {
-        textNodes.push(node);
-      }
-    }
-
-    const newHighlights: HTMLElement[] = [];
-    const matchesArray = textNodes.flatMap((node) => {
-      const indices = [];
-      let idx = node.textContent!.indexOf(searchTerm);
-      while (idx !== -1) {
-        indices.push({ node, index: idx });
-        idx = node.textContent!.indexOf(searchTerm, idx + searchTerm.length);
-      }
-      return indices;
-    });
-
-    matchesArray.forEach(({ node, index }) => {
-      const text = node.textContent || "";
-      const start = index;
-      const end = index + searchTerm.length;
-      const parent = node.parentNode;
-
-      if (parent) {
-        const before = text.slice(0, start);
-        const after = text.slice(end);
-        const highlight = document.createElement("span");
-        highlight.className = "bg-yellow-200";
-        highlight.textContent = text.slice(start, end);
-
-        const beforeNode = document.createTextNode(before);
-        const afterNode = document.createTextNode(after);
-
-        parent.insertBefore(beforeNode, node);
-        parent.insertBefore(highlight, node);
-        parent.insertBefore(afterNode, node);
-        parent.removeChild(node);
-
-        newHighlights.push(highlight);
-      }
-    });
-
-    highlightsRef.current = newHighlights;
-    setMatches(matchesArray);
-    setCurrentMatchIndex(matchesArray.length > 0 ? 0 : -1);
+    handleSearch(searchTerm);
 
     return () => cleanupHighlights();
-  }, [searchTerm]);
+  }, [searchTerm, containerRef]);
 
-  const handleNext = () => {
+  const cleanupHighlights = useCallback(() => {
+    highlightsRef.current.forEach((highlight) => {
+      const text = document.createTextNode(highlight.textContent || "");
+      highlight.parentNode?.replaceChild(text, highlight);
+    });
+    highlightsRef.current = [];
+  }, []);
+
+  const onSearchTerm = setSearchTerm;
+  const onReplaceTerm = setReplaceTerm;
+
+  const handleNext = useCallback(() => {
     setCurrentMatchIndex((prev) => (prev + 1) % matches.length);
     scrollToMatch(currentMatchIndex + 1);
-  };
+  }, []);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     setCurrentMatchIndex(
       (prev) => (prev - 1 + matches.length) % matches.length
     );
     scrollToMatch(currentMatchIndex - 1);
-  };
+  }, [currentMatchIndex, matches]);
 
-  const scrollToMatch = (index: number) => {
-    if (index >= 0 && index < matches.length) {
-      const { node, index: textIndex } = matches[index];
-      const range = document.createRange();
-      range.setStart(node, textIndex);
-      range.setEnd(node, textIndex + searchTerm.length);
-      range.getBoundingClientRect();
-      range.startContainer.parentElement?.scrollIntoView({ block: "center" });
-    }
-  };
+  const scrollToMatch = useCallback(
+    (index: number) => {
+      const c = containerRef.current;
+      // Update style of previous match
+      if (index > -1) {
+        const prevMatch = c?.querySelector(`.match-${index - 1}`);
+        prevMatch?.classList.remove(highlightClass);
+        prevMatch?.classList.add(matchClass);
+      }
 
-  const handleReplace = () => {
+      const match = c?.querySelector(`.match-${index}`);
+      match?.classList.remove(matchClass);
+      match?.classList.add(highlightClass);
+    },
+    [containerRef]
+  );
+
+  const handleReplace = useCallback(() => {
     if (currentMatchIndex === -1) return;
 
     const match = matches[currentMatchIndex];
@@ -269,9 +159,9 @@ export function FindReplaceWidget() {
     setCurrentMatchIndex(
       newMatches.length > 0 ? currentMatchIndex % newMatches.length : -1
     );
-  };
+  }, [currentMatchIndex, matches, searchTerm, replaceTerm]);
 
-  const handleReplaceAll = () => {
+  const handleReplaceAll = useCallback(() => {
     matches.forEach((match) => {
       const textNode = match.node;
       // @ts-ignore
@@ -282,7 +172,216 @@ export function FindReplaceWidget() {
     });
     setMatches([]);
     setCurrentMatchIndex(-1);
-  };
+  }, [matches, searchTerm, replaceTerm]);
 
-  return null;
+  const reset = useCallback(() => {
+    cleanupHighlights();
+
+    setSearchTerm("");
+    setReplaceTerm("");
+    setMatches([]);
+    setCurrentMatchIndex(-1);
+  }, []);
+
+  return {
+    containerRef,
+
+    replaceTerm,
+    searchTerm,
+    onReplaceTerm,
+    onSearchTerm,
+
+    matches,
+    currentMatchIndex,
+
+    reset,
+
+    handleNext,
+    handlePrevious,
+    handleReplace,
+    handleReplaceAll,
+  };
+}
+
+type ToastContentProps = {
+  onClose?: VoidFunction;
+  hook: Hook;
+};
+
+function ToastContent(props: ToastContentProps) {
+  const { hook } = props;
+
+  const [showReplace, setShowReplace] = useState(false);
+
+  const hasMatches = hook.matches.length > 0;
+
+  const hasNext =
+    hasMatches && hook.currentMatchIndex < hook.matches.length - 1;
+
+  const hasPrev = hasMatches && hook.currentMatchIndex > 0;
+
+  const canReplace =
+    hook.replaceTerm.length > 0 && hasMatches && hook.currentMatchIndex >= 0;
+
+  const canReplaceAll = hook.replaceTerm.length > 0 && hasMatches;
+
+  return (
+    <TooltipProvider>
+      <div
+        className={cn(
+          "flex flex-col gap-2",
+          "overflow-hidden rounded-md border p-3 shadow-lg transition-all"
+        )}
+      >
+        <div className="flex gap-2 flex-col">
+          <Input
+            placeholder="Find"
+            value={hook.searchTerm}
+            onChange={(e) => hook.onSearchTerm(e.target.value)}
+            className="h-8 w-48"
+          />
+
+          {showReplace && (
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Replace"
+                value={hook.replaceTerm}
+                onChange={(e) => hook.onReplaceTerm(e.target.value)}
+                className="h-8 w-48"
+              />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={hook.handleReplace}
+                    disabled={!canReplace}
+                  >
+                    <Replace className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Replace</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={hook.handleReplaceAll}
+                    disabled={!canReplaceAll}
+                  >
+                    <ClipboardCopy className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Replace all</TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground text-xs">
+            {hook.matches.length
+              ? `${hook.currentMatchIndex + 1} of ${hook.matches.length}`
+              : "No results"}
+          </span>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={hook.handlePrevious}
+                disabled={!hasPrev}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Previous</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={hook.handleNext}
+                disabled={!hasNext}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Next</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReplace(!showReplace)}
+              >
+                <ArrowRightLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {showReplace ? "Hide replace" : "Show replace"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="sm" onClick={props.onClose}>
+                <X className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Close</TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+export function useFindEdit() {
+  const hook = useFindEditMatcher();
+  const [toastId, setToastId] = useState<number | undefined>();
+
+  const handleClose = useCallback((toastId: any) => {
+    setToastId(undefined);
+    toast.dismiss(toastId);
+    hook.reset();
+  }, []);
+
+  useEffect(() => {
+    let toastId: number | string | undefined;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f" && !toastId) {
+        e.preventDefault();
+        setToastId(Math.random());
+      } else if (e.key === "Escape") {
+        handleClose(toastId);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [toastId]);
+
+  useEffect(() => {
+    if (toastId) {
+      toast.custom(
+        () => <ToastContent hook={hook} onClose={() => handleClose(toastId)} />,
+        {
+          id: toastId,
+          duration: Infinity,
+          onDismiss: () => setToastId(undefined),
+          onAutoClose: () => setToastId(undefined),
+        }
+      );
+    }
+  }, [toastId, hook]);
+
+  return hook.containerRef;
 }

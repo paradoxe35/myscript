@@ -7,18 +7,24 @@ import { ContentEditor } from "./content-editor";
 import { useContentZoomStore } from "@/store/content-zoom";
 import { useDebouncedCallback } from "use-debounce";
 
+import { useFindEdit } from "./use-find-edit";
+
 export function Content() {
   const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
   const canEdit = activePageStore.canEdit();
+
+  const containerRef = useFindEdit();
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
       <ContentTitle />
       <ResetScroll />
 
-      {canEdit && <ContentEditor />}
-      {!canEdit && <ContentRead />}
+      <div ref={containerRef}>
+        {canEdit && <ContentEditor />}
+        {!canEdit && <ContentRead />}
+      </div>
     </div>
   );
 }
