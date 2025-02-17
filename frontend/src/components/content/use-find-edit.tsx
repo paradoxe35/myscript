@@ -17,13 +17,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toast } from "sonner";
 import { createTreeTextWalker } from "@/lib/dom";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
 
-const highlightClass = "bg-yellow-200";
-const matchClass = "bg-slate-700/45";
+const highlightClass = ["bg-yellow-600/60"];
+const matchClass = ["dark:bg-slate-400/60", "bg-slate-700/45"];
 
 type SearchMatch = {
   node: Node;
@@ -50,6 +49,12 @@ function useFindEditMatcher() {
 
     cleanupHighlights();
 
+    searchTerm = searchTerm.trim();
+
+    if (searchTerm.length < 2) {
+      return;
+    }
+
     const matchesArray: SearchMatch[] = [];
     const walker = createTreeTextWalker(containerRef.current!);
 
@@ -60,12 +65,14 @@ function useFindEditMatcher() {
         continue;
       }
 
-      const idx = node.textContent
-        .toLowerCase()
-        .indexOf(searchTerm.toLowerCase());
+      let idx = node.nodeValue!.toLowerCase().indexOf(searchTerm.toLowerCase());
 
-      if (idx > -1) {
+      while (idx !== -1) {
         matchesArray.push({ node, start: idx, end: idx + searchTerm.length });
+        idx = node.nodeValue!.indexOf(
+          searchTerm.toLowerCase(),
+          idx + searchTerm.length
+        );
       }
     }
 
@@ -73,7 +80,7 @@ function useFindEditMatcher() {
 
     matchesArray.forEach((match, idx) => {
       const highlight = document.createElement("span");
-      highlight.classList.add(matchClass, `match-${idx}`);
+      highlight.classList.add(...matchClass, `match-${idx}`);
 
       const range = document.createRange();
       range.setStart(match.node, match.start);
@@ -96,6 +103,7 @@ function useFindEditMatcher() {
     if (!searchTerm) {
       setMatches([]);
       setCurrentMatchIndex(-1);
+      cleanupHighlights();
       return;
     }
 
@@ -133,13 +141,13 @@ function useFindEditMatcher() {
       // Update style of previous match
       if (index > -1) {
         const prevMatch = c?.querySelector(`.match-${index - 1}`);
-        prevMatch?.classList.remove(highlightClass);
-        prevMatch?.classList.add(matchClass);
+        prevMatch?.classList.remove(...highlightClass);
+        prevMatch?.classList.add(...matchClass);
       }
 
       const match = c?.querySelector(`.match-${index}`);
-      match?.classList.remove(matchClass);
-      match?.classList.add(highlightClass);
+      match?.classList.remove(...matchClass);
+      match?.classList.add(...highlightClass);
     },
     [containerRef]
   );
@@ -230,6 +238,7 @@ function ToastContent(props: ToastContentProps) {
         <div className="flex gap-2 flex-col">
           <Input
             placeholder="Find"
+            autoFocus
             value={hook.searchTerm}
             onChange={(e) => hook.onSearchTerm(e.target.value)}
             className="h-8 w-48"
@@ -348,8 +357,11 @@ export function useFindEdit() {
 
   const handleClose = useCallback((t: typeof toaster) => {
     t?.dismiss();
-    setToaster(undefined);
-    hook.reset();
+
+    requestAnimationFrame(() => {
+      setToaster(undefined);
+      hook.reset();
+    });
   }, []);
 
   useEffect(() => {
