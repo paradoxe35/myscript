@@ -19,7 +19,7 @@ import (
 )
 
 func (a *App) IsGoogleAuthEnabled() bool {
-	return a.synchronizer.googleClient.HasCredentials()
+	return a.googleClient.HasCredentials()
 }
 
 func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
@@ -33,11 +33,11 @@ func (a *App) DeleteGoogleAuthToken() {
 		NewGoogleAuthTokenRepository(a.unSyncedDB).
 		DeleteGoogleAuthToken()
 
-	a.synchronizer.sync.StopScheduler()
+	a.synchronizer.StopScheduler()
 }
 
 func (a *App) RefreshGoogleAuthToken() (*repository.GoogleAuthToken, error) {
-	_, err := a.synchronizer.googleClient.GetClientFromSavedToken()
+	_, err := a.googleClient.GetClientFromSavedToken()
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (a *App) RefreshGoogleAuthToken() (*repository.GoogleAuthToken, error) {
 }
 
 func (a *App) StopSynchronizer() {
-	a.synchronizer.sync.StopScheduler()
+	a.synchronizer.StopScheduler()
 }
 
 // This function is being called from the frontend
@@ -55,18 +55,18 @@ func (a *App) StartSynchronizer() error {
 	var err error
 
 	if utils.HasInternet() {
-		httpClient, err = a.synchronizer.googleClient.GetClientFromSavedToken()
+		httpClient, err = a.googleClient.GetClientFromSavedToken()
 		if err != nil {
 			slog.Error("[StartSynchronizer] Error getting Google client", "error", err)
 			return err
 		}
 	} else {
-		token := a.synchronizer.googleClient.GetSavedToken()
+		token := a.googleClient.GetSavedToken()
 		if token == nil {
 			return errors.New("no token found")
 		}
 
-		httpClient, err = a.synchronizer.googleClient.GetClient(token.AuthToken.Data())
+		httpClient, err = a.googleClient.GetClient(token.AuthToken.Data())
 		if err != nil {
 			return err
 		}
@@ -77,19 +77,19 @@ func (a *App) StartSynchronizer() error {
 		return err
 	}
 
-	a.synchronizer.sync.SetDriveService(googleDriveService)
+	a.synchronizer.SetDriveService(googleDriveService)
 
 	// Set on sync success callback
-	a.synchronizer.sync.SetOnSyncSuccess(func(affectedTables database.AffectedTables) {
+	a.synchronizer.SetOnSyncSuccess(func(affectedTables database.AffectedTables) {
 		runtime.EventsEmit(a.ctx, "on-sync-success", affectedTables)
 	})
 
 	// Set on sync failure callback
-	a.synchronizer.sync.SetOnSyncFailure(func(err error) {
+	a.synchronizer.SetOnSyncFailure(func(err error) {
 		runtime.EventsEmit(a.ctx, "on-sync-failure", err.Error())
 	})
 
-	return a.synchronizer.sync.StartScheduler()
+	return a.synchronizer.StartScheduler()
 }
 
 // Just to get the affected tables binding generated
@@ -103,7 +103,6 @@ func (a *App) StartGoogleAuthorization() error {
 
 	done := make(chan bool)
 	ticker := time.NewTicker(2 * time.Minute)
-	googleClient := a.synchronizer.googleClient
 
 	tmpServer := synchronizer.NewAuthServerRedirection()
 
@@ -134,7 +133,7 @@ func (a *App) StartGoogleAuthorization() error {
 			return
 		}
 
-		_, err := googleClient.SaveAuthToken(authorizationCode, addr)
+		_, err := a.googleClient.SaveAuthToken(authorizationCode, addr)
 		if err != nil {
 			slog.Error("Error saving Google authorization token", "error", err)
 			runtime.EventsEmit(a.ctx, "on-google-authorization-error", err.Error())
@@ -142,7 +141,7 @@ func (a *App) StartGoogleAuthorization() error {
 		}
 	})
 
-	if authURL, err := googleClient.GenerateAuthURL(addr); err != nil {
+	if authURL, err := a.googleClient.GenerateAuthURL(addr); err != nil {
 		return err
 	} else {
 		runtime.BrowserOpenURL(a.ctx, authURL)

@@ -88,11 +88,8 @@ func main() {
 		WithAudioSequencer(microphone.NewAudioSequencer()),
 		WithUpdater(appUpdater),
 
-		// Synchronizer
-		WithSynchronizer(
-			WithSync(sync),
-			WithGoogleClient(googleClient),
-		),
+		WithGoogleClient(googleClient),
+		WithSynchronizer(sync),
 	)
 
 	// Create application with options

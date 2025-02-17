@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Toast, ToastClose, ToastDescription } from "@/components/ui/toast";
 import {
   ChevronLeft,
   ChevronRight,
@@ -18,10 +17,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 export function FindReplaceWidget() {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
   const [matches, setMatches] = useState<{ node: Node; index: number }[]>([]);
@@ -38,14 +36,15 @@ export function FindReplaceWidget() {
   };
 
   useEffect(() => {
+    let toastId: number | string | undefined;
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "f") {
-        // e.preventDefault();
+        e.preventDefault();
+
         setShowReplace(false);
 
-        const toaster = toast({
-          duration: 999999999,
-          description: (
+        toastId = toast.custom(
+          (id) => (
             <TooltipProvider>
               <div className="flex flex-col gap-2">
                 <div className="flex gap-2">
@@ -143,7 +142,7 @@ export function FindReplaceWidget() {
                         size="sm"
                         onClick={() => {
                           setSearchTerm("");
-                          toaster.dismiss();
+                          toast.dismiss(id);
                         }}
                       >
                         <X className="h-4 w-4" />
@@ -155,16 +154,19 @@ export function FindReplaceWidget() {
               </div>
             </TooltipProvider>
           ),
-        });
+          {
+            duration: Infinity,
+          }
+        );
       } else if (e.key === "Escape") {
         setSearchTerm("");
-        // toast.dismiss();
+        toast.dismiss(toastId);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toast, searchTerm, matches, currentMatchIndex, showReplace]);
+  }, [searchTerm, matches, currentMatchIndex, showReplace]);
 
   useEffect(() => {
     cleanupHighlights();

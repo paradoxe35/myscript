@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func readFile(file string) []byte {
+func readCredentialFile(file string) []byte {
 	fileData, err := credentials.ReadFile("credentials/" + file)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
@@ -30,11 +30,11 @@ func readFile(file string) []byte {
 }
 
 func readGoogleCredentials() []byte {
-	return readFile("google-credentials.json")
+	return readCredentialFile("google-credentials.json")
 }
 
 func readGitHubToken() string {
-	data := readFile("github-token.txt")
+	data := readCredentialFile("github-token.txt")
 	// Handle Windows/Unix line endings
 	token := strings.TrimSpace(strings.ReplaceAll(string(data), "\r\n", "\n"))
 

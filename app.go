@@ -24,17 +24,13 @@ type App struct {
 	audioSequencer *microphone.AudioSequencer
 	lwt            *local_whisper.LocalWhisperTranscriber
 	updater        *updater.Updater
-	synchronizer   *Synchronizer
-}
 
-type Synchronizer struct {
-	sync         *synchronizer.Synchronizer
+	// synchronizer
+	synchronizer *synchronizer.Synchronizer
 	googleClient *google.GoogleClient
 }
 
 type AppOption func(app *App)
-
-type SynchronizerOption func(synchronizer *Synchronizer)
 
 func WithMainDB(db *gorm.DB) AppOption {
 	return func(app *App) {
@@ -66,29 +62,15 @@ func WithUpdater(updater *updater.Updater) AppOption {
 	}
 }
 
-// Synchronizer Options
-
-func WithSynchronizer(options ...SynchronizerOption) AppOption {
-	sync := &Synchronizer{}
-
-	for _, option := range options {
-		option(sync)
-	}
-
+func WithGoogleClient(client *google.GoogleClient) AppOption {
 	return func(app *App) {
-		app.synchronizer = sync
+		app.googleClient = client
 	}
 }
 
-func WithGoogleClient(client *google.GoogleClient) SynchronizerOption {
-	return func(synch *Synchronizer) {
-		synch.googleClient = client
-	}
-}
-
-func WithSync(sync *synchronizer.Synchronizer) SynchronizerOption {
-	return func(synch *Synchronizer) {
-		synch.sync = sync
+func WithSynchronizer(synchronizer *synchronizer.Synchronizer) AppOption {
+	return func(app *App) {
+		app.synchronizer = synchronizer
 	}
 }
 
