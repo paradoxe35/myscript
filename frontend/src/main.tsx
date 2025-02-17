@@ -2,7 +2,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "./components/theme-provider";
 import App from "./app";
-import { Toaster } from "./components/ui/sonner";
+import { Toaster as SonnerToaster } from "./components/ui/sonner";
+import { Toaster } from "./components/ui/toaster";
 
 import { AsyncPromptModalProvider } from "./components/async-prompt-modal";
 import { AppErrorBoundary } from "./components/error-boundary";
@@ -20,7 +21,9 @@ root.render(
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AppErrorBoundary>
         <AsyncPromptModalProvider>
+          <SonnerToaster />
           <Toaster />
+
           <App />
         </AsyncPromptModalProvider>
       </AppErrorBoundary>

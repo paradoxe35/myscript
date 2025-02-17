@@ -18,10 +18,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { createTreeTextWalker } from "@/lib/dom";
 import { useDebouncedCallback } from "use-debounce";
-import { useSyncRef } from "@/hooks/use-sync-ref";
+import { useToast } from "@/hooks/use-toast";
 
 const highlightClass = "bg-yellow-200";
 const matchClass = "bg-slate-700/45";
@@ -227,12 +226,7 @@ function ToastContent(props: ToastContentProps) {
 
   return (
     <TooltipProvider>
-      <div
-        className={cn(
-          "flex flex-col gap-2",
-          "overflow-hidden rounded-md border p-3 shadow-lg transition-all"
-        )}
-      >
+      <div className={"flex flex-col gap-2"}>
         <div className="flex gap-2 flex-col">
           <Input
             placeholder="Find"
@@ -345,43 +339,44 @@ function ToastContent(props: ToastContentProps) {
 }
 
 export function useFindEdit() {
-  const hook = useFindEditMatcher();
-  const [toastId, setToastId] = useState<number | undefined>();
+  const { toast } = useToast();
 
-  const handleClose = useCallback((toastId: any) => {
-    setToastId(undefined);
-    toast.dismiss(toastId);
+  const hook = useFindEditMatcher();
+  const [toaster, setToaster] = useState<
+    ReturnType<typeof toast> | undefined
+  >();
+
+  const handleClose = useCallback((t: typeof toaster) => {
+    t?.dismiss();
+    setToaster(undefined);
     hook.reset();
   }, []);
 
   useEffect(() => {
-    let toastId: number | string | undefined;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "f" && !toastId) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f" && !toaster) {
         e.preventDefault();
-        setToastId(Math.random());
+        setToaster(toast({}));
       } else if (e.key === "Escape") {
-        handleClose(toastId);
+        handleClose(toaster);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toastId]);
+  }, [toaster]);
 
   useEffect(() => {
-    if (toastId) {
-      toast.custom(
-        () => <ToastContent hook={hook} onClose={() => handleClose(toastId)} />,
-        {
-          id: toastId,
-          duration: Infinity,
-          onDismiss: () => setToastId(undefined),
-          onAutoClose: () => setToastId(undefined),
-        }
-      );
+    if (toaster) {
+      toaster.update({
+        id: toaster.id,
+        duration: 9999999,
+        description: (
+          <ToastContent hook={hook} onClose={() => handleClose(toaster)} />
+        ),
+      });
     }
-  }, [toastId, hook]);
+  }, [toaster, hook]);
 
   return hook.containerRef;
 }
