@@ -44,7 +44,7 @@ const NovelEditor = (props: EditorProps) => {
   const zoomStore = useContentZoomStore();
 
   const className = cn(
-    "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full !pt-0",
+    "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full !pt-0 opacity-90",
 
     // zoomStore.zoom === 80 && "prose-sm",
     // zoomStore.zoom === 90 && "prose-base",

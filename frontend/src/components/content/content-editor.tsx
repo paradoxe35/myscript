@@ -6,6 +6,7 @@ import { useDebouncedCallback } from "use-debounce";
 import { useConfigStore } from "@/store/config";
 
 import hljs from "highlight.js";
+import { FindReplaceWidget } from "./use-find-edit";
 
 export function ContentEditor() {
   const config = useConfigStore((state) => state.config);
@@ -45,12 +46,16 @@ export function ContentEditor() {
   );
 
   return (
-    <NovelEditor
-      key={activePageStore.version}
-      openAIApiKey={config?.OpenAIApiKey}
-      initialContent={activePageStore.page?.blocks}
-      onUpdate={debouncedUpdates}
-      className="w-full block mx-auto max-w-[846px]"
-    />
+    <>
+      <FindReplaceWidget />
+
+      <NovelEditor
+        key={activePageStore.version}
+        openAIApiKey={config?.OpenAIApiKey}
+        initialContent={activePageStore.page?.blocks}
+        onUpdate={debouncedUpdates}
+        className="w-full block mx-auto max-w-[846px]"
+      />
+    </>
   );
 }
