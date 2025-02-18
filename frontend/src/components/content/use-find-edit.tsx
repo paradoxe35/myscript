@@ -20,14 +20,14 @@ import {
 import { createTreeTextWalker } from "@/lib/dom";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
+import { useSyncRef } from "@/hooks/use-sync-ref";
 
 const highlightClass = ["bg-yellow-600/60"];
 const matchClass = ["dark:bg-slate-400/60", "bg-slate-700/45"];
 
 type SearchMatch = {
   node: Node;
-  start: number;
-  end: number;
+  index: number;
 };
 
 type Hook = ReturnType<typeof useFindEditMatcher>;
@@ -39,6 +39,8 @@ function useFindEditMatcher() {
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
 
+  const $currentMatchIndex = useSyncRef(currentMatchIndex);
+
   const highlightsRef = useRef<HTMLElement[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,45 +51,66 @@ function useFindEditMatcher() {
 
     cleanupHighlights();
 
-    searchTerm = searchTerm.trim();
+    searchTerm = searchTerm.toLowerCase().trim();
 
     if (searchTerm.length < 2) {
       return;
     }
 
-    const matchesArray: SearchMatch[] = [];
-    const walker = createTreeTextWalker(containerRef.current!);
+    const textNodes: Node[] = [];
+
+    const walker = createTreeTextWalker(containerRef.current);
 
     while (walker.nextNode()) {
       const node = walker.currentNode;
-
       if (!node.textContent) {
         continue;
       }
 
-      let idx = node.nodeValue!.toLowerCase().indexOf(searchTerm.toLowerCase());
-
-      while (idx !== -1) {
-        matchesArray.push({ node, start: idx, end: idx + searchTerm.length });
-        idx = node.nodeValue!.indexOf(
-          searchTerm.toLowerCase(),
-          idx + searchTerm.length
-        );
+      if (node.textContent?.includes(searchTerm)) {
+        textNodes.push(node);
       }
     }
 
+    const matchesArray = textNodes.flatMap((node) => {
+      const indices = [];
+      const textContent = node.textContent!.toLowerCase();
+
+      let idx = textContent.indexOf(searchTerm);
+      while (idx !== -1) {
+        indices.push({ node, index: idx });
+        idx = textContent.indexOf(searchTerm, idx + searchTerm.length);
+      }
+      return indices;
+    });
+
     const highlights: HTMLElement[] = [];
 
-    matchesArray.forEach((match, idx) => {
-      const highlight = document.createElement("span");
-      highlight.classList.add(...matchClass, `match-${idx}`);
+    matchesArray.forEach(({ node, index }, idx) => {
+      const text = node.textContent || "";
+      const start = index;
+      const end = index + searchTerm.length;
+      const parent = node.parentNode;
 
-      const range = document.createRange();
-      range.setStart(match.node, match.start);
-      range.setEnd(match.node, match.end);
-      range.surroundContents(highlight);
+      if (parent) {
+        const before = text.slice(0, start);
+        const after = text.slice(end);
 
-      highlights.push(highlight);
+        const highlight = document.createElement("span");
+        highlight.classList.add(...matchClass, `match-${idx}`);
+
+        highlight.textContent = text.slice(start, end);
+
+        const beforeNode = document.createTextNode(before);
+        const afterNode = document.createTextNode(after);
+
+        parent.insertBefore(beforeNode, node);
+        parent.insertBefore(highlight, node);
+        parent.insertBefore(afterNode, node);
+        parent.removeChild(node);
+
+        highlights.push(highlight);
+      }
     });
 
     highlightsRef.current = highlights;
@@ -101,9 +124,9 @@ function useFindEditMatcher() {
 
   useEffect(() => {
     if (!searchTerm) {
+      cleanupHighlights();
       setMatches([]);
       setCurrentMatchIndex(-1);
-      cleanupHighlights();
       return;
     }
 
@@ -118,22 +141,22 @@ function useFindEditMatcher() {
       highlight.parentNode?.replaceChild(text, highlight);
     });
     highlightsRef.current = [];
-  }, []);
+  }, [highlightsRef]);
 
   const onSearchTerm = setSearchTerm;
   const onReplaceTerm = setReplaceTerm;
 
   const handleNext = useCallback(() => {
     setCurrentMatchIndex((prev) => (prev + 1) % matches.length);
-    scrollToMatch(currentMatchIndex + 1);
-  }, []);
+    scrollToMatch($currentMatchIndex.current + 1);
+  }, [$currentMatchIndex, matches]);
 
   const handlePrevious = useCallback(() => {
     setCurrentMatchIndex(
       (prev) => (prev - 1 + matches.length) % matches.length
     );
-    scrollToMatch(currentMatchIndex - 1);
-  }, [currentMatchIndex, matches]);
+    scrollToMatch($currentMatchIndex.current - 1);
+  }, [$currentMatchIndex, matches]);
 
   const scrollToMatch = useCallback(
     (index: number) => {
@@ -153,6 +176,8 @@ function useFindEditMatcher() {
   );
 
   const handleReplace = useCallback(() => {
+    const currentMatchIndex = $currentMatchIndex.current;
+
     if (currentMatchIndex === -1) return;
 
     const match = matches[currentMatchIndex];
@@ -166,7 +191,7 @@ function useFindEditMatcher() {
     setCurrentMatchIndex(
       newMatches.length > 0 ? currentMatchIndex % newMatches.length : -1
     );
-  }, [currentMatchIndex, matches, searchTerm, replaceTerm]);
+  }, [$currentMatchIndex, matches, searchTerm, replaceTerm]);
 
   const handleReplaceAll = useCallback(() => {
     matches.forEach((match) => {
@@ -287,7 +312,9 @@ function ToastContent(props: ToastContentProps) {
         <div className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground text-xs">
             {hook.matches.length
-              ? `${hook.currentMatchIndex + 1} of ${hook.matches.length}`
+              ? `${hook.currentMatchIndex + 1 || hook.matches.length} of ${
+                  hook.matches.length
+                }`
               : "No results"}
           </span>
 
@@ -368,6 +395,10 @@ export function useFindEdit() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "f" && !toaster) {
         e.preventDefault();
+
+        const selection = window.getSelection()?.toString();
+        hook.onSearchTerm(selection || "");
+
         setToaster(toast({}));
       } else if (e.key === "Escape") {
         handleClose(toaster);
@@ -384,7 +415,11 @@ export function useFindEdit() {
         id: toaster.id,
         duration: 9999999,
         description: (
-          <ToastContent hook={hook} onClose={() => handleClose(toaster)} />
+          <ToastContent
+            key={toaster.id}
+            hook={hook}
+            onClose={() => handleClose(toaster)}
+          />
         ),
       });
     }
