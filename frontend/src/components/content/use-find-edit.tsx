@@ -36,12 +36,13 @@ function useFindEditMatcher() {
   const [searchTerm, setSearchTerm] = useState("");
   const [replaceTerm, setReplaceTerm] = useState("");
 
-  const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
 
   const $currentMatchIndex = useSyncRef(currentMatchIndex);
 
-  const highlightsRef = useRef<HTMLElement[]>([]);
+  const [highlights, setHighlights] = useState<HTMLElement[]>([]);
+  const $highlights = useSyncRef(highlights);
+
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleSearch = useDebouncedCallback((searchTerm: string) => {
@@ -84,7 +85,7 @@ function useFindEditMatcher() {
       return indices;
     });
 
-    const highlights: HTMLElement[] = [];
+    const newHighlights: HTMLElement[] = [];
 
     matchesArray.forEach(({ node, index }, idx) => {
       const text = node.textContent || "";
@@ -109,23 +110,21 @@ function useFindEditMatcher() {
         parent.insertBefore(afterNode, node);
         parent.removeChild(node);
 
-        highlights.push(highlight);
+        newHighlights.push(highlight);
       }
     });
 
-    highlightsRef.current = highlights;
-    setMatches(matchesArray);
+    setHighlights(newHighlights);
     setCurrentMatchIndex(matchesArray.length > 0 ? 0 : -1);
 
     if (matchesArray.length > 0) {
-      scrollToMatch(0);
+      scrollToMatch(0, 0);
     }
   }, 500);
 
   useEffect(() => {
     if (!searchTerm) {
       cleanupHighlights();
-      setMatches([]);
       setCurrentMatchIndex(-1);
       return;
     }
@@ -136,34 +135,39 @@ function useFindEditMatcher() {
   }, [searchTerm, containerRef]);
 
   const cleanupHighlights = useCallback(() => {
-    highlightsRef.current.forEach((highlight) => {
+    $highlights.current.forEach((highlight) => {
       const text = document.createTextNode(highlight.textContent || "");
       highlight.parentNode?.replaceChild(text, highlight);
     });
-    highlightsRef.current = [];
-  }, [highlightsRef]);
+    setHighlights([]);
+  }, [$highlights]);
 
   const onSearchTerm = setSearchTerm;
   const onReplaceTerm = setReplaceTerm;
 
   const handleNext = useCallback(() => {
-    setCurrentMatchIndex((prev) => (prev + 1) % matches.length);
-    scrollToMatch($currentMatchIndex.current + 1);
-  }, [$currentMatchIndex, matches]);
+    const currentMatchIndex = $currentMatchIndex.current;
+
+    setCurrentMatchIndex((prev) => (prev + 1) % highlights.length);
+    scrollToMatch(currentMatchIndex + 1, currentMatchIndex);
+  }, [$currentMatchIndex, highlights]);
 
   const handlePrevious = useCallback(() => {
+    const currentMatchIndex = $currentMatchIndex.current;
+
     setCurrentMatchIndex(
-      (prev) => (prev - 1 + matches.length) % matches.length
+      (prev) => (prev - 1 + highlights.length) % highlights.length
     );
-    scrollToMatch($currentMatchIndex.current - 1);
-  }, [$currentMatchIndex, matches]);
+    scrollToMatch(currentMatchIndex - 1, currentMatchIndex);
+  }, [$currentMatchIndex, highlights]);
 
   const scrollToMatch = useCallback(
-    (index: number) => {
+    (index: number, currentMatchIndex: number) => {
       const c = containerRef.current;
+
       // Update style of previous match
-      if (index > -1) {
-        const prevMatch = c?.querySelector(`.match-${index - 1}`);
+      if (index !== currentMatchIndex) {
+        const prevMatch = c?.querySelector(`.match-${currentMatchIndex}`);
         prevMatch?.classList.remove(...highlightClass);
         prevMatch?.classList.add(...matchClass);
       }
@@ -171,6 +175,10 @@ function useFindEditMatcher() {
       const match = c?.querySelector(`.match-${index}`);
       match?.classList.remove(...matchClass);
       match?.classList.add(...highlightClass);
+      match?.parentElement?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
     },
     [containerRef]
   );
@@ -180,38 +188,38 @@ function useFindEditMatcher() {
 
     if (currentMatchIndex === -1) return;
 
-    const match = matches[currentMatchIndex];
-    const textNode = match.node;
-    const newText = textNode.textContent!.replace(searchTerm, replaceTerm);
-    textNode.textContent = newText;
+    const highlight = highlights[currentMatchIndex];
+    if (highlight) {
+      const textNode = document.createTextNode(replaceTerm);
+      highlight.parentNode?.replaceChild(textNode, highlight);
+    }
 
     // Update matches after replacement
-    const newMatches = matches.filter((_, i) => i !== currentMatchIndex);
-    setMatches(newMatches);
+    const newHighlights = highlights.filter((_, i) => i !== currentMatchIndex);
+    setHighlights(newHighlights);
+
     setCurrentMatchIndex(
-      newMatches.length > 0 ? currentMatchIndex % newMatches.length : -1
+      highlights.length > 0 ? currentMatchIndex % highlights.length : -1
     );
-  }, [$currentMatchIndex, matches, searchTerm, replaceTerm]);
+  }, [$currentMatchIndex, highlights, searchTerm, replaceTerm]);
 
   const handleReplaceAll = useCallback(() => {
-    matches.forEach((match) => {
-      const textNode = match.node;
+    highlights.forEach((highlight) => {
       // @ts-ignore
-      textNode.textContent = textNode.textContent?.replaceAll(
+      highlight.textContent = highlight.textContent?.replaceAll(
         searchTerm,
         replaceTerm
       );
     });
-    setMatches([]);
+    setHighlights([]);
     setCurrentMatchIndex(-1);
-  }, [matches, searchTerm, replaceTerm]);
+  }, [highlights, searchTerm, replaceTerm]);
 
   const reset = useCallback(() => {
     cleanupHighlights();
 
     setSearchTerm("");
     setReplaceTerm("");
-    setMatches([]);
     setCurrentMatchIndex(-1);
   }, []);
 
@@ -223,7 +231,7 @@ function useFindEditMatcher() {
     onReplaceTerm,
     onSearchTerm,
 
-    matches,
+    matches: highlights,
     currentMatchIndex,
 
     reset,
@@ -413,7 +421,7 @@ export function useFindEdit() {
     if (toaster) {
       toaster.update({
         id: toaster.id,
-        duration: 9999999,
+        duration: Infinity,
         description: (
           <ToastContent
             key={toaster.id}
