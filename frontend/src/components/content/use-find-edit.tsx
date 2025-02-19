@@ -25,11 +25,6 @@ import { useSyncRef } from "@/hooks/use-sync-ref";
 const highlightClass = ["bg-yellow-600/60"];
 const matchClass = ["dark:bg-slate-400/60", "bg-slate-700/45"];
 
-type SearchMatch = {
-  node: Node;
-  index: number;
-};
-
 type Hook = ReturnType<typeof useFindEditMatcher>;
 
 function useFindEditMatcher() {
@@ -52,7 +47,7 @@ function useFindEditMatcher() {
 
     cleanupHighlights();
 
-    searchTerm = searchTerm.toLowerCase().trim();
+    searchTerm = searchTerm.toLowerCase();
 
     if (searchTerm.length < 2) {
       return;
@@ -148,31 +143,29 @@ function useFindEditMatcher() {
   const handleNext = useCallback(() => {
     const currentMatchIndex = $currentMatchIndex.current;
 
-    setCurrentMatchIndex((prev) => (prev + 1) % highlights.length);
+    setCurrentMatchIndex((prev) => prev + 1);
     scrollToMatch(currentMatchIndex + 1, currentMatchIndex);
   }, [$currentMatchIndex, highlights]);
 
   const handlePrevious = useCallback(() => {
     const currentMatchIndex = $currentMatchIndex.current;
 
-    setCurrentMatchIndex(
-      (prev) => (prev - 1 + highlights.length) % highlights.length
-    );
+    setCurrentMatchIndex((prev) => prev - 1);
     scrollToMatch(currentMatchIndex - 1, currentMatchIndex);
   }, [$currentMatchIndex, highlights]);
 
   const scrollToMatch = useCallback(
     (index: number, currentMatchIndex: number) => {
-      const c = containerRef.current;
+      const highlights = $highlights.current;
 
       // Update style of previous match
       if (index !== currentMatchIndex) {
-        const prevMatch = c?.querySelector(`.match-${currentMatchIndex}`);
+        const prevMatch = highlights[currentMatchIndex];
         prevMatch?.classList.remove(...highlightClass);
         prevMatch?.classList.add(...matchClass);
       }
 
-      const match = c?.querySelector(`.match-${index}`);
+      const match = highlights[index];
       match?.classList.remove(...matchClass);
       match?.classList.add(...highlightClass);
       match?.parentElement?.scrollIntoView({
@@ -180,7 +173,7 @@ function useFindEditMatcher() {
         block: "center",
       });
     },
-    [containerRef]
+    [$highlights]
   );
 
   const handleReplace = useCallback(() => {
