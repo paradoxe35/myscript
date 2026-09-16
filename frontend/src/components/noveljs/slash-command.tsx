@@ -12,8 +12,7 @@ import {
   Twitter,
   Youtube,
 } from "lucide-react";
-import { createSuggestionItems } from "novel/extensions";
-import { Command, renderItems } from "novel/extensions";
+import { Command, createSuggestionItems, renderItems } from "novel";
 import { uploadFn } from "./image-upload";
 import { useAsyncPromptModal } from "../async-prompt-modal";
 import { toast } from "sonner";
@@ -131,7 +130,6 @@ export const suggestionItems = createSuggestionItems([
     icon: <ImageIcon size={18} />,
     command: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).run();
-      // upload image
       const input = document.createElement("input");
       input.type = "file";
       input.accept = "image/*";
@@ -160,7 +158,6 @@ export const suggestionItems = createSuggestionItems([
         return;
       }
 
-      //From https://regexr.com/3dj5t
       const ytregex = new RegExp(
         /^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$/
       );

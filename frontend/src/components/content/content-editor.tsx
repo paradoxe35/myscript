@@ -12,12 +12,9 @@ export function ContentEditor() {
   const activePageStore = useActivePageStore();
   const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
 
-  //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
     const fragment = document.createRange().createContextualFragment(content);
-    fragment.querySelectorAll("pre code").forEach((el) => {
-      // @ts-ignore
-      // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
+    fragment.querySelectorAll<HTMLElement>("pre code").forEach((el) => {
       hljs.highlightElement(el);
     });
 

@@ -1,8 +1,7 @@
 import { Command, CommandInput } from "@/components/ui/command";
 
 import { ArrowUp } from "lucide-react";
-import { useEditor } from "novel";
-import { addAIHighlight } from "novel/extensions";
+import { addAIHighlight, useEditor } from "novel";
 import { useEffect, useState } from "react";
 import Markdown from "react-markdown";
 import { toast } from "sonner";
@@ -12,7 +11,7 @@ import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
 import { useOpenAICompletion } from "./use-openai-completion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/noveljs/ui/button";
+import { Button } from "@/components/ui/button";
 
 interface AISelectorProps {
   openAIApiKey: string;

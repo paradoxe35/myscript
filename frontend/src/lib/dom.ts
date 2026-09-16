@@ -1,73 +1,84 @@
-/**
- * @param {Node} element
- * @returns
- */
+import { buildWordIndex } from "./reading/word-index";
+
 export const createTreeTextWalker = (element: Node) => {
   return document.createTreeWalker(element, NodeFilter.SHOW_TEXT, {
-    acceptNode: function (node) {
-      if (!node.nodeValue || !node.nodeValue.length) {
-        return NodeFilter.FILTER_SKIP;
-      }
-
-      return NodeFilter.FILTER_ACCEPT;
-    },
+    acceptNode: (node) =>
+      node.nodeValue?.length ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
   });
 };
 
-// Function to wrap an element with a parent element
-export function wrapElement(elementToWrap: Node, wrapperElement: Node) {
-  const parentElement = elementToWrap.parentNode;
+export const WORD_ATTRIBUTE = "data-word";
 
-  parentElement?.insertBefore(wrapperElement, elementToWrap);
+export type WrappedWords = { words: string[]; spans: HTMLElement[] };
 
-  wrapperElement.appendChild(elementToWrap);
+// One pass: every word of the rendered script becomes a span carrying its index.
+export function wrapWords(container: HTMLElement): WrappedWords {
+  const walker = createTreeTextWalker(container);
+  const nodes: Text[] = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode as Text);
 
-  return wrapperElement;
-}
+  const index = buildWordIndex(nodes.map((node) => node.data));
+  const spans: HTMLElement[] = [];
+  let next = 0;
 
-export function surroundContentsTag(node: Node, start: number, end: number) {
-  const range = document.createRange();
+  nodes.forEach((node, segment) => {
+    const first = next;
+    while (next < index.length && index[next].segment === segment) next++;
+    if (next === first) return;
 
-  const tag = document.createElement("span");
-  tag.setAttribute("data-mark-id", "true");
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
 
-  const className =
-    "bg-slide-primary bg-double animate-bg-slide screen-reader-marker";
-  tag.classList.add(...className.split(" "));
+    for (const word of index.slice(first, next)) {
+      fragment.append(node.data.slice(cursor, word.start));
 
-  range.setStart(node, start);
-  range.setEnd(node, end);
-  range.surroundContents(tag);
+      const span = document.createElement("span");
+      span.className = "reader-word";
+      span.setAttribute(WORD_ATTRIBUTE, String(word.index));
+      span.textContent = word.text;
+      fragment.append(span);
 
-  return range;
-}
-
-export function cleanMarkTags(container = document.body) {
-  Array.from(container.querySelectorAll("[data-mark-id]")).forEach((el) => {
-    let textContent = el.textContent;
-
-    let sibling = null;
-    // always merge next sibling element with the current node
-    while (el.nextSibling && el.nextSibling.nodeType === Node.TEXT_NODE) {
-      sibling = el.nextSibling;
-      textContent += sibling.textContent || "";
-      sibling.parentNode?.removeChild(sibling);
+      spans[word.index] = span;
+      cursor = word.end;
     }
 
-    // always merge previous sibling element with the current node
-    while (
-      el.previousSibling &&
-      el.previousSibling.nodeType === Node.TEXT_NODE
-    ) {
-      sibling = el.previousSibling;
-      textContent = (sibling.textContent || "") + textContent;
-      sibling.parentNode?.removeChild(sibling);
-    }
-
-    const fragment = document
-      .createRange()
-      .createContextualFragment(textContent || "");
-
-    el.parentNode?.replaceChild(fragment, el);
+    fragment.append(node.data.slice(cursor));
+    node.replaceWith(fragment);
   });
+
+  return { words: index.map((word) => word.text), spans };
+}
+
+export function wordIndexOf(target: EventTarget | null): number | null {
+  if (!(target instanceof Element)) return null;
+  const span = target.closest(`[${WORD_ATTRIBUTE}]`);
+  return span ? Number(span.getAttribute(WORD_ATTRIBUTE)) : null;
+}
+
+function scrollParent(element: HTMLElement): HTMLElement | null {
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+  }
+  return null;
+}
+
+export function scrollToEyeLine(element: HTMLElement) {
+  const parent = scrollParent(element);
+  const top = element.getBoundingClientRect().top;
+
+  if (parent) {
+    const offset = top - parent.getBoundingClientRect().top;
+    parent.scrollTo({
+      top: parent.scrollTop + offset - parent.clientHeight / 3,
+      behavior: "smooth",
+    });
+  } else {
+    window.scrollTo({
+      top: window.scrollY + top - window.innerHeight / 3,
+      behavior: "smooth",
+    });
+  }
 }

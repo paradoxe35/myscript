@@ -115,7 +115,9 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
   text-decoration-thickness: 2px;
 }
 
-/* Overwrite tippy-box original max-width */
+[data-tippy-root] {
+  z-index: 20 !important;
+}
 
 .tippy-box {
   max-width: 400px !important;
@@ -140,7 +142,7 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
   background-position: center;
   width: 1.2rem;
   height: 1.5rem;
-  z-index: 50;
+  z-index: 20;
   cursor: grab;
 
   &:hover {

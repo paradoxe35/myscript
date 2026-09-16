@@ -78,6 +78,7 @@ jobs:
           cd frontend
           pnpm install --frozen-lockfile
           pnpm run build
+          pnpm test
 
       - name: Go vet and tests
         run: |
