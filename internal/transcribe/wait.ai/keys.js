@@ -13,8 +13,11 @@ try {
   // Decode base64 to UTF-8 string
   const decodedString = Buffer.from(base64Input, "base64").toString("utf8");
 
-  // Write to keys.go with UTF-8 encoding
-  fs.writeFileSync("keys.go", decodedString, { encoding: "utf8" });
+  // keys_default.go covers builds without keys; the tag swaps it for this file.
+  const tagged = decodedString.startsWith("//go:build")
+    ? decodedString
+    : "//go:build witai_keys\n\n" + decodedString;
+  fs.writeFileSync("keys.go", tagged, { encoding: "utf8" });
 
   console.log("Successfully wrote decoded content to keys.go");
 } catch (error) {

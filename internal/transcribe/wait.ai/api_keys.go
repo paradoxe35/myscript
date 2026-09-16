@@ -58,13 +58,6 @@ func GetSupportedLanguages() []languages.Language {
 	return languages
 }
 
-// Create keys.go where you list all the API keys
-// for the different languages
-// Example:
-//
-//	var API_KEYS = []ApiKey{
-//		{"XXXXXXXXXXXXXXXXXXX", "en"},
-//	}
 func GetAPIKey(lan string) *ApiKey {
 	for _, key := range API_KEYS {
 		if key.Language == lan {

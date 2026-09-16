@@ -1,19 +1,25 @@
-name: Build and Release App
+name: Build and Release
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
-  GO_VERSION: "1.23"
+  NODE_VERSION: "22"
   NODE_OPTIONS: "--max-old-space-size=4096"
-  # ggml defaults to -march=native, which would tie a release to the runner.
-  # Pin an AVX2 baseline (x86 from ~2013); inert on arm64.
+  # ggml defaults to -march=native, which would tie a release to the runner:
+  # pin an AVX2 baseline (x86 from ~2013), inert on arm64. The BLAS probe is
+  # off because the cgo link never provides a BLAS on Linux or Windows.
   TRANSCRIBE_CMAKE_ARGS: >-
     -DGGML_NATIVE=OFF
     -DGGML_SSE42=ON
@@ -22,63 +28,56 @@ env:
     -DGGML_FMA=ON
     -DGGML_F16C=ON
     -DGGML_BMI2=ON
+    -DTRANSCRIBE_USE_SYSTEM_BLAS=OFF
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            rust-ffi/target/
-          key: ${{ runner.os }}-cargo-test-${{ hashFiles('rust-ffi/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-test-
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 9
-          run_install: false
 
-      - name: Install Linux dependencies
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust-ffi
+
+      - name: Install Linux build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
 
       - name: Rust tests
-        run: cd rust-ffi && cargo test --release
+        working-directory: rust-ffi
+        run: cargo test --release
 
-      - name: Build Rust FFI library
+      - name: Build speech library
         run: bash scripts/build-rust-ffi.sh
 
       # main.go embeds frontend/dist, so the frontend must exist before any go command.
-      - name: Frontend build
+      - name: Frontend build and tests
+        working-directory: frontend
         run: |
-          cd frontend
           pnpm install --frozen-lockfile
           pnpm run build
-          pnpm test
+          pnpm run --if-present test
 
       - name: Go vet and tests
         run: |
@@ -86,24 +85,27 @@ jobs:
           go test ./...
 
   build:
-    name: Build for all platforms
+    name: Build ${{ matrix.platform }}/${{ matrix.arch }}
     needs: test
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
         include:
-          # The oldest runner still offered: the binary links the runner's glibc
-          # and libstdc++, so this is what lets Ubuntu 22.04 / Debian 12 users run it.
+          # Oldest Ubuntu runner still offered: the binary links the runner's
+          # glibc and libstdc++, so this is what lets Ubuntu 22.04 and Debian 12 run it.
           - os: ubuntu-22.04
             platform: linux
             arch: amd64
+            rust-target: x86_64-unknown-linux-gnu
           - os: windows-latest
             platform: windows
             arch: amd64
             rust-target: x86_64-pc-windows-gnu
-          - os: macos-13
+          # Both macOS builds run on Apple silicon; the Intel one cross-compiles.
+          - os: macos-latest
             platform: darwin
             arch: amd64
             rust-target: x86_64-apple-darwin
@@ -117,181 +119,140 @@ jobs:
         shell: bash
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: pnpm/action-setup@v6
         with:
-          go-version: ${{ env.GO_VERSION }}
+          version: 9
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust-target }}
 
-      - name: Cache Rust dependencies
-        uses: actions/cache@v4
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            rust-ffi/target/
-          key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('rust-ffi/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-cargo-
+          workspaces: rust-ffi
+          key: ${{ matrix.rust-target }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
-
-      - name: Create GitHub Token File
-        run: |
-          node -e "require('fs').writeFileSync('credentials/github-token.txt', process.env.REPOSITORY_TOKEN)"
-        env:
-          REPOSITORY_TOKEN: "${{ secrets.REPOSITORY_TOKEN }}"
-
-      - name: Create Google OAuth Credentials File
-        run: |
-          node -e "require('fs').writeFileSync('credentials/google-credentials.json', process.env.GOOGLE_CREDENTIALS)"
-        env:
-          GOOGLE_CREDENTIALS: "${{ secrets.GOOGLE_CREDENTIALS }}"
-
-      - name: Set App Version
-        run: |
-          echo "${{ github.ref_name }}" > version.txt
-
-      - name: Update version wails.json
-        run: |
-          case "$(uname -s)" in
-            Darwin*) sed -i '' "s/1.0.0/${GITHUB_REF_NAME#v}/g" wails.json ;;
-            *) sed -i "s/1.0.0/${GITHUB_REF_NAME#v}/g" wails.json ;;
-          esac
-
-          cat wails.json
-
-      - name: Create API Keys file
-        run: |
-          cd internal/transcribe/wait.ai
-          node keys.js ${{ secrets.WAIT_API_KEYS }}
-
-      - name: Install Linux dependencies
+      - name: Install Linux build dependencies
         if: matrix.platform == 'linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
 
-      - name: Install Windows dependencies
+      - name: Install Windows build dependencies
         if: matrix.platform == 'windows'
+        run: choco install mingw nsis -y --no-progress
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)
+
+      - name: Write credentials from secrets
+        env:
+          REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          WAIT_API_KEYS: ${{ secrets.WAIT_API_KEYS }}
         run: |
-          choco install mingw nsis -y
+          printf '%s' "$REPOSITORY_TOKEN" > credentials/github-token.txt
+          printf '%s' "$GOOGLE_CREDENTIALS" > credentials/google-credentials.json
+          (cd internal/transcribe/wait.ai && node keys.js "$WAIT_API_KEYS")
 
-      - name: Install macOS dependencies
-        if: matrix.platform == 'darwin'
+      - name: Stamp version
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          brew update
-          brew install cmake
+          printf '%s' "$VERSION" > version.txt
+          python3 - <<'PY'
+          import json, os, re
+          version = re.sub(r"^v", "", os.environ["VERSION"]) or "0.0.0"
+          with open("wails.json") as f:
+              config = json.load(f)
+          config.setdefault("info", {})["productVersion"] = version
+          with open("wails.json", "w") as f:
+              json.dump(config, f, indent=2)
+              f.write("\n")
+          PY
+          cat wails.json
 
-      - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
-
-      - name: Build Rust FFI library
+      - name: Build speech library
         run: bash scripts/build-rust-ffi.sh ${{ matrix.rust-target }}
 
-      - name: Build Linux
+      - name: Build for Linux
         if: matrix.platform == 'linux'
-        run: |
-          wails build -platform linux/amd64 -skipbindings -tags webkit2_41 -o ${{ github.event.repository.name }}-amd64
+        run: wails build -platform linux/${{ matrix.arch }} -skipbindings -tags webkit2_41,witai_keys -o myscript-${{ matrix.arch }}
 
-      - name: Build Windows
+      - name: Build for Windows
         if: matrix.platform == 'windows'
-        run: |
-          wails build -platform windows/amd64 -skipbindings -s -webview2 embed -nsis
+        run: wails build -platform windows/${{ matrix.arch }} -skipbindings -webview2 embed -nsis -tags witai_keys
 
-      - name: Build macOS
+      - name: Build for macOS
         if: matrix.platform == 'darwin'
         run: |
-          wails build -platform darwin/${{ matrix.arch }} -skipbindings
-          cd build/bin
-          zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
+          wails build -platform darwin/${{ matrix.arch }} -skipbindings -tags witai_keys
+          cd build/bin && zip -r -X myscript-darwin-${{ matrix.arch }}.zip *.app
 
-      - name: Create .deb Package with nFPM
+      - name: Package for Linux
         if: matrix.platform == 'linux'
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
-          docker run --rm \
-            -v "$PWD:/tmp" \
-            -w /tmp \
-            -e VERSION="${{ github.ref_name }}" \
-            goreleaser/nfpm package \
-            --config /tmp/nfpm.yaml \
-            --target /tmp/build/bin \
-            --packager deb
-
-      - name: Process Linux Artifacts
-        if: matrix.platform == 'linux'
-        run: |
-          shopt -s nullglob
+          docker run --rm -v "$PWD:/src" -w /src -e VERSION goreleaser/nfpm package \
+            --config nfpm.yaml --target build/bin --packager deb
           cd build/bin
+          mv *.deb myscript-linux-${{ matrix.arch }}.deb
+          tar czf myscript-linux-${{ matrix.arch }}.tar.gz myscript-${{ matrix.arch }}
 
-          for file in *.deb; do
-            mv "$file" "${{ github.event.repository.name }}-linux-${{ matrix.arch }}.deb"
-          done
-
-          mkdir linux_files
-          find . -maxdepth 1 -type f -not -name "*.deb" -exec mv {} linux_files/ \;
-          tar czf ${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz -C linux_files .
-          rm -rf linux_files
-
-      - name: Process Windows Artifacts
+      - name: Name Windows artifacts
         if: matrix.platform == 'windows'
         run: |
-          shopt -s nullglob
           cd build/bin
-
-          for file in *-installer.exe; do
-            mv "$file" "${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe"
-          done
-
+          for file in *-installer.exe; do mv "$file" myscript-windows-${{ matrix.arch }}-installer.exe; done
           for file in *.exe; do
-            [[ "$file" == *"-installer.exe" ]] && continue
-            mv "$file" "${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
+            [[ "$file" == *-installer.exe ]] || mv "$file" myscript-windows-${{ matrix.arch }}.exe
           done
 
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.platform }}-${{ matrix.arch }}-build
-          path: build/bin/*
+          name: myscript-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            build/bin/*.deb
+            build/bin/*.tar.gz
+            build/bin/*.zip
+            build/bin/*.exe
+          if-no-files-found: error
           retention-days: 1
 
   release:
+    name: Release
     needs: build
-    runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
-          path: artifacts
+          path: release
+          merge-multiple: true
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
+      - name: Checksums
+        working-directory: release
+        run: sha256sum * > checksums.txt
+
+      - uses: softprops/action-gh-release@v3
         with:
-          draft: false
-          prerelease: false
-          files: |
-            artifacts/**/*.exe
-            artifacts/**/*.tar.gz
-            artifacts/**/*.zip
-            artifacts/**/*.deb
+          files: release/*
+          prerelease: ${{ contains(github.ref_name, '-') }}
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

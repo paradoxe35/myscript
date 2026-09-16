@@ -16,7 +16,9 @@ fi
 
 # ggml defaults to -march=native, which would tie a release to the build
 # machine. Pin an AVX2 baseline (x86 from ~2013); inert on arm64.
-export TRANSCRIBE_CMAKE_ARGS="${TRANSCRIBE_CMAKE_ARGS:--DGGML_NATIVE=OFF -DGGML_SSE42=ON -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DGGML_BMI2=ON}"
+# TRANSCRIBE_USE_SYSTEM_BLAS=OFF: the decoder would otherwise call cblas when a
+# BLAS is found at build time, which the final cgo link never provides.
+export TRANSCRIBE_CMAKE_ARGS="${TRANSCRIBE_CMAKE_ARGS:--DGGML_NATIVE=OFF -DGGML_SSE42=ON -DGGML_AVX=ON -DGGML_AVX2=ON -DGGML_FMA=ON -DGGML_F16C=ON -DGGML_BMI2=ON -DTRANSCRIBE_USE_SYSTEM_BLAS=OFF}"
 
 # ggml clears CMAKE_STATIC_LIBRARY_PREFIX on WIN32, so it installs ggml.a while
 # its link manifest says "ggml" and rustc looks for libggml.a.
