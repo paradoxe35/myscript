@@ -207,17 +207,17 @@ jobs:
       - name: Build Linux
         if: matrix.platform == 'linux'
         run: |
-          wails build -platform linux/amd64 -skipbindings -tags webkit2_41 -o ${{ github.event.repository.name }}-amd64
+          wails build -platform linux/amd64 -skipbindings -tags webkit2_41,witai_keys -o ${{ github.event.repository.name }}-amd64
 
       - name: Build Windows
         if: matrix.platform == 'windows'
         run: |
-          wails build -platform windows/amd64 -skipbindings -s -webview2 embed -nsis
+          wails build -platform windows/amd64 -skipbindings -s -webview2 embed -nsis -tags witai_keys
 
       - name: Build macOS
         if: matrix.platform == 'darwin'
         run: |
-          wails build -platform darwin/${{ matrix.arch }} -skipbindings
+          wails build -platform darwin/${{ matrix.arch }} -skipbindings -tags witai_keys
           cd build/bin
           zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
