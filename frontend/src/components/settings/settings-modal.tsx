@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { LocalWhisperInputs } from "./settings-local-whisper";
+import { SpeechModelsInputs } from "./settings-speech-models";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { SettingsCloud } from "./settings-cloud";
 import { cn } from "@/lib/utils";
@@ -78,11 +78,11 @@ export function SettingsModal(props: PropsWithChildren) {
           <TabsContent value="speech-recognition" className="min-h-48">
             <div className="grid gap-4 py-4">
               <div className="flex flex-col gap-4 relative">
-                <Label>Speech Recognition (Whisper, Wit.ai)</Label>
+                <Label>Speech Recognition</Label>
                 <SelectSpeechSource />
               </div>
 
-              {state.TranscriberSource === "local" && <LocalWhisperInputs />}
+              {state.TranscriberSource === "local" && <SpeechModelsInputs />}
 
               {state.TranscriberSource === "openai" && (
                 <OpenAIApiKeyTranscriber />

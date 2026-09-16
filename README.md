@@ -20,7 +20,7 @@ Have you ever tried recording a tutorial or reading a script, only to lose your 
     *   *(Planned/Included)* AI Features: Enhance your scripts with AI-powered text generation, improvement suggestions, etc. (Specify if this is already implemented or planned).
 *   **Multiple Transcription Options:** Choose the best fit for your needs:
     *   **Remote OpenAI Whisper:** High accuracy transcription using the OpenAI API (Requires your own API key).
-    *   **Local Whisper:** Run Whisper directly on your machine for privacy and offline use (Requires setup, performance depends on your hardware).
+    *   **Local models:** Run speech recognition directly on your machine for privacy and offline use. Models (Whisper, Parakeet, Moonshine and more, in GGUF form) are downloaded from the in-app catalogue, which ranks them for your hardware.
     *   **Groq Whisper:** Leverage Groq's fast Whisper API implementation (Requires a Groq API key).
     *   **Wit.ai:** A free, cloud-based option (Requires internet, no user API key needed, potentially less accurate than Whisper).
 *   **Google Drive Sync:** Securely back up your local scripts and application configuration to Google Drive. Synchronize your data across multiple devices where you use MyScript.
@@ -38,17 +38,20 @@ Have you ever tried recording a tutorial or reading a script, only to lose your 
 *   **Backend:** Go
 *   **Frontend:** ReactJS
 *   **Framework:** Wails (v2)
-*   **Transcription Engines:** OpenAI Whisper API, Local Whisper (via bindings like `whisper.cpp`), Groq API, Wit.ai API
+*   **Speech capture and local recognition:** Rust static library (`rust-ffi/`) built on `transcribe-cpp` (ggml), `cpal` and `earshot`, linked into Go through cgo
+*   **Transcription Engines:** local GGUF models, OpenAI Whisper API, Groq API, Wit.ai API
 
 ## Installation
 
 **Build Steps (adjust as needed):**
 
-1.  Ensure you have Go, Node.js, and the Wails CLI installed. (See [Wails prerequisites](https://wails.io/docs/gettingstarted/installation#prerequisites))
+1.  Ensure you have Go, Node.js with pnpm, the Wails CLI, a Rust toolchain, CMake and a C++ compiler installed. (See [Wails prerequisites](https://wails.io/docs/gettingstarted/installation#prerequisites)). On Linux also install `libasound2-dev`.
 2.  Clone the repository: `git clone https://github.com/paradoxe35/myscript.git`
 3.  Navigate to the project directory: `cd myscript`
-4.  Build the application: `make build`
+4.  Build the application: `make build` (this first builds the Rust speech library into `lib/`; `make build-rust` rebuilds it alone)
 5.  Find the executable in the `build/bin` directory.
+
+Run `make test` to run the Rust, Go and frontend checks.
 
 **(Alternatively, download the prebuild here [release](https://github.com/paradoxe35/myscript/releases/latest))**
 
@@ -59,7 +62,7 @@ Upon first launch or via the settings menu, you may need to configure:
 *   **Notion Integration:** Authorize access to your Notion account.
 *   **Transcription Services:**
     *   Enter your API key for OpenAI Whisper or Groq.
-    *   Configure paths or settings for Local Whisper if applicable.
+    *   Pick and download a local speech model; the list shows which ones fit your machine.
     *   Wit.ai typically requires no user-specific keys.
 *   **Google Drive Sync:** Authorize access to your Google Drive account.
 

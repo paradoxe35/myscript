@@ -3,14 +3,14 @@
 
 package witai
 
-import "myscript/internal/transcribe/structs"
+import "myscript/internal/transcribe/languages"
 
 type ApiKey struct {
 	Key      string
 	Language string
 }
 
-var LANGUAGES = []structs.Language{
+var LANGUAGES = []languages.Language{
 	{Name: "English", Code: "en"},
 	{Name: "French", Code: "fr"},
 	{Name: "Arabic", Code: "ar"},
@@ -43,8 +43,8 @@ var LANGUAGES = []structs.Language{
 	{Name: "Vietnamese", Code: "vi"},
 }
 
-func GetSupportedLanguages() []structs.Language {
-	var languages []structs.Language
+func GetSupportedLanguages() []languages.Language {
+	var languages []languages.Language
 
 	for _, lang := range LANGUAGES {
 		for _, key := range API_KEYS {

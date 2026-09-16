@@ -10,11 +10,11 @@ import (
 	"myscript/internal/filesystem"
 	"myscript/internal/google"
 	"myscript/internal/repository"
+	"myscript/internal/stt"
+	"myscript/internal/stt/ffi"
 	"myscript/internal/synchronizer"
-	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
-	"myscript/internal/utils/microphone"
 	"strings"
 
 	"github.com/wailsapp/wails/v2"
@@ -55,6 +55,10 @@ func main() {
 	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
 	appUpdater.SetToken(readGitHubToken())
 
+	// Speech models
+	stt.Init(filesystem.HOME_DIR)
+	stt.RefreshInBackground()
+
 	// Database
 	mainDB := database.NewMainDatabase(filesystem.HOME_DIR)
 	unSyncedDB := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
@@ -84,8 +88,7 @@ func main() {
 	app := NewApp(
 		WithMainDB(mainDB),
 		WithUnSyncedDB(unSyncedDB),
-		WithLocalWhisper(local_whisper.NewLocalWhisperTranscriber()),
-		WithAudioSequencer(microphone.NewAudioSequencer()),
+		WithSpeech(func() (stt.Engine, error) { return ffi.NewSpeech() }),
 		WithUpdater(appUpdater),
 
 		// Synchronizer
@@ -107,6 +110,7 @@ func main() {
 		WindowStartState: options.Maximised,
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        app.startup,
+		OnShutdown:       app.shutdown,
 		Bind: []interface{}{
 			app,
 		},

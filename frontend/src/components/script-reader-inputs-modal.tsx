@@ -20,21 +20,28 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useTranscriberStore } from "@/store/transcriber";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  AUTO_DETECT_LANGUAGE,
+  useTranscriberStore,
+} from "@/store/transcriber";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useConfigStore } from "@/store/config";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { microphone } from "~wails/models";
+import { languages, main, stt } from "~wails/models";
 import { useActivePageStore } from "@/store/active-page";
 import { Checkbox } from "./ui/checkbox";
 import { useContentReadStore } from "@/store/content-read";
+import { useSpeechModelsStore } from "@/store/speech-models";
 
 type Props = {
   trigger: React.ReactNode | null;
-  onLanguageSelected: (
-    languageCode: string,
-    micInputDeviceID: number[]
-  ) => void;
+  onStartReading: (languageCode: string, micInputDevice: string) => void;
 };
 
 const SRInputsContext = createContext<ReturnType<typeof useSRInputs>>(
@@ -43,20 +50,24 @@ const SRInputsContext = createContext<ReturnType<typeof useSRInputs>>(
 
 function useSRInputs(props: Props) {
   const transcriberStore = useTranscriberStore();
-  const { languages, selectedLanguageCode, setSelectedLanguageCode } =
-    useLanguages();
+  const config = useConfigStore((state) => state.config);
+  const localSource = config?.TranscriberSource === "local";
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const [micInputDevice, setMicInputDevice] =
-    useState<microphone.MicInputDevice | null>(null);
+  const models = useModels(dialogOpen, localSource);
+  const { languages, selectedLanguageCode, setSelectedLanguageCode } =
+    useLanguages(localSource, models.selectedModel);
 
+  const [micInputDevice, setMicInputDevice] = useState<stt.Device | null>(
+    null
+  );
   const micInputDevices = transcriberStore.micInputDevices;
 
   const onStartReading = () => {
     requestAnimationFrame(() => {
       if (selectedLanguageCode && micInputDevice) {
-        props.onLanguageSelected(selectedLanguageCode, micInputDevice.ID);
+        props.onStartReading(selectedLanguageCode, micInputDevice.Name);
       }
     });
   };
@@ -73,26 +84,31 @@ function useSRInputs(props: Props) {
     transcriberStore.getMicInputDevices().then(async (micInputDevices) => {
       let defaultDevice = await transcriberStore.getDefaultMicInput();
 
-      if (defaultDevice) {
-        setMicInputDevice(defaultDevice);
-        return;
+      if (!defaultDevice) {
+        defaultDevice =
+          micInputDevices.find((device) => device.IsDefault) ||
+          micInputDevices[0];
       }
-
-      defaultDevice = micInputDevices.find((device) => device.IsDefault === 1);
       if (defaultDevice) {
         setMicInputDevice(defaultDevice);
       }
     });
   }, [dialogOpen]);
 
-  const canSubmit = selectedLanguageCode && micInputDevice;
+  const canSubmit =
+    !!selectedLanguageCode &&
+    !!micInputDevice &&
+    (!localSource || !!models.selectedModel);
 
   return {
+    localSource,
     languages,
     selectedLanguageCode,
     setSelectedLanguageCode,
     onStartReading,
     canSubmit,
+
+    ...models,
 
     micInputDevice,
     micInputDevices,
@@ -103,7 +119,45 @@ function useSRInputs(props: Props) {
   };
 }
 
-function useLanguages() {
+// The model chosen here becomes the active one, so the settings panel and the
+// next take agree.
+function useModels(dialogOpen: boolean, localSource: boolean) {
+  const speechModelsStore = useSpeechModelsStore();
+  const configStore = useConfigStore();
+
+  const downloadedModels = speechModelsStore.downloaded();
+  const configuredID = configStore.config?.SpeechModelID;
+
+  const selectedModel = useMemo(() => {
+    return (
+      downloadedModels.find((model) => model.ID === configuredID) ||
+      downloadedModels[0]
+    );
+  }, [downloadedModels, configuredID]);
+
+  useEffect(() => {
+    if (dialogOpen && localSource) {
+      speechModelsStore.fetchModels();
+    }
+  }, [dialogOpen, localSource]);
+
+  useEffect(() => {
+    if (localSource && selectedModel && selectedModel.ID !== configuredID) {
+      configStore.writeConfig({ SpeechModelID: selectedModel.ID });
+    }
+  }, [localSource, selectedModel?.ID, configuredID]);
+
+  const setSelectedModel = (model: main.SpeechModel) => {
+    configStore.writeConfig({ SpeechModelID: model.ID });
+  };
+
+  return { downloadedModels, selectedModel, setSelectedModel };
+}
+
+function useLanguages(
+  localSource: boolean,
+  selectedModel: main.SpeechModel | undefined
+) {
   const transcriberStore = useTranscriberStore();
   const activePageStore = useActivePageStore();
   const config = useConfigStore((state) => state.config);
@@ -111,62 +165,125 @@ function useLanguages() {
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<
     string | null
   >();
-
-  const [languages, setLanguages] = useState(transcriberStore.languages);
+  const [pageLanguage, setPageLanguage] = useState<string | null>(null);
 
   const activePageID = activePageStore.getPageId();
 
-  useEffect(() => {
-    setLanguages(transcriberStore.languages);
-  }, [transcriberStore.languages]);
+  // A model that declares no languages (a dropped-in file) is left to detect.
+  const available = useMemo<languages.Language[]>(() => {
+    if (!localSource) return transcriberStore.languages;
+    if (!selectedModel) return [];
+    const spoken = selectedModel.Languages || [];
+    return selectedModel.LanguageDetect || spoken.length === 0
+      ? [AUTO_DETECT_LANGUAGE, ...spoken]
+      : spoken;
+  }, [localSource, transcriberStore.languages, selectedModel]);
 
-  // Set page language
+  // The remembered language sorts first, and stays there while the user browses.
+  const languages = useMemo(() => {
+    return available.slice().sort((a, b) => {
+      if (a.Code === pageLanguage) return -1;
+      if (b.Code === pageLanguage) return 1;
+      return 0;
+    });
+  }, [available, pageLanguage]);
+
+  useEffect(() => {
+    if (!localSource) {
+      transcriberStore.getLanguages();
+    }
+  }, [localSource, config?.TranscriberSource]);
+
+  useEffect(() => {
+    if (activePageID) {
+      transcriberStore.getPageLanguage(activePageID).then((language) => {
+        setPageLanguage(language || "en");
+      });
+    }
+  }, [activePageID]);
+
+  useEffect(() => {
+    if (available.length === 0 || pageLanguage === null) return;
+
+    const wanted = pageLanguage;
+    const fallback = available.some((l) => l.Code === "en")
+      ? "en"
+      : available[0].Code;
+    const code = available.some((l) => l.Code === wanted) ? wanted : fallback;
+    setSelectedLanguageCode(code);
+  }, [available, pageLanguage]);
+
   useEffect(() => {
     const cacheSelectedLanguageCode = async () => {
       if (activePageID && selectedLanguageCode) {
         const cachedLanguage = await transcriberStore.getPageLanguage(
           activePageID
         );
-
         if (cachedLanguage !== selectedLanguageCode) {
           transcriberStore.setPageLanguage(activePageID, selectedLanguageCode);
         }
       }
     };
-
     cacheSelectedLanguageCode();
   }, [activePageID, selectedLanguageCode]);
-
-  useEffect(() => {
-    transcriberStore.getLanguages();
-  }, [config?.TranscriberSource]);
-
-  // Get page language
-  useEffect(() => {
-    if (activePageID) {
-      transcriberStore.getPageLanguage(activePageID).then((language) => {
-        const lan = language || "en";
-        setSelectedLanguageCode(lan);
-
-        // Sort languages, so the selected language is at the top
-        setTimeout(() => {
-          setLanguages((prev) => {
-            return prev.slice().sort((a, b) => {
-              if (a.Code === lan) return -1;
-              if (b.Code === lan) return 1;
-              return 0;
-            });
-          });
-        }, 1000);
-      });
-    }
-  }, [activePageID]);
 
   return {
     languages,
     setSelectedLanguageCode,
     selectedLanguageCode,
   };
+}
+
+function modelSummary(model: main.SpeechModel) {
+  const languages = model.Languages || [];
+  const spoken =
+    languages.length === 1 ? languages[0].Name : `${languages.length} languages`;
+  return model.LanguageDetect ? `${spoken}, auto-detect` : spoken;
+}
+
+function ModelCommands() {
+  const { downloadedModels, selectedModel, setSelectedModel } =
+    useContext(SRInputsContext);
+
+  return (
+    <Command>
+      <CommandInput placeholder="Search model..." className="h-9" />
+      <CommandList className="min-h-[300px]">
+        <CommandEmpty>
+          No downloaded model. Download one in Settings, Speech Recognition.
+        </CommandEmpty>
+        <CommandGroup>
+          {downloadedModels.map((model) => (
+            <CommandItem
+              key={model.ID}
+              value={model.Name}
+              onSelect={() => setSelectedModel(model)}
+            >
+              <div className="flex flex-col min-w-0">
+                <span className="truncate">
+                  {model.Name}
+                  {model.Suggested && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-primary">
+                      Suggested
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs opacity-60 truncate">
+                  {modelSummary(model)} · {model.FitLabel}
+                </span>
+              </div>
+              <Check
+                className={cn(
+                  "ml-auto",
+                  selectedModel?.ID === model.ID ? "opacity-100" : "opacity-0"
+                )}
+              />
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  );
 }
 
 function LanguageCommands() {
@@ -176,7 +293,7 @@ function LanguageCommands() {
   return (
     <Command>
       <CommandInput placeholder="Search language..." className="h-9" />
-      <CommandList>
+      <CommandList className="min-h-[300px]">
         <CommandEmpty>No language found.</CommandEmpty>
         <CommandGroup>
           {languages.map((language) => (
@@ -213,7 +330,7 @@ function MicInputDevices() {
     <Command>
       <CommandInput placeholder="Search device..." className="h-9" />
       <CommandList className="min-h-[300px]">
-        <CommandEmpty>No device found.</CommandEmpty>
+        <CommandEmpty>No microphone found.</CommandEmpty>
         <CommandGroup>
           {micInputDevices.map((device) => (
             <CommandItem
@@ -222,10 +339,15 @@ function MicInputDevices() {
               onSelect={() => setMicInputDevice(device)}
             >
               {device.Name}
+              {device.IsDefault && (
+                <span className="ml-2 text-xs opacity-60">default</span>
+              )}
               <Check
                 className={cn(
                   "ml-auto",
-                  micInputDevice === device ? "opacity-100" : "opacity-0"
+                  micInputDevice?.Name === device.Name
+                    ? "opacity-100"
+                    : "opacity-0"
                 )}
               />
             </CommandItem>
@@ -279,13 +401,22 @@ export default function SRInputsModal(props: Props) {
       <DialogTrigger asChild>{props.trigger}</DialogTrigger>
 
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
-        {/* Modal content */}
         <SRInputsContext.Provider value={ctx}>
-          <Tabs defaultValue="languages" className="w-full">
-            {/* Header */}
+          <Tabs
+            defaultValue={ctx.localSource ? "model" : "languages"}
+            className="w-full"
+          >
             <DialogHeader>
               <DialogTitle>
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList
+                  className={cn(
+                    "grid w-full",
+                    ctx.localSource ? "grid-cols-3" : "grid-cols-2"
+                  )}
+                >
+                  {ctx.localSource && (
+                    <TabsTrigger value="model">Model</TabsTrigger>
+                  )}
                   <TabsTrigger value="languages">Languages</TabsTrigger>
                   <TabsTrigger value="microphone">Microphone</TabsTrigger>
                 </TabsList>
@@ -294,7 +425,12 @@ export default function SRInputsModal(props: Props) {
               <DialogDescription />
             </DialogHeader>
 
-            {/* Body */}
+            {ctx.localSource && (
+              <TabsContent value="model">
+                <ModelCommands />
+              </TabsContent>
+            )}
+
             <TabsContent value="languages">
               <LanguageCommands />
             </TabsContent>

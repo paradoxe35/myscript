@@ -4,74 +4,121 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
-	"myscript/internal/utils"
-	"myscript/internal/utils/microphone"
+	"myscript/internal/repository"
+	"myscript/internal/stt"
+	"myscript/internal/stt/ffi"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-func (a *App) StartRecording(language string, micInputDeviceID string) error {
-	micDeviceID, err := utils.B64toBytes(micInputDeviceID)
-	if err != nil {
-		return fmt.Errorf("Invalid microphone input device")
-	}
+const (
+	eventTranscribedText  = "on-transcribed-text"
+	eventTranscribeError  = "on-transcribe-error"
+	eventRecordingStopped = "on-recording-stopped"
+	eventTranscriberState = "on-transcriber-state"
+	eventMicLevel         = "on-mic-level"
+)
 
-	if config := a.GetConfig(); config.TranscriberSource == "" {
+type TranscriberState struct {
+	State     stt.State
+	ModelName string
+}
+
+func (a *App) speechListener() stt.Listener {
+	return stt.Listener{
+		State: func(state stt.State, model stt.Model) {
+			runtime.EventsEmit(a.ctx, eventTranscriberState, TranscriberState{State: state, ModelName: model.Name})
+		},
+		Text: func(text string) {
+			runtime.EventsEmit(a.ctx, eventTranscribedText, text)
+		},
+		Error: func(message string) {
+			slog.Error("Transcription error", "error", message)
+			runtime.EventsEmit(a.ctx, eventTranscribeError, message)
+		},
+		Level: func(rms float32) {
+			runtime.EventsEmit(a.ctx, eventMicLevel, rms)
+		},
+		Stopped: func(auto bool) {
+			runtime.EventsEmit(a.ctx, eventRecordingStopped, auto)
+		},
+	}
+}
+
+// StartRecording returns once the request is accepted; loading and listening
+// are reported through on-transcriber-state, failures through on-transcribe-error.
+func (a *App) StartRecording(language string, micInputDevice string) error {
+	config := a.GetConfig()
+	if config.TranscriberSource == "" {
 		return fmt.Errorf("No transcription source has been configured.")
 	}
 
-	// If transcriber source is set to local, load the model
-	if err := a.initLocalWhisperTranscriber(language); err != nil {
-		return err
+	opts := stt.Options{Language: language, Device: micInputDevice}
+	if config.TranscriberSource == "local" {
+		model, err := a.selectedSpeechModel(config)
+		if err != nil {
+			return err
+		}
+		opts.ModelID = model.ID
+	} else {
+		remote, err := a.remoteTranscriber(config.TranscriberSource)
+		if err != nil {
+			return err
+		}
+		opts.Remote = remote
 	}
 
-	pq := utils.NewProcessQueue("transcriber-queue")
+	slog.Debug("Starting recording", "language", language, "source", config.TranscriberSource)
 
-	a.audioSequencer.SetSequentializeCallback(func(buffer []byte) {
-		bookId := pq.Book()
-
-		slog.Debug("AudioSequencer: new audio chunk", "chunk", len(buffer), "transcribing", true)
-
-		waveBuffer, _ := a.audioSequencer.RawBytesToWAV(buffer)
-		transcribed, err := a.Transcribe(waveBuffer, language)
-
-		if err != nil {
-			slog.Error("Transcription error", "error", err)
-			runtime.EventsEmit(a.ctx, "on-transcribe-error", err.Error())
-			return
+	go func() {
+		err := a.speech.Start(opts)
+		if err != nil && !errors.Is(err, stt.ErrCancelled) {
+			slog.Error("Could not start recording", "error", err)
+			runtime.EventsEmit(a.ctx, eventTranscribeError, err.Error())
 		}
+	}()
 
-		pq.Add(bookId, func() {
-			runtime.EventsEmit(a.ctx, "on-transcribed-text", transcribed)
-		})
-	})
-
-	a.audioSequencer.SetStopCallback(func(autoStopped bool) {
-		runtime.EventsEmit(a.ctx, "on-recording-stopped", autoStopped)
-		// Unload local whisper model, if it is loaded
-		go a.lwt.Close()
-	})
-
-	slog.Debug("Starting recording with language", "language", language)
-
-	return a.audioSequencer.Start(micDeviceID)
+	return nil
 }
 
-func (a *App) StopRecording() {
-	slog.Debug("Stopping recording")
+// selectedSpeechModel falls back to the best downloaded model when none is
+// chosen yet, and remembers it, so a first read works without a trip to Settings.
+func (a *App) selectedSpeechModel(config *repository.Config) (stt.Model, error) {
+	store := a.speech.Store()
+	if config.SpeechModelID != nil {
+		if model, ok := stt.FindModel(*config.SpeechModelID); ok && store.Downloaded(model) {
+			return model, nil
+		}
+	}
 
-	a.audioSequencer.Stop(false)
-	// Should be called after Stop()
-	a.audioSequencer.SetSequentializeCallback(nil)
-	a.audioSequencer.SetStopCallback(nil)
+	best, ok := stt.Recommended(stt.Catalogue(), stt.Host(), store.Downloaded)
+	if !ok || !store.Downloaded(best) {
+		return stt.Model{}, stt.ErrNoModel
+	}
+	config.SpeechModelID = &best.ID
+	a.SaveConfig(config)
+	return best, nil
+}
+
+func (a *App) StopRecording() error {
+	slog.Debug("Stopping recording")
+	return a.speech.Stop()
+}
+
+// CancelRecording ends the take and drops what has not been delivered, for
+// when the text has nowhere to go any more.
+func (a *App) CancelRecording() error {
+	slog.Debug("Cancelling recording")
+	return a.speech.Cancel()
 }
 
 func (a *App) IsRecording() bool {
-	return a.audioSequencer.Recording()
+	return a.speech.Recording()
 }
 
-func (a *App) GetMicInputDevices() ([]microphone.MicInputDevice, error) {
-	return a.audioSequencer.GetMicInputDevices()
+func (a *App) GetMicInputDevices() []stt.Device {
+	return ffi.InputDevices()
 }

@@ -3,6 +3,8 @@ import { useTranscriberStore } from "@/store/transcriber";
 import { useEffect } from "react";
 import { toast } from "sonner";
 
+const STATE_TOAST = "transcriber-state";
+
 export function TranscriberInit() {
   const transcriberStore = useTranscriberStore();
   const activePageStore = useActivePageStore();
@@ -11,15 +13,47 @@ export function TranscriberInit() {
     transcriberStore.getRecordingStatus();
   }, []);
 
-  // Stop recording when page changes
+  // Text still in flight belongs to the page being left.
   useEffect(() => {
-    transcriberStore.stopRecording();
+    transcriberStore.cancelRecording();
   }, [activePageStore.getPageId()]);
+
+  useEffect(() => {
+    return transcriberStore.onTranscriberState((event) => {
+      transcriberStore.setState(event);
+
+      switch (event.State) {
+        case "loading":
+          toast.loading(`Loading ${event.ModelName}…`, {
+            id: STATE_TOAST,
+            duration: Infinity,
+          });
+          break;
+        case "ready":
+          toast.success(`${event.ModelName} is ready`, {
+            id: STATE_TOAST,
+            duration: 2000,
+          });
+          break;
+        case "listening":
+          toast.dismiss(STATE_TOAST);
+          break;
+        case "idle":
+          toast.dismiss(STATE_TOAST);
+          break;
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    return transcriberStore.onMicLevel(transcriberStore.setMicLevel);
+  }, []);
 
   useEffect(() => {
     return transcriberStore.onTranscribeError((error) => {
       console.log("Transcription error:", error);
-      toast.error("Transcription error: " + error);
+      toast.error("Transcription error: " + error, { id: STATE_TOAST });
+      transcriberStore.getRecordingStatus();
     });
   }, []);
 
@@ -29,14 +63,14 @@ export function TranscriberInit() {
       console.log("Recording stopped:", autoStopped);
 
       if (autoStopped) {
-        toast.info("10 seconds of silence detected, stopping the read mode");
+        toast.info("30 seconds of silence detected, stopping the read mode");
       }
     });
   }, []);
 
   useEffect(() => {
-    activePageStore.setReadMode(transcriberStore.isRecording);
-  }, [transcriberStore.isRecording]);
+    activePageStore.setReadMode(transcriberStore.state === "listening");
+  }, [transcriberStore.state]);
 
   return null;
 }

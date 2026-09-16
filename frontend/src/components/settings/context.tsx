@@ -10,10 +10,10 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { repository, whisper } from "~wails/models";
+import { repository } from "~wails/models";
 
 import isEqual from "lodash/isEqual";
-import { useLocalWhisperStore } from "@/store/local-whisper";
+import { useSpeechModelsStore } from "@/store/speech-models";
 import {
   GetAppVersion,
   IsGoogleAuthEnabled,
@@ -78,7 +78,7 @@ function useSettingsHook() {
 
   const cloudHook = useCloudSettings();
 
-  const localWhisperStore = useLocalWhisperStore();
+  const fetchModels = useSpeechModelsStore((store) => store.fetchModels);
   const configStore = useConfigStore();
 
   useEffect(() => {
@@ -99,13 +99,9 @@ function useSettingsHook() {
 
   useEffect(() => {
     if (state.TranscriberSource === "local") {
-      localWhisperStore.getBestModel();
+      fetchModels();
     }
   }, [state.TranscriberSource]);
-
-  useEffect(() => {
-    localWhisperStore.getModels();
-  }, []);
 
   function validateOpenAIApiKey(state: SettingsState) {
     if (state.TranscriberSource === "openai") {
@@ -161,8 +157,6 @@ function useSettingsHook() {
     handleSave,
     appVersion,
     configModified,
-    bestWhisperModel: localWhisperStore.bestModel,
-    whisperModels: localWhisperStore.models,
     cloud: cloudHook,
   };
 }

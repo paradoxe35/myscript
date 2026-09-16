@@ -6,11 +6,10 @@ package main
 import (
 	"context"
 	"myscript/internal/google"
+	"myscript/internal/stt"
 	"myscript/internal/synchronizer"
-	local_whisper "myscript/internal/transcribe/whisper/local"
 	"myscript/internal/updater"
 	"myscript/internal/utils"
-	"myscript/internal/utils/microphone"
 
 	"gorm.io/gorm"
 )
@@ -19,12 +18,11 @@ import (
 type App struct {
 	ctx context.Context
 
-	mainDB         *gorm.DB
-	unSyncedDB     *gorm.DB
-	audioSequencer *microphone.AudioSequencer
-	lwt            *local_whisper.LocalWhisperTranscriber
-	updater        *updater.Updater
-	synchronizer   *Synchronizer
+	mainDB       *gorm.DB
+	unSyncedDB   *gorm.DB
+	speech       *stt.Service
+	updater      *updater.Updater
+	synchronizer *Synchronizer
 }
 
 type Synchronizer struct {
@@ -48,15 +46,11 @@ func WithUnSyncedDB(db *gorm.DB) AppOption {
 	}
 }
 
-func WithLocalWhisper(lwt *local_whisper.LocalWhisperTranscriber) AppOption {
+// WithSpeech wires the speech service; its listener needs the app, so the
+// service is built here rather than passed in.
+func WithSpeech(newEngine func() (stt.Engine, error)) AppOption {
 	return func(app *App) {
-		app.lwt = lwt
-	}
-}
-
-func WithAudioSequencer(sequencer *microphone.AudioSequencer) AppOption {
-	return func(app *App) {
-		app.audioSequencer = sequencer
+		app.speech = stt.NewService(stt.NewStore(stt.ModelsDir()), newEngine, app.speechListener())
 	}
 }
 
@@ -107,6 +101,10 @@ func NewApp(options ...AppOption) *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
+
+func (a *App) shutdown(ctx context.Context) {
+	a.speech.Close()
 }
 
 func (a *App) GetAppVersion() string {

@@ -14,6 +14,10 @@ type Config struct {
 	GroqApiKey   *string `gorm:"column:groq_api_key"`
 
 	TranscriberSource string  `gorm:"column:transcriber_source;default:local"` // local, openai, witai, groq
+	SpeechModelID     *string `gorm:"column:speech_model_id"`                  // catalogue id of the local model
+
+	// Kept so a synced row from an older build still applies; unused since the
+	// GGUF catalogue replaced the ggml models. Drop in a later migration.
 	LocalWhisperModel *string `gorm:"column:local_whisper_model"`
 	LocalWhisperGPU   *bool   `gorm:"column:local_whisper_gpu"`
 }

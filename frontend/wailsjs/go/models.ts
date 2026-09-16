@@ -1,55 +1,97 @@
-export namespace local_whisper {
+export namespace languages {
 	
-	export class DownloadProgress {
+	export class Language {
 	    Name: string;
-	    Size: number;
-	    Total: number;
+	    Code: string;
 	
 	    static createFrom(source: any = {}) {
-	        return new DownloadProgress(source);
+	        return new Language(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
-	        this.Size = source["Size"];
-	        this.Total = source["Total"];
-	    }
-	}
-	export class LocalWhisperModel {
-	    Name: string;
-	    EnglishOnly: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new LocalWhisperModel(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.EnglishOnly = source["EnglishOnly"];
+	        this.Code = source["Code"];
 	    }
 	}
 
 }
 
-export namespace microphone {
+export namespace main {
 	
-	export class MicInputDevice {
-	    Name: string;
-	    IsDefault: number;
-	    ID: number[];
+	export class MachineInfo {
+	    Cores: number;
+	    MemoryMB: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new MicInputDevice(source);
+	        return new MachineInfo(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.IsDefault = source["IsDefault"];
-	        this.ID = source["ID"];
+	        this.Cores = source["Cores"];
+	        this.MemoryMB = source["MemoryMB"];
 	    }
+	}
+	export class SpeechModel {
+	    ID: string;
+	    Name: string;
+	    Description: string;
+	    SizeMB: number;
+	    Languages: languages.Language[];
+	    LanguageDetect: boolean;
+	    Streaming: boolean;
+	    Custom: boolean;
+	    Accuracy: number;
+	    Speed: number;
+	    Fit: string;
+	    FitLabel: string;
+	    Downloaded: boolean;
+	    Downloading: boolean;
+	    Recommended: boolean;
+	    Suggested: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SpeechModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Name = source["Name"];
+	        this.Description = source["Description"];
+	        this.SizeMB = source["SizeMB"];
+	        this.Languages = this.convertValues(source["Languages"], languages.Language);
+	        this.LanguageDetect = source["LanguageDetect"];
+	        this.Streaming = source["Streaming"];
+	        this.Custom = source["Custom"];
+	        this.Accuracy = source["Accuracy"];
+	        this.Speed = source["Speed"];
+	        this.Fit = source["Fit"];
+	        this.FitLabel = source["FitLabel"];
+	        this.Downloaded = source["Downloaded"];
+	        this.Downloading = source["Downloading"];
+	        this.Recommended = source["Recommended"];
+	        this.Suggested = source["Suggested"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 
 }
@@ -161,6 +203,7 @@ export namespace repository {
 	    OpenAIApiKey?: string;
 	    GroqApiKey?: string;
 	    TranscriberSource: string;
+	    SpeechModelID?: string;
 	    LocalWhisperModel?: string;
 	    LocalWhisperGPU?: boolean;
 	
@@ -178,6 +221,7 @@ export namespace repository {
 	        this.OpenAIApiKey = source["OpenAIApiKey"];
 	        this.GroqApiKey = source["GroqApiKey"];
 	        this.TranscriberSource = source["TranscriberSource"];
+	        this.SpeechModelID = source["SpeechModelID"];
 	        this.LocalWhisperModel = source["LocalWhisperModel"];
 	        this.LocalWhisperGPU = source["LocalWhisperGPU"];
 	    }
@@ -303,43 +347,20 @@ export namespace repository {
 
 }
 
-export namespace structs {
+export namespace stt {
 	
-	export class Language {
+	export class Device {
 	    Name: string;
-	    Code: string;
+	    IsDefault: boolean;
 	
 	    static createFrom(source: any = {}) {
-	        return new Language(source);
+	        return new Device(source);
 	    }
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Name = source["Name"];
-	        this.Code = source["Code"];
-	    }
-	}
-
-}
-
-export namespace whisper {
-	
-	export class WhisperModel {
-	    Name: string;
-	    HasAlsoAnEnglishOnlyModel: boolean;
-	    RAMRequired: number;
-	    Enabled: boolean;
-	
-	    static createFrom(source: any = {}) {
-	        return new WhisperModel(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.Name = source["Name"];
-	        this.HasAlsoAnEnglishOnlyModel = source["HasAlsoAnEnglishOnlyModel"];
-	        this.RAMRequired = source["RAMRequired"];
-	        this.Enabled = source["Enabled"];
+	        this.IsDefault = source["IsDefault"];
 	    }
 	}
 

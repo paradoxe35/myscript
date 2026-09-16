@@ -32,8 +32,9 @@ contents:
     file_info:
       mode: 0644
 
-# Desktop integration dependencies
+# Desktop integration and microphone capture dependencies
 depends:
+  - libasound2 | libasound2t64
   - libgtk-3-0
   - libnotify4
   - libnss3

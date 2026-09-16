@@ -2,38 +2,144 @@ name: Build and Release App
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+  pull_request:
   workflow_dispatch:
 
+env:
+  GO_VERSION: "1.23"
+  NODE_OPTIONS: "--max-old-space-size=4096"
+  # ggml defaults to -march=native, which would tie a release to the runner.
+  # Pin an AVX2 baseline (x86 from ~2013); inert on arm64.
+  TRANSCRIBE_CMAKE_ARGS: >-
+    -DGGML_NATIVE=OFF
+    -DGGML_SSE42=ON
+    -DGGML_AVX=ON
+    -DGGML_AVX2=ON
+    -DGGML_FMA=ON
+    -DGGML_F16C=ON
+    -DGGML_BMI2=ON
+
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            rust-ffi/target/
+          key: ${{ runner.os }}-cargo-test-${{ hashFiles('rust-ffi/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-test-
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Rust tests
+        run: cd rust-ffi && cargo test --release
+
+      - name: Build Rust FFI library
+        run: bash scripts/build-rust-ffi.sh
+
+      # main.go embeds frontend/dist, so the frontend must exist before any go command.
+      - name: Frontend build
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+          pnpm run build
+
+      - name: Go vet and tests
+        run: |
+          go vet ./...
+          go test ./...
+
   build:
     name: Build for all platforms
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Continue with other builds even if one fails
+      fail-fast: false
       matrix:
         include:
-          # Docker builds for Windows and Linux
-          - os: ubuntu-latest
-            build-type: docker
+          # The oldest runner still offered: the binary links the runner's glibc
+          # and libstdc++, so this is what lets Ubuntu 22.04 / Debian 12 users run it.
+          - os: ubuntu-22.04
+            platform: linux
             arch: amd64
-          # macOS builds
-          - os: macos-latest
-            build-type: native
+          - os: windows-latest
+            platform: windows
             arch: amd64
+            rust-target: x86_64-pc-windows-gnu
+          - os: macos-13
+            platform: darwin
+            arch: amd64
+            rust-target: x86_64-apple-darwin
           - os: macos-latest
-            build-type: native
+            platform: darwin
             arch: arm64
+            rust-target: aarch64-apple-darwin
 
-    env:
-      CGO_CFLAGS_ALLOW: "-mfma|-mf16c"
-      NODE_OPTIONS: "--max-old-space-size=4096"
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - uses: actions/checkout@v4
 
-      # Common setup steps
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            rust-ffi/target/
+          key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('rust-ffi/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-cargo-
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -75,33 +181,49 @@ jobs:
           cd internal/transcribe/wait.ai
           node keys.js ${{ secrets.WAIT_API_KEYS }}
 
-      # Docker-specific steps
-      - name: Set up Docker Buildx
-        if: matrix.build-type == 'docker'
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build with Docker
-        if: matrix.build-type == 'docker'
+      - name: Install Linux dependencies
+        if: matrix.platform == 'linux'
         run: |
-          docker build \
-            --build-arg BUILDARCH=${{ matrix.arch }} \
-            --build-arg APP_NAME=${{ github.event.repository.name }} \
-            -t builder .
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libasound2-dev libgtk-3-dev libwebkit2gtk-4.1-dev
 
-          # Create artifacts directory
-          mkdir -p build/bin
+      - name: Install Windows dependencies
+        if: matrix.platform == 'windows'
+        run: |
+          choco install mingw nsis -y
 
-          # Run container and copy artifacts
-          docker run --rm -v ${{ github.workspace }}/build/bin:/artifacts builder
+      - name: Install macOS dependencies
+        if: matrix.platform == 'darwin'
+        run: |
+          brew update
+          brew install cmake
 
-      # Add this step before "Process Linux Artifacts"
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
+
+      - name: Build Rust FFI library
+        run: bash scripts/build-rust-ffi.sh ${{ matrix.rust-target }}
+
+      - name: Build Linux
+        if: matrix.platform == 'linux'
+        run: |
+          wails build -platform linux/amd64 -skipbindings -tags webkit2_41 -o ${{ github.event.repository.name }}-amd64
+
+      - name: Build Windows
+        if: matrix.platform == 'windows'
+        run: |
+          wails build -platform windows/amd64 -skipbindings -s -webview2 embed -nsis
+
+      - name: Build macOS
+        if: matrix.platform == 'darwin'
+        run: |
+          wails build -platform darwin/${{ matrix.arch }} -skipbindings
+          cd build/bin
+          zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
+
       - name: Create .deb Package with nFPM
-        if: matrix.build-type == 'docker'
+        if: matrix.platform == 'linux'
         run: |
-          # Ensure target directory exists
-          mkdir -p build/bin
-
-          # Create .deb package using nFPM Docker image
           docker run --rm \
             -v "$PWD:/tmp" \
             -w /tmp \
@@ -111,78 +233,40 @@ jobs:
             --target /tmp/build/bin \
             --packager deb
 
-      - name: Process .deb Package Artifacts
-        if: matrix.build-type == 'docker'
+      - name: Process Linux Artifacts
+        if: matrix.platform == 'linux'
         run: |
           shopt -s nullglob
+          cd build/bin
 
-          for file in build/bin/*.deb; do
-            mv "$file" "build/bin/${{ github.event.repository.name }}-linux-${{ matrix.arch }}.deb"
+          for file in *.deb; do
+            mv "$file" "${{ github.event.repository.name }}-linux-${{ matrix.arch }}.deb"
           done
+
+          mkdir linux_files
+          find . -maxdepth 1 -type f -not -name "*.deb" -exec mv {} linux_files/ \;
+          tar czf ${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz -C linux_files .
+          rm -rf linux_files
 
       - name: Process Windows Artifacts
-        if: matrix.build-type == 'docker'
+        if: matrix.platform == 'windows'
         run: |
           shopt -s nullglob
-
-          # Rename installer files (if any)
-          for file in build/bin/*-installer.exe; do
-            mv "$file" "build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe"
-          done
-
-          # Rename other .exe files
-          for file in build/bin/*.exe; do
-            [[ "$file" == *"-installer.exe" ]] && continue  # Skip installer files
-            mv "$file" "build/bin/${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
-          done
-
-      - name: Process Linux Artifacts
-        if: matrix.build-type == 'docker'
-        run: |
-          if [ -f "build/bin/${{ github.event.repository.name }}-amd64" ] || [ -f "build/bin/${{ github.event.repository.name }}" ]; then
-            cd build/bin
-            # Create a temporary directory for Linux files
-            mkdir linux_files
-            # Move Linux binaries to temp directory (Exclude .exe, .zip, and .deb files from tarball)
-            find . -type f -not -name "*.exe" -not -name "*.zip" -not -name "*.deb" -exec mv {} linux_files/ \;
-            # Create tarball from Linux files only
-            cd linux_files
-            tar czf ../${{ github.event.repository.name }}-linux-${{ matrix.arch }}.tar.gz *
-            cd ..
-            # Clean up the temporary directory
-            rm -rf linux_files
-          fi
-
-      # macOS-specific steps
-      - name: Set up Go
-        if: matrix.build-type == 'native'
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.23"
-
-      - name: Install Wails
-        if: matrix.build-type == 'native'
-        run: |
-          go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
-      - name: Install macOS Dependencies
-        if: matrix.build-type == 'native'
-        run: |
-          brew update
-          brew install sdl2 cmake gcc
-
-      - name: Build macOS
-        if: matrix.build-type == 'native'
-        run: |
-          wails build -platform darwin/${{ matrix.arch }} -skipbindings
           cd build/bin
-          zip -r ${{ github.event.repository.name }}-darwin-${{ matrix.arch }}.zip *
 
-      # Common upload step
+          for file in *-installer.exe; do
+            mv "$file" "${{ github.event.repository.name }}-windows-${{ matrix.arch }}-installer.exe"
+          done
+
+          for file in *.exe; do
+            [[ "$file" == *"-installer.exe" ]] && continue
+            mv "$file" "${{ github.event.repository.name }}-windows-${{ matrix.arch }}.exe"
+          done
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-${{ matrix.arch }}-build
+          name: ${{ matrix.platform }}-${{ matrix.arch }}-build
           path: build/bin/*
           retention-days: 1
 

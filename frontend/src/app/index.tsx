@@ -12,7 +12,7 @@ import { RightButtonsHeader } from "@/components/app-header/right-buttons-header
 
 // Init components
 import { TranscriberInit } from "@/components/transcriber-init";
-import { LocalWhisperInit } from "@/components/local-whisper-init";
+import { SpeechModelsInit } from "@/components/speech-models-init";
 import { AppUpdater } from "@/components/app-updater";
 import { SynchronizerInit } from "@/components/synchronizer-init";
 
@@ -34,7 +34,7 @@ export default function App() {
         <AppUpdater />
         <SynchronizerInit />
         <TranscriberInit />
-        <LocalWhisperInit />
+        <SpeechModelsInit />
       </SidebarInset>
     </SidebarProvider>
   );

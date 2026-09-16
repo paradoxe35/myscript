@@ -6,7 +6,7 @@ import { repository } from "~wails/models";
 type ConfigStore = {
   config: repository.Config | null;
   fetchConfig: () => Promise<void>;
-  writeConfig: (config: TConfig) => Promise<void>;
+  writeConfig: (config: Partial<TConfig>) => Promise<void>;
 };
 
 type TConfig = WithoutRepositoryBaseFields<repository.Config>;

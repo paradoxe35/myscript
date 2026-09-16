@@ -6,14 +6,12 @@ toolchain go1.23.4
 
 require (
 	github.com/conneroisu/groq-go v0.9.5
-	github.com/gen2brain/malgo v0.11.23
 	github.com/go-audio/wav v1.1.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/openai/openai-go v0.1.0-alpha.41
-	github.com/paradoxe35/whisper.cpp-go v1.0.3
 	github.com/shirou/gopsutil/v4 v4.24.11
 	github.com/wailsapp/wails/v2 v2.9.2
 	golang.org/x/oauth2 v0.25.0

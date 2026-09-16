@@ -1,0 +1,4 @@
+# Build scripts pnpm 10+ may run on install; pnpm 9 reads only "packages" from this file.
+allowBuilds:
+  esbuild: true
+  core-js: false

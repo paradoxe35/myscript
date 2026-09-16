@@ -6,7 +6,7 @@ package groq
 import (
 	"bytes"
 	"context"
-	"myscript/internal/transcribe/whisper"
+	"myscript/internal/transcribe/languages"
 
 	"github.com/conneroisu/groq-go"
 )
@@ -21,7 +21,7 @@ func GetGroqTranscribeModel() string {
 
 func TranscribeFromBuffer(buffer []byte, language, apiKey string) (string, error) {
 	// Since it uses the whisper model, it should have a valid language
-	err := whisper.ValidateWhisperLanguage(language)
+	err := languages.Validate(language)
 	if err != nil {
 		return "", err
 	}

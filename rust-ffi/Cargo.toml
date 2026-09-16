@@ -1,0 +1,36 @@
+[package]
+name = "myscript-stt"
+version = "0.1.0"
+edition = "2024"
+description = "Microphone capture, voice detection and local speech-to-text for MyScript"
+license = "MIT"
+
+[lib]
+name = "myscript_stt"
+crate-type = ["staticlib"]
+
+[dependencies]
+anyhow = "1.0"
+parking_lot = "0.12"
+once_cell = "1.20"
+log = "0.4"
+env_logger = { version = "0.11", default-features = false }
+
+# GGUF/ggml engine, capture, resampling and voice detection. Model support is
+# not feature-gated; the architecture is read from the file.
+transcribe-cpp = { version = "0.2.3", default-features = false }
+cpal = "0.18"
+rubato = "0.16"
+earshot = "1.2"
+
+[build-dependencies]
+cbindgen = "0.29"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+# Callbacks into the host are wrapped in catch_unwind; `abort` would make that
+# dead code and take the app down with the audio thread.
+panic = "unwind"
