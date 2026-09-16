@@ -153,7 +153,10 @@ jobs:
 
       - name: Install Windows build dependencies
         if: matrix.platform == 'windows'
-        run: choco install mingw nsis -y --no-progress
+        run: |
+          choco install mingw nsis -y --no-progress
+          # Installed for the machine, not for this job's shell: later steps need it on PATH.
+          echo "C:\Program Files (x86)\NSIS" >> "$GITHUB_PATH"
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@$(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v2)
@@ -217,10 +220,13 @@ jobs:
         if: matrix.platform == 'windows'
         run: |
           cd build/bin
-          for file in *-installer.exe; do mv "$file" myscript-windows-${{ matrix.arch }}-installer.exe; done
-          for file in *.exe; do
-            [[ "$file" == *-installer.exe ]] || mv "$file" myscript-windows-${{ matrix.arch }}.exe
-          done
+          ls -la
+          installer=$(ls *-installer.exe 2>/dev/null | head -n 1)
+          test -n "$installer" || { echo "NSIS produced no installer"; exit 1; }
+          mv "$installer" myscript-windows-${{ matrix.arch }}-installer.exe
+          app=$(ls *.exe | grep -v -- '-installer.exe' | head -n 1)
+          test -n "$app" || { echo "no application exe"; exit 1; }
+          mv "$app" myscript-windows-${{ matrix.arch }}.exe
 
       - uses: actions/upload-artifact@v7
         with:
