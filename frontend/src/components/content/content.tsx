@@ -8,12 +8,15 @@ import { useContentZoomStore } from "@/store/content-zoom";
 import { useDebouncedCallback } from "use-debounce";
 
 export function Content() {
-  const $content = useRef<HTMLDivElement>(null);
   const activePageStore = useActivePageStore();
+  const zoom = useContentZoomStore((state) => state.zoom);
   const canEdit = activePageStore.canEdit();
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4" ref={$content}>
+    <div
+      className="flex flex-1 flex-col gap-4 p-4"
+      style={{ "--content-zoom": zoom / 100 } as React.CSSProperties}
+    >
       <ContentTitle />
       <ResetScroll />
 
@@ -28,8 +31,7 @@ function ResetScroll() {
 
   useEffect(() => {
     requestAnimationFrame(() => {
-      // @ts-ignore
-      document.body.scrollTo({ top: 0, behavior: "instant" });
+      window.scrollTo({ top: 0, behavior: "instant" });
     });
   }, [activePageStore.getPageId()]);
 
@@ -37,8 +39,6 @@ function ResetScroll() {
 }
 
 function ContentTitle() {
-  const zoomStore = useContentZoomStore();
-
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const savePageTitle = useLocalPagesStore((state) => state.savePageTitle);
@@ -122,15 +122,9 @@ function ContentTitle() {
         rows={1}
         className={cn(
           "px-8 sm:px-12 max-w-[846px]",
-          "font-bold text-3xl bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
+          "font-bold title-zoom bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
           "mb-2 justify-self-center outline-none border-none w-full block",
-          "resize-none overflow-hidden",
-
-          // zoomStore.zoom === 80 && "text-xl",
-          // zoomStore.zoom === 90 && "text-2xl",
-          zoomStore.zoom === 100 && "text-3xl",
-          zoomStore.zoom === 200 && "text-4xl",
-          zoomStore.zoom === 300 && "text-5xl"
+          "resize-none overflow-hidden"
         )}
       />
     </div>

@@ -1,10 +1,8 @@
-import { EditorBubble, useEditor } from "novel";
-import { removeAIHighlight } from "novel/extensions";
-import {} from "novel/plugins";
+import { EditorBubble, removeAIHighlight, useEditor } from "novel";
 import { Fragment, type ReactNode, useEffect } from "react";
 import Magic from "../ui/icons/magic";
 import { AISelector } from "./ai-selector";
-import { Button } from "@/components/noveljs/ui/button";
+import { Button } from "@/components/ui/button";
 
 interface GenerativeMenuSwitchProps {
   openAIApiKey?: string;

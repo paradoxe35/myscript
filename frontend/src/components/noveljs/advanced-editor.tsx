@@ -6,25 +6,26 @@ import {
   EditorContent,
   type EditorInstance,
   EditorRoot,
+  ImageResizer,
   type JSONContent,
+  handleCommandNavigation,
+  handleImageDrop,
+  handleImagePaste,
 } from "novel";
-import { ImageResizer, handleCommandNavigation } from "novel/extensions";
 import { useState } from "react";
 import { defaultExtensions } from "./extensions";
 import { ColorSelector } from "./selectors/color-selector";
 import { LinkSelector } from "./selectors/link-selector";
 import { NodeSelector } from "./selectors/node-selector";
 import { MathSelector } from "./selectors/math-selector";
-import { Separator } from "./ui/separator";
+import { Separator } from "@/components/ui/separator";
 
-import { handleImageDrop, handleImagePaste } from "novel/plugins";
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
 import { uploadFn } from "./image-upload";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
 
 import { cn } from "@/lib/utils";
-import { useContentZoomStore } from "@/store/content-zoom";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -40,18 +41,6 @@ const NovelEditor = (props: EditorProps) => {
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
-
-  const zoomStore = useContentZoomStore();
-
-  const className = cn(
-    "prose prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full !pt-0",
-
-    // zoomStore.zoom === 80 && "prose-sm",
-    // zoomStore.zoom === 90 && "prose-base",
-    zoomStore.zoom === 100 && "prose-lg",
-    zoomStore.zoom === 200 && "prose-xl",
-    zoomStore.zoom === 300 && "prose-2xl"
-  );
 
   return (
     <div className={cn("relative w-full max-w-screen-md", props.className)}>
@@ -69,13 +58,14 @@ const NovelEditor = (props: EditorProps) => {
             handleDrop: (view, event, _slice, moved) =>
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
-              class: className,
+              class:
+                "prose prose-lg dark:prose-invert prose-zoom focus:outline-none max-w-full !pt-0",
             },
           }}
           onUpdate={({ editor }) => props.onUpdate?.(editor)}
           slotAfter={<ImageResizer />}
         >
-          <EditorCommand className="z-[10000] h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
+          <EditorCommand className="h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
             <EditorCommandEmpty className="px-2 text-muted-foreground">
               No results
             </EditorCommandEmpty>
@@ -106,16 +96,15 @@ const NovelEditor = (props: EditorProps) => {
             open={openAI}
             onOpenChange={setOpenAI}
           >
-            <Separator orientation="vertical" />
+            <Separator orientation="vertical" className="h-auto" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
-            <Separator orientation="vertical" />
-
+            <Separator orientation="vertical" className="h-auto" />
             <LinkSelector open={openLink} onOpenChange={setOpenLink} />
-            <Separator orientation="vertical" />
+            <Separator orientation="vertical" className="h-auto" />
             <MathSelector />
-            <Separator orientation="vertical" />
+            <Separator orientation="vertical" className="h-auto" />
             <TextButtons />
-            <Separator orientation="vertical" />
+            <Separator orientation="vertical" className="h-auto" />
             <ColorSelector open={openColor} onOpenChange={setOpenColor} />
           </GenerativeMenuSwitch>
         </EditorContent>

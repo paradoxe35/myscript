@@ -1,7 +1,9 @@
+packages:
+  - "."
 # Build scripts pnpm 10+ may run on install; pnpm 9 reads only "packages" from this file.
 allowBuilds:
   esbuild: true
   core-js: false
-
-packages:
-  - "."
+# 0.1.16 imports a symbol prosemirror-view 1.38 removed; pnpm 9 reads the same override from package.json.
+overrides:
+  tiptap-extension-global-drag-handle: ^0.1.18

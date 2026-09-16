@@ -19,6 +19,7 @@ export function ZoomController() {
         <Button
           variant="outline"
           size="icon"
+          title={`Zoom ${zoomStore.zoom}%`}
           className="bg-sidebar-accent hover:bg-sidebar-accent/40"
         >
           <ZoomIn />
@@ -39,7 +40,7 @@ export function ZoomController() {
             <Minus />
           </Button>
 
-          <span>{zoomStore.zoom}</span>
+          <span className="w-12 text-center tabular-nums">{zoomStore.zoom}%</span>
 
           <Button
             disabled={!zoomStore.canZoomIn()}

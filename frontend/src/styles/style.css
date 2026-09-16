@@ -166,6 +166,36 @@
   }
 }
 
+@layer utilities {
+  .prose-zoom {
+    font-size: calc(1.125rem * var(--content-zoom, 1));
+  }
+  .title-zoom {
+    font-size: calc(1.875rem * var(--content-zoom, 1));
+  }
+}
+
+.reader .reader-word {
+  border-radius: 0.2em;
+  cursor: pointer;
+  transition: background-color 150ms, color 150ms, box-shadow 150ms;
+}
+
+.reader .reader-word:hover {
+  background-color: hsl(var(--accent));
+}
+
+.reader .reader-word.is-read {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--muted-foreground));
+}
+
+.reader .reader-word.is-current {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.3);
+}
+
 .novel-editor pre {
   background: #0d0d0d;
   border-radius: 0.5rem;

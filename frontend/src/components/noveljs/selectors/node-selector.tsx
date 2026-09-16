@@ -13,12 +13,12 @@ import {
 } from "lucide-react";
 import { EditorBubbleItem, useEditor } from "novel";
 
-import { Button } from "@/components/noveljs/ui/button";
+import { Button } from "@/components/ui/button";
 import {
+  Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/noveljs/ui/popover";
-import { Popover } from "@radix-ui/react-popover";
+} from "@/components/ui/popover";
 
 export type SelectorItem = {
   name: string;
@@ -32,7 +32,6 @@ const items: SelectorItem[] = [
     name: "Text",
     icon: TextIcon,
     command: (editor) => editor?.chain().focus().clearNodes().run(),
-    // I feel like there has to be a more efficient way to do this – feel free to PR if you know how!
     isActive: (editor) =>
       !!(
         editor?.isActive("paragraph") &&

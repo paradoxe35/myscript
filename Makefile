@@ -69,6 +69,7 @@ test-go: $(RUST_LIB) build-frontend
 	go test ./...
 
 test-frontend: build-frontend
+	cd frontend && pnpm test
 
 clean-rust:
 	cd rust-ffi && cargo clean

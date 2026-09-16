@@ -68,8 +68,9 @@ export function TranscriberInit() {
     });
   }, []);
 
+  // Read mode outlives the take so the reader can restart or leave on their own.
   useEffect(() => {
-    activePageStore.setReadMode(transcriberStore.state === "listening");
+    if (transcriberStore.state === "listening") activePageStore.setReadMode(true);
   }, [transcriberStore.state]);
 
   return null;
