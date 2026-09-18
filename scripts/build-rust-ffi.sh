@@ -5,9 +5,20 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root/rust-ffi"
 
+# Cross-target builds need the target's std, which a fresh toolchain lacks.
+ensure_target() {
+  command -v rustup >/dev/null 2>&1 || return 0
+  if rustup target list --installed | grep -qx "$1"; then
+    return 0
+  fi
+  echo "Installing the $1 Rust target..."
+  rustup target add "$1"
+}
+
 target="${1:-}"
 cargo_args=(build --release)
 if [ -n "$target" ]; then
+  ensure_target "$target"
   cargo_args+=(--target "$target")
   out_dir="target/$target/release"
 else
