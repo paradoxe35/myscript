@@ -9,22 +9,20 @@ import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
-import { useOpenAICompletion } from "./use-openai-completion";
+import { useAICompletion } from "./use-ai-completion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 
 interface AISelectorProps {
-  openAIApiKey: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
+export function AISelector({ onOpenChange }: AISelectorProps) {
   const { editor } = useEditor();
   const [inputValue, setInputValue] = useState("");
 
-  const { completion, generateCompletion, isLoading, error } =
-    useOpenAICompletion(openAIApiKey);
+  const { completion, generate, cancel, isLoading, error } = useAICompletion();
 
   useEffect(() => {
     if (error) {
@@ -47,12 +45,20 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
       )}
 
       {isLoading && (
-        <div className="flex h-12 w-full items-center px-4 text-sm font-medium text-muted-foreground text-blue-500">
-          <Magic className="mr-2 h-4 w-4 shrink-0  " />
+        <div className="flex h-12 w-full items-center px-4 text-sm font-medium text-blue-500">
+          <Magic className="mr-2 h-4 w-4 shrink-0" />
           AI is thinking
           <div className="ml-2 mt-1">
             <CrazySpinner />
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto text-muted-foreground"
+            onClick={cancel}
+          >
+            Stop
+          </Button>
         </div>
       )}
 
@@ -76,7 +82,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
               className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-blue-500 hover:bg-blue-900"
               onClick={() => {
                 if (completion) {
-                  return generateCompletion(completion, "zap", inputValue).then(
+                  return generate(completion, "zap", inputValue).then(
                     () => setInputValue("")
                   );
                 }
@@ -86,9 +92,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
                   slice?.content
                 );
 
-                generateCompletion(text, "zap", inputValue).then(() =>
-                  setInputValue("")
-                );
+                generate(text, "zap", inputValue).then(() => setInputValue(""));
               }}
             >
               <ArrowUp className="h-4 w-4" />
@@ -106,7 +110,7 @@ export function AISelector({ onOpenChange, openAIApiKey }: AISelectorProps) {
           ) : (
             <AISelectorCommands
               onSelect={(value, option) => {
-                generateCompletion(value, option);
+                generate(value, option);
               }}
             />
           )}

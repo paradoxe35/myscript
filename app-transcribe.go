@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"myscript/internal/repository"
 	"myscript/internal/stt"
 	"myscript/internal/transcribe/groq"
 	"myscript/internal/transcribe/languages"
@@ -33,7 +34,7 @@ func (a *App) GetLanguages() []languages.Language {
 }
 
 func (a *App) remoteTranscriber(source string) (stt.Transcriber, error) {
-	config := a.GetConfig()
+	secrets := a.secrets()
 
 	switch source {
 	case "witai":
@@ -46,19 +47,19 @@ func (a *App) remoteTranscriber(source string) (stt.Transcriber, error) {
 		}, nil
 
 	case "openai":
-		if config.OpenAIApiKey == nil || *config.OpenAIApiKey == "" {
+		apiKey := secrets.Get(repository.SecretSpeechOpenAIAPIKey)
+		if apiKey == "" {
 			return nil, fmt.Errorf("no OpenAI API key found")
 		}
-		apiKey := *config.OpenAIApiKey
 		return func(wav []byte, language string) (string, error) {
 			return openai.TranscribeFromBuffer(wav, language, apiKey)
 		}, nil
 
 	case "groq":
-		if config.GroqApiKey == nil || *config.GroqApiKey == "" {
+		apiKey := secrets.Get(repository.SecretSpeechGroqAPIKey)
+		if apiKey == "" {
 			return nil, fmt.Errorf("no Groq API key found")
 		}
-		apiKey := *config.GroqApiKey
 		return func(wav []byte, language string) (string, error) {
 			return groq.TranscribeFromBuffer(wav, language, apiKey)
 		}, nil

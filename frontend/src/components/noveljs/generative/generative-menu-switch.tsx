@@ -3,26 +3,30 @@ import { Fragment, type ReactNode, useEffect } from "react";
 import Magic from "../ui/icons/magic";
 import { AISelector } from "./ai-selector";
 import { Button } from "@/components/ui/button";
+import { useAIProvidersStore } from "@/store/ai-providers";
 
 interface GenerativeMenuSwitchProps {
-  openAIApiKey?: string;
   children: ReactNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
 const GenerativeMenuSwitch = ({
-  openAIApiKey,
   children,
   open,
   onOpenChange,
 }: GenerativeMenuSwitchProps) => {
   const { editor } = useEditor();
+  const aiEnabled = useAIProvidersStore((store) => store.enabled);
+  const checkEnabled = useAIProvidersStore((store) => store.checkEnabled);
+
+  useEffect(() => {
+    checkEnabled();
+  }, []);
 
   useEffect(() => {
     if (!open && editor) removeAIHighlight(editor);
   }, [open]);
-
-  const aiEnabled = !!openAIApiKey;
 
   return (
     <EditorBubble
@@ -36,11 +40,7 @@ const GenerativeMenuSwitch = ({
       className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
     >
       {open && aiEnabled && (
-        <AISelector
-          open={open}
-          openAIApiKey={openAIApiKey}
-          onOpenChange={onOpenChange}
-        />
+        <AISelector open={open} onOpenChange={onOpenChange} />
       )}
 
       {!open && (

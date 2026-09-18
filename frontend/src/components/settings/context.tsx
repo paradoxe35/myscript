@@ -1,191 +1,106 @@
 import { useConfigStore } from "@/store/config";
+import { useGoogleAuthTokenStore } from "@/store/google-auth-token";
+import { isGoogleAPIInvalidGrantError } from "@/store/google-auth-token";
 import { WithoutRepositoryBaseFields } from "@/types";
+import { Loader2 } from "lucide-react";
 import {
   createContext,
   useCallback,
   useContext,
   useEffect,
-  useMemo,
-  useReducer,
   useState,
 } from "react";
 import { toast } from "sonner";
-import { repository } from "~wails/models";
-
-import isEqual from "lodash/isEqual";
-import { useSpeechModelsStore } from "@/store/speech-models";
+import { useDebouncedCallback } from "use-debounce";
+import { EventsOn, EventsOnce } from "~wails-runtime";
 import {
   GetAppVersion,
   IsGoogleAuthEnabled,
   StartGoogleAuthorization,
   StartSynchronizer,
 } from "~wails/main/App";
-import { EventsOn, EventsOnce } from "~wails-runtime";
-import { useDebouncedCallback } from "use-debounce";
-import {
-  isGoogleAPIInvalidGrantError,
-  useGoogleAuthTokenStore,
-} from "@/store/google-auth-token";
-import { Loader2 } from "lucide-react";
+import { repository } from "~wails/models";
 
 export type TranscriberSource = "local" | "openai" | "witai" | "groq";
 
-export type TranscriberSources = {
-  [key in TranscriberSource]: {
-    name: string;
-    key: key;
-  };
-};
-
-export const TRANSCRIBER_SOURCES: TranscriberSources = {
-  local: {
-    name: "Local",
+export const TRANSCRIBER_SOURCES: Array<{
+  key: TranscriberSource;
+  name: string;
+  description: string;
+}> = [
+  {
     key: "local",
+    name: "On this computer",
+    description: "Private and offline, once a model is downloaded.",
   },
-  openai: {
-    name: "OpenAI",
+  {
     key: "openai",
+    name: "OpenAI Whisper",
+    description: "Accurate, needs an internet connection and an API key.",
   },
-  witai: {
-    name: "Wit.ai",
-    key: "witai",
-  },
-  groq: {
-    name: "Groq",
+  {
     key: "groq",
+    name: "Groq",
+    description: "Whisper on Groq's hardware. Fast, needs an API key.",
   },
-};
+  {
+    key: "witai",
+    name: "Wit.ai",
+    description: "Free and needs no key, but less accurate.",
+  },
+];
 
-type SettingsState = WithoutRepositoryBaseFields<repository.Config> & {
-  TranscriberSource: TranscriberSource;
-};
+export type ConfigPatch = Partial<
+  WithoutRepositoryBaseFields<repository.Config>
+>;
 
-type SettingsContextValue = ReturnType<typeof useSettingsHook>;
+type SettingsContextValue = ReturnType<typeof useSettingsState>;
 
-const SettingsContext = createContext<SettingsContextValue>({} as any);
+const SettingsContext = createContext<SettingsContextValue | null>(null);
 
-function reducer(state: SettingsState, action: Partial<SettingsState>) {
-  return {
-    ...state,
-    ...action,
-  };
-}
-
-function useSettingsHook() {
+function useSettingsState() {
   const [appVersion, setAppVersion] = useState("");
 
-  const [state, dispatch] = useReducer(reducer, { TranscriberSource: "local" });
+  const config = useConfigStore((state) => state.config);
+  const fetchConfig = useConfigStore((state) => state.fetchConfig);
+  const writeConfig = useConfigStore((state) => state.writeConfig);
 
-  const cloudHook = useCloudSettings();
-
-  const fetchModels = useSpeechModelsStore((store) => store.fetchModels);
-  const configStore = useConfigStore();
+  const cloud = useCloudSettings();
 
   useEffect(() => {
-    GetAppVersion().then((v) => setAppVersion(v));
+    GetAppVersion().then(setAppVersion);
+    fetchConfig();
   }, []);
 
-  useEffect(() => {
-    configStore.fetchConfig();
-  }, []);
+  const updateConfig = useCallback(
+    (patch: ConfigPatch) => {
+      return writeConfig(patch).catch((error) => {
+        toast.error(`Could not save: ${error}`);
+      });
+    },
+    [writeConfig],
+  );
 
-  useEffect(() => {
-    const config = configStore.config as SettingsState;
-
-    if (config) {
-      dispatch(config);
-    }
-  }, [configStore.config]);
-
-  useEffect(() => {
-    if (state.TranscriberSource === "local") {
-      fetchModels();
-    }
-  }, [state.TranscriberSource]);
-
-  function validateOpenAIApiKey(state: SettingsState) {
-    if (state.TranscriberSource === "openai") {
-      if (!state.OpenAIApiKey) {
-        toast.error("OpenAI API key is required");
-        return false;
-      }
-
-      if (!state.OpenAIApiKey.startsWith("sk-")) {
-        toast.error("OpenAI API key must start with 'sk-'");
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function validateGroqApiKey(state: SettingsState) {
-    if (state.TranscriberSource === "groq") {
-      if (!state.GroqApiKey) {
-        toast.error("Groq API key is required");
-        return false;
-      }
-
-      if (!state.GroqApiKey.startsWith("gsk_")) {
-        toast.error("Groq API key must start with 'gsk_'");
-        return false;
-      }
-    }
-    return true;
-  }
-
-  const handleSave = useCallback(() => {
-    const valid = [
-      validateOpenAIApiKey(state),
-      validateGroqApiKey(state),
-    ].every((v) => v);
-
-    if (!valid) return;
-
-    configStore.writeConfig(state).then(() => {
-      toast.success("Settings saved successfully!");
-    });
-  }, [state]);
-
-  const configModified = useMemo(() => {
-    return !isEqual(state, configStore.config);
-  }, [state, configStore.config]);
-
-  return {
-    state,
-    dispatch,
-    handleSave,
-    appVersion,
-    configModified,
-    cloud: cloudHook,
-  };
+  return { appVersion, config, updateConfig, cloud };
 }
 
 function useCloudSettings() {
-  // Google auth token
   const googleAuthToken = useGoogleAuthTokenStore((state) => state.token);
   const getGoogleAuthToken = useGoogleAuthTokenStore((state) => state.getToken);
   const deleteGoogleAuthToken = useGoogleAuthTokenStore(
-    (state) => state.deleteToken
+    (state) => state.deleteToken,
   );
 
   const [authorizing, setAuthorizing] = useState(false);
-
-  // Services status
   const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
 
   const cloudEnabled = googleAuthEnabled;
 
-  // Start synchronization here
   const startSynchronizer = useDebouncedCallback(() => {
     StartSynchronizer().catch((error) => {
-      // If the error is due to an expired token,
-      // delete it and show a toast
       if (isGoogleAPIInvalidGrantError(error)) {
         deleteGoogleAuthToken();
         toast.warning("Google auth token expired, please re-authorize");
-      } else {
-        console.log("Error starting synchronizer");
       }
     });
   }, 1000);
@@ -198,70 +113,54 @@ function useCloudSettings() {
 
   useEffect(() => {
     getGoogleAuthToken();
-  }, []);
-
-  useEffect(() => {
     IsGoogleAuthEnabled().then(setGoogleAuthEnabled);
   }, []);
 
   useEffect(() => {
     return EventsOn("on-google-authorization-timeout", () => {
-      toast.warning("Google authorization timeout");
+      toast.warning("Google authorization timed out");
       setAuthorizing(false);
     });
   }, []);
 
   useEffect(() => {
     return EventsOn("on-google-authorization-error", (error) => {
-      toast.error("Error Google authorization: " + error);
+      toast.error("Google authorization failed: " + error);
     });
   }, []);
 
-  const onGoogleAuthorizationSuccess = useCallback(async () => {
+  const onAuthorized = useCallback(async () => {
     const token = await getGoogleAuthToken();
-
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     const toastID = toast.message(
       <div className="flex items-center gap-2">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Restoring your data from drive</span>
+        <span>Restoring your data from Drive</span>
       </div>,
-      {
-        description: "This might take a few moments...",
-        duration: Infinity,
-      }
+      { description: "This might take a few moments...", duration: Infinity },
     );
 
-    let onSuccessEvent: VoidFunction | undefined;
-    let onFailureEvent: VoidFunction | undefined;
+    let clearSuccess: VoidFunction | undefined;
+    let clearFailure: VoidFunction | undefined;
 
-    // Dismiss toast when sync is completed
-    onSuccessEvent = EventsOnce("on-sync-success", () => {
+    const dismiss = () => {
       toast.dismiss(toastID);
+      clearSuccess?.();
+      clearFailure?.();
+    };
 
-      onSuccessEvent?.();
-      onFailureEvent?.();
-    });
-
-    // Dismiss toast when sync fails
-    onFailureEvent = EventsOnce("on-sync-failure", (error) => {
-      toast.dismiss(toastID);
-
-      onSuccessEvent?.();
-      onFailureEvent?.();
-    });
+    clearSuccess = EventsOnce("on-sync-success", dismiss);
+    clearFailure = EventsOnce("on-sync-failure", dismiss);
   }, [getGoogleAuthToken]);
 
   const startGoogleAuthorization = useCallback(() => {
     setAuthorizing(true);
 
     return StartGoogleAuthorization()
-      .then(onGoogleAuthorizationSuccess)
+      .then(onAuthorized)
       .finally(() => setAuthorizing(false));
-  }, [onGoogleAuthorizationSuccess]);
+  }, [onAuthorized]);
 
   return {
     googleAuthEnabled,
@@ -274,10 +173,10 @@ function useCloudSettings() {
 }
 
 export function SettingsProvider({ children }: React.PropsWithChildren) {
-  const hook = useSettingsHook();
-
   return (
-    <SettingsContext.Provider value={hook}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider value={useSettingsState()}>
+      {children}
+    </SettingsContext.Provider>
   );
 }
 

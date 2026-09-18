@@ -1,0 +1,93 @@
+import { cn } from "@/lib/utils";
+import { useSpeechModelsStore } from "@/store/speech-models";
+import { useEffect } from "react";
+import {
+  TranscriberSource,
+  TRANSCRIBER_SOURCES,
+  useSettings,
+} from "../context";
+import { Hint, SettingsCard, SettingsGroup, SettingsPanel } from "../fields";
+import { SpeechModelsInputs } from "../settings-speech-models";
+import { SecretField } from "./secret-field";
+
+export function SpeechSection() {
+  const { config, updateConfig } = useSettings();
+  const fetchModels = useSpeechModelsStore((store) => store.fetchModels);
+
+  const source = (config?.TranscriberSource || "local") as TranscriberSource;
+
+  useEffect(() => {
+    if (source === "local") fetchModels();
+  }, [source]);
+
+  return (
+    <SettingsPanel>
+      <SettingsGroup
+        title="Transcription"
+        description="How MyScript follows along while you read."
+      >
+        <div className="flex flex-col gap-2">
+          {TRANSCRIBER_SOURCES.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => updateConfig({ TranscriberSource: option.key })}
+              className={cn(
+                "flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition",
+                "hover:bg-accent",
+                source === option.key &&
+                  "border-primary bg-primary/5 hover:bg-primary/5",
+              )}
+            >
+              <span className="text-sm font-medium">{option.name}</span>
+              <span className="text-xs text-muted-foreground">
+                {option.description}
+              </span>
+            </button>
+          ))}
+        </div>
+      </SettingsGroup>
+
+      <SettingsGroup title="Setup">
+        <SettingsCard>
+          <SourceSetup source={source} />
+        </SettingsCard>
+      </SettingsGroup>
+    </SettingsPanel>
+  );
+}
+
+function SourceSetup({ source }: { source: TranscriberSource }) {
+  switch (source) {
+    case "local":
+      return <SpeechModelsInputs />;
+
+    case "openai":
+      return (
+        <SecretField
+          secret="speech.openai"
+          label="OpenAI API key"
+          placeholder="sk-..."
+          hint="Used for transcription only; the writing assistant has its own key."
+        />
+      );
+
+    case "groq":
+      return (
+        <SecretField
+          secret="speech.groq"
+          label="Groq API key"
+          placeholder="gsk_..."
+          hint="Transcribes with whisper-large-v3-turbo."
+        />
+      );
+
+    case "witai":
+      return (
+        <Hint>
+          Wit.ai needs no key. It works over the internet and is less accurate
+          than the other options.
+        </Hint>
+      );
+  }
+}

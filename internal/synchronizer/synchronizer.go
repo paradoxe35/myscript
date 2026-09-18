@@ -24,9 +24,6 @@ const MAX_SNAPSHOT_APPLY_FAILURES = 10
 const SCHEDULER_INTERVAL = time.Second * 10
 
 type Synchronizer struct {
-	driveService DriveService
-
-	// Synced
 	mainDB *gorm.DB
 
 	// Repositories
@@ -35,12 +32,16 @@ type Synchronizer struct {
 	remoteApplyFailureRepository *repository.RemoteApplyFailureRepository
 	processedChangeRepository    *repository.ProcessedChangeRepository
 
-	// Synced
-	isSyncing               bool
-	schedulerTicker         *time.Ticker
+	// mu guards everything the frontend and the scheduler goroutine both touch.
+	mu            sync.Mutex
+	driveService  DriveService
+	stop          chan struct{}
+	isSyncing     bool
+	onSyncSuccess func(affectedTables database.AffectedTables)
+	onSyncFailure func(err error)
+
+	// Only the sync worker reads or writes these, and two workers never overlap.
 	affectedTables          database.AffectedTables
-	onSyncSuccess           func(affectedTables database.AffectedTables)
-	onSyncFailure           func(err error)
 	lastSnapshotCreatedTime *time.Time
 }
 
@@ -79,7 +80,7 @@ func WithRemoteApplyFailureRepository(repository *repository.RemoteApplyFailureR
 
 // Init
 func NewSynchronizer(options ...Option) *Synchronizer {
-	s := &Synchronizer{isSyncing: false}
+	s := &Synchronizer{}
 
 	for _, option := range options {
 		option(s)
@@ -88,60 +89,121 @@ func NewSynchronizer(options ...Option) *Synchronizer {
 }
 
 func (s *Synchronizer) SetDriveService(driveService DriveService) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.driveService = driveService
 }
 
 func (s *Synchronizer) SetOnSyncSuccess(onSyncSuccess func(affectedTables database.AffectedTables)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.onSyncSuccess = onSyncSuccess
 }
 
 func (s *Synchronizer) SetOnSyncFailure(onSyncFailure func(err error)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.onSyncFailure = onSyncFailure
 }
 
+// drive is read through the mutex because the frontend can swap the service in
+// while the scheduler goroutine is mid-cycle.
+func (s *Synchronizer) drive() DriveService {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.driveService
+}
+
+func (s *Synchronizer) callbacks() (func(database.AffectedTables), func(error)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.onSyncSuccess, s.onSyncFailure
+}
+
+// IsSyncing reports whether a sync cycle is running right now.
+func (s *Synchronizer) IsSyncing() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.isSyncing
+}
+
 func (s *Synchronizer) StartScheduler() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if s.driveService == nil {
 		return errors.New("drive service is not initialized")
 	}
 
-	if s.schedulerTicker != nil {
-		s.schedulerTicker.Stop()
+	// Replacing a running scheduler: the old goroutine sees a stop it can
+	// select on. Stopping a ticker never closes its channel, so a loop ranging
+	// over one would have parked here forever.
+	if s.stop != nil {
+		close(s.stop)
 	}
+	stop := make(chan struct{})
+	s.stop = stop
 
-	s.schedulerTicker = time.NewTicker(SCHEDULER_INTERVAL)
-
-	go s.scheduler()
+	go s.scheduler(stop)
 
 	slog.Debug("Synchronizer[StartScheduler]: scheduler started")
 	return nil
 }
 
 func (s *Synchronizer) StopScheduler() error {
-	if s.schedulerTicker != nil {
-		s.schedulerTicker.Stop()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.stop != nil {
+		close(s.stop)
+		s.stop = nil
 	}
 
-	slog.Error("Synchronizer[StopScheduler]: scheduler stopped")
+	slog.Debug("Synchronizer[StopScheduler]: scheduler stopped")
 	return nil
 }
 
-func (s *Synchronizer) scheduler() {
-	if s.schedulerTicker == nil {
-		return
-	}
+func (s *Synchronizer) scheduler(stop chan struct{}) {
+	ticker := time.NewTicker(SCHEDULER_INTERVAL)
+	defer ticker.Stop()
 
-	for range s.schedulerTicker.C {
-		if !s.isSyncing {
+	for {
+		select {
+		case <-stop:
+			return
+		case <-ticker.C:
+			if !s.beginSync(stop) {
+				continue
+			}
 			if utils.HasInternet() {
 				s.schedulerWorker() // run the sync
 			}
+			s.endSync()
 		}
 	}
 }
 
-func (s *Synchronizer) schedulerWorker() {
-	s.isSyncing = true
+// beginSync claims the right to run one cycle. It fails when a cycle is still
+// running or when this goroutine has been replaced by a newer scheduler, so a
+// restart never leaves two workers writing the same database.
+func (s *Synchronizer) beginSync(stop chan struct{}) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
+	if s.isSyncing || s.stop != stop {
+		return false
+	}
+	s.isSyncing = true
+	return true
+}
+
+func (s *Synchronizer) endSync() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.isSyncing = false
+}
+
+func (s *Synchronizer) schedulerWorker() {
 	// Reset affected tables
 	s.resetAffectedTables()
 
@@ -155,18 +217,17 @@ func (s *Synchronizer) schedulerWorker() {
 		failure = err
 	}
 
+	onSuccess, onFailure := s.callbacks()
 	if failure != nil {
-		if s.onSyncFailure != nil {
-			s.onSyncFailure(failure)
+		if onFailure != nil {
+			onFailure(failure)
 		}
-	} else if s.onSyncSuccess != nil {
-		s.onSyncSuccess(s.affectedTables)
+	} else if onSuccess != nil {
+		onSuccess(s.affectedTables)
 	}
 
 	// Synchronize changes (this should be the last step)
 	s.syncChangesLogsToDrive()
-
-	s.isSyncing = false
 }
 
 func (s *Synchronizer) resetAffectedTables() {
@@ -191,12 +252,13 @@ func (s *Synchronizer) mergeAffectedTables(affectedTables database.AffectedTable
 }
 
 func (s *Synchronizer) applyRemoteChanges() error {
-	if s.driveService == nil {
+	drive := s.drive()
+	if drive == nil {
 		return errors.New("drive service is not initialized")
 	}
 
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
-	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
+	changesFiles, err := drive.GetChangeFilesAfterTimeOffset(timeOffset)
 	if err != nil {
 		return err
 	}
@@ -263,7 +325,7 @@ func (s *Synchronizer) canIgnoreRemoteApplyFailure(file *File, err error) bool {
 }
 
 func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
-	fileContent, err := s.driveService.GetFileContent(file.ID)
+	fileContent, err := s.drive().GetFileContent(file.ID)
 	if err != nil {
 		return err
 	}
@@ -317,7 +379,7 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 	dbSynchronizer := database.NewDatabaseSynchronizer(nil, s.mainDB)
 
 	return s.mainDB.Transaction(func(tx *gorm.DB) error {
-		fileContent, err := s.driveService.GetFileContent(file.ID)
+		fileContent, err := s.drive().GetFileContent(file.ID)
 		if err != nil {
 			return err
 		}
@@ -344,6 +406,11 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 }
 
 func (s *Synchronizer) syncChangesLogsToDrive() error {
+	drive := s.drive()
+	if drive == nil {
+		return errors.New("drive service is not initialized")
+	}
+
 	changes := s.changeLogRepository.GetUnSyncedChanges()
 	if len(changes) == 0 {
 		return nil
@@ -357,7 +424,7 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 			defer wg.Done()
 
 			// Delete change log from drive
-			deletedFiles, err := s.driveService.DeleteChangeLog(change)
+			deletedFiles, err := drive.DeleteChangeLog(change)
 			if err == nil && len(deletedFiles) > 0 {
 				for _, file := range deletedFiles {
 					s.processedChangeRepository.DeleteProcessedChange(file.ID)
@@ -365,7 +432,7 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 			}
 
 			// Upload change log to drive
-			if file, err := s.driveService.UploadChangeLog(change); err != nil {
+			if file, err := drive.UploadChangeLog(change); err != nil {
 				slog.Error("Synchronizer[syncChangesLogsToDrive] Failed to upload change logs", "error", err, "change", change.ID)
 				return
 			} else {
@@ -389,7 +456,7 @@ func (s *Synchronizer) createDBSnapshot() error {
 		}
 	}
 
-	dbSnapshot, err := s.driveService.GetLatestDBSnapshot()
+	dbSnapshot, err := s.drive().GetLatestDBSnapshot()
 	if err != nil && !errors.Is(err, ErrSnapshotNotFound) {
 		return err
 	}
@@ -404,7 +471,7 @@ func (s *Synchronizer) createDBSnapshot() error {
 
 	// Check if there is any pending changes to be applied
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
-	changesFiles, err := s.driveService.GetChangeFilesAfterTimeOffset(timeOffset)
+	changesFiles, err := s.drive().GetChangeFilesAfterTimeOffset(timeOffset)
 	if err != nil {
 		return err
 	}
@@ -427,7 +494,7 @@ func (s *Synchronizer) createDBSnapshot() error {
 		return err
 	}
 
-	newSnapshot, err := s.driveService.SaveDBSnapshot(bytes.NewReader(buf.Bytes()))
+	newSnapshot, err := s.drive().SaveDBSnapshot(bytes.NewReader(buf.Bytes()))
 	if err != nil {
 		slog.Error("Synchronizer[createSnapshot]: failed to save snapshot", "error", err)
 		return err
@@ -446,12 +513,12 @@ func (s *Synchronizer) createDBSnapshot() error {
 }
 
 func (s *Synchronizer) clearupAfterSnapshot(pruneTimeOffset time.Time) error {
-	if err := s.driveService.PruneOldChanges(pruneTimeOffset); err != nil {
+	if err := s.drive().PruneOldChanges(pruneTimeOffset); err != nil {
 		slog.Error("Synchronizer[clearupAfterSnapshot]: failed to prune old changes (retry again)", "error", err)
 
 		// Retry again after 5 seconds
 		time.Sleep(time.Second * 5)
-		s.driveService.PruneOldChanges(pruneTimeOffset)
+		s.drive().PruneOldChanges(pruneTimeOffset)
 	}
 
 	// Prune old apply failures

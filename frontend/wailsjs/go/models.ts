@@ -1,3 +1,22 @@
+export namespace ai {
+	
+	export class ModelInfo {
+	    ID: string;
+	    Name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Name = source["Name"];
+	    }
+	}
+
+}
+
 export namespace languages {
 	
 	export class Language {
@@ -19,6 +38,56 @@ export namespace languages {
 
 export namespace main {
 	
+	export class AICompletionRequest {
+	    Task: string;
+	    Text: string;
+	    Command: string;
+	    Provider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AICompletionRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Task = source["Task"];
+	        this.Text = source["Text"];
+	        this.Command = source["Command"];
+	        this.Provider = source["Provider"];
+	    }
+	}
+	export class AIProvider {
+	    Name: string;
+	    Kind: string;
+	    BaseURL: string;
+	    Model: string;
+	    Temperature: number;
+	    NoAPIKey: boolean;
+	    LowReasoning: boolean;
+	    Custom: boolean;
+	    HasAPIKey: boolean;
+	    Configured: boolean;
+	    Active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AIProvider(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Name = source["Name"];
+	        this.Kind = source["Kind"];
+	        this.BaseURL = source["BaseURL"];
+	        this.Model = source["Model"];
+	        this.Temperature = source["Temperature"];
+	        this.NoAPIKey = source["NoAPIKey"];
+	        this.LowReasoning = source["LowReasoning"];
+	        this.Custom = source["Custom"];
+	        this.HasAPIKey = source["HasAPIKey"];
+	        this.Configured = source["Configured"];
+	        this.Active = source["Active"];
+	    }
+	}
 	export class MachineInfo {
 	    Cores: number;
 	    MemoryMB: number;
@@ -199,11 +268,13 @@ export namespace repository {
 	    UpdatedAt: any;
 	    // Go type: gorm
 	    DeletedAt: any;
+	    TranscriberSource: string;
+	    SpeechModelID?: string;
+	    AIProvider: string;
+	    AIProviders: number[];
 	    NotionApiKey?: string;
 	    OpenAIApiKey?: string;
 	    GroqApiKey?: string;
-	    TranscriberSource: string;
-	    SpeechModelID?: string;
 	    LocalWhisperModel?: string;
 	    LocalWhisperGPU?: boolean;
 	
@@ -217,11 +288,13 @@ export namespace repository {
 	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
 	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
+	        this.TranscriberSource = source["TranscriberSource"];
+	        this.SpeechModelID = source["SpeechModelID"];
+	        this.AIProvider = source["AIProvider"];
+	        this.AIProviders = source["AIProviders"];
 	        this.NotionApiKey = source["NotionApiKey"];
 	        this.OpenAIApiKey = source["OpenAIApiKey"];
 	        this.GroqApiKey = source["GroqApiKey"];
-	        this.TranscriberSource = source["TranscriberSource"];
-	        this.SpeechModelID = source["SpeechModelID"];
 	        this.LocalWhisperModel = source["LocalWhisperModel"];
 	        this.LocalWhisperGPU = source["LocalWhisperGPU"];
 	    }

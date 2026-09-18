@@ -6,6 +6,10 @@ export function AffectedTablesPlaceholder() {
   return window['go']['main']['App']['AffectedTablesPlaceholder']();
 }
 
+export function CancelAICompletion(arg1) {
+  return window['go']['main']['App']['CancelAICompletion'](arg1);
+}
+
 export function CancelRecording() {
   return window['go']['main']['App']['CancelRecording']();
 }
@@ -16,6 +20,10 @@ export function CancelSpeechModelDownload(arg1) {
 
 export function CheckForUpdates() {
   return window['go']['main']['App']['CheckForUpdates']();
+}
+
+export function DeleteAIProvider(arg1) {
+  return window['go']['main']['App']['DeleteAIProvider'](arg1);
 }
 
 export function DeleteCache(arg1) {
@@ -36,6 +44,18 @@ export function DeleteSpeechModel(arg1) {
 
 export function DownloadSpeechModel(arg1) {
   return window['go']['main']['App']['DownloadSpeechModel'](arg1);
+}
+
+export function GetAIProviderAPIKey(arg1) {
+  return window['go']['main']['App']['GetAIProviderAPIKey'](arg1);
+}
+
+export function GetAIProviders() {
+  return window['go']['main']['App']['GetAIProviders']();
+}
+
+export function GetActiveAIProvider() {
+  return window['go']['main']['App']['GetActiveAIProvider']();
 }
 
 export function GetAppVersion() {
@@ -82,8 +102,16 @@ export function GetNotionPages() {
   return window['go']['main']['App']['GetNotionPages']();
 }
 
+export function GetSecret(arg1) {
+  return window['go']['main']['App']['GetSecret'](arg1);
+}
+
 export function GetSpeechModels() {
   return window['go']['main']['App']['GetSpeechModels']();
+}
+
+export function HasConfiguredAIProvider() {
+  return window['go']['main']['App']['HasConfiguredAIProvider']();
 }
 
 export function HasLegacyWhisperFiles() {
@@ -102,6 +130,10 @@ export function IsRecording() {
   return window['go']['main']['App']['IsRecording']();
 }
 
+export function ListAIModels(arg1, arg2) {
+  return window['go']['main']['App']['ListAIModels'](arg1, arg2);
+}
+
 export function PerformUpdate() {
   return window['go']['main']['App']['PerformUpdate']();
 }
@@ -114,6 +146,10 @@ export function RemoveLegacyWhisperFiles() {
   return window['go']['main']['App']['RemoveLegacyWhisperFiles']();
 }
 
+export function SaveAIProvider(arg1, arg2) {
+  return window['go']['main']['App']['SaveAIProvider'](arg1, arg2);
+}
+
 export function SaveCache(arg1, arg2) {
   return window['go']['main']['App']['SaveCache'](arg1, arg2);
 }
@@ -124,6 +160,18 @@ export function SaveConfig(arg1) {
 
 export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
+}
+
+export function SaveSecret(arg1, arg2) {
+  return window['go']['main']['App']['SaveSecret'](arg1, arg2);
+}
+
+export function SetActiveAIProvider(arg1) {
+  return window['go']['main']['App']['SetActiveAIProvider'](arg1);
+}
+
+export function StartAICompletion(arg1) {
+  return window['go']['main']['App']['StartAICompletion'](arg1);
 }
 
 export function StartGoogleAuthorization() {
@@ -144,6 +192,10 @@ export function StopRecording() {
 
 export function StopSynchronizer() {
   return window['go']['main']['App']['StopSynchronizer']();
+}
+
+export function TestAIProvider(arg1, arg2) {
+  return window['go']['main']['App']['TestAIProvider'](arg1, arg2);
 }
 
 export function UpdateLocalPageOrder(arg1, arg2, arg3) {
