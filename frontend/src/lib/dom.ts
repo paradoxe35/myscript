@@ -9,6 +9,12 @@ export const createTreeTextWalker = (element: Node) => {
 
 export const WORD_ATTRIBUTE = "data-word";
 
+export const APP_SCROLL_ATTRIBUTE = "data-app-scroll";
+
+export function appScrollElement(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(`[${APP_SCROLL_ATTRIBUTE}]`);
+}
+
 export type WrappedWords = { words: string[]; spans: HTMLElement[] };
 
 // One pass: every word of the rendered script becomes a span carrying its index.
@@ -58,27 +64,25 @@ export function wordIndexOf(target: EventTarget | null): number | null {
 function scrollParent(element: HTMLElement): HTMLElement | null {
   for (let node = element.parentElement; node; node = node.parentElement) {
     const { overflowY } = getComputedStyle(node);
-    if (/(auto|scroll|overlay)/.test(overflowY) && node.scrollHeight > node.clientHeight) {
+    if (
+      /(auto|scroll|overlay)/.test(overflowY) &&
+      node.scrollHeight > node.clientHeight
+    ) {
       return node;
     }
   }
-  return null;
+  return appScrollElement();
 }
 
 export function scrollToEyeLine(element: HTMLElement) {
   const parent = scrollParent(element);
-  const top = element.getBoundingClientRect().top;
+  if (!parent) return;
 
-  if (parent) {
-    const offset = top - parent.getBoundingClientRect().top;
-    parent.scrollTo({
-      top: parent.scrollTop + offset - parent.clientHeight / 3,
-      behavior: "smooth",
-    });
-  } else {
-    window.scrollTo({
-      top: window.scrollY + top - window.innerHeight / 3,
-      behavior: "smooth",
-    });
-  }
+  const offset =
+    element.getBoundingClientRect().top - parent.getBoundingClientRect().top;
+
+  parent.scrollTo({
+    top: parent.scrollTop + offset - parent.clientHeight / 3,
+    behavior: "smooth",
+  });
 }

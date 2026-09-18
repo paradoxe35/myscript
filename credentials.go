@@ -14,8 +14,9 @@ import (
 func readFile(file string) []byte {
 	fileData, err := credentials.ReadFile("credentials/" + file)
 	if err != nil {
+		// A missing file is the normal case for a build without credentials.
 		if !errors.Is(err, fs.ErrNotExist) {
-			slog.Error("Unexpected error opening GitHub token", "error", err)
+			slog.Error("Unexpected error reading an embedded credential", "file", file, "error", err)
 		}
 		return nil
 	}

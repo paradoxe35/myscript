@@ -12,6 +12,7 @@ import { AppHeaderBreadcrumb } from "@/components/app-header/app-header-breadcru
 import { RightButtonsHeader } from "@/components/app-header/right-buttons-header";
 import { ReadingHeader } from "@/components/app-header/reading-header";
 import { useActivePageStore } from "@/store/active-page";
+import { APP_SCROLL_ATTRIBUTE } from "@/lib/dom";
 
 // Init components
 import { TranscriberInit } from "@/components/transcriber-init";
@@ -27,11 +28,12 @@ export default function App() {
     <SidebarProvider
       open={sidebarOpen && !readMode}
       onOpenChange={setSidebarOpen}
+      className="h-full min-h-0 overflow-hidden"
     >
       <AppSidebar />
 
-      <SidebarInset>
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+      <SidebarInset className="h-full min-h-0 overflow-hidden">
+        <header className="z-30 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
           {readMode ? (
             <ReadingHeader />
           ) : (
@@ -44,7 +46,12 @@ export default function App() {
           )}
         </header>
 
-        <Content />
+        <div
+          {...{ [APP_SCROLL_ATTRIBUTE]: "" }}
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+        >
+          <Content />
+        </div>
 
         <AppUpdater />
         <SynchronizerInit />

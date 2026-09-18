@@ -13,6 +13,7 @@ import (
 	"myscript/internal/utils"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -81,6 +82,8 @@ func (a *App) StartSynchronizer() error {
 
 	// Set on sync success callback
 	a.synchronizer.sync.SetOnSyncSuccess(func(affectedTables database.AffectedTables) {
+		// A restored backup can carry credentials written by an older build.
+		repository.AdoptLegacyKeys(a.mainDB, a.unSyncedDB)
 		runtime.EventsEmit(a.ctx, "on-sync-success", affectedTables)
 	})
 
@@ -97,56 +100,65 @@ func (a *App) AffectedTablesPlaceholder() database.AffectedTables {
 	return nil
 }
 
+const googleAuthPort = 43056
+const googleAuthTimeout = 2 * time.Minute
+
+// StartGoogleAuthorization opens the consent screen and returns once the
+// browser has come back, or once the wait times out. Both endings close the
+// same channel exactly once: two senders on an unbuffered channel would have
+// parked whichever arrived second for the life of the process.
 func (a *App) StartGoogleAuthorization() error {
-	port := 43056
-	addr := fmt.Sprintf("http://localhost:%d", port)
+	addr := fmt.Sprintf("http://localhost:%d", googleAuthPort)
 
-	done := make(chan bool)
-	ticker := time.NewTicker(2 * time.Minute)
+	done := make(chan struct{})
+	var finish sync.Once
+	settle := func() { finish.Do(func() { close(done) }) }
+
 	googleClient := a.synchronizer.googleClient
-
 	tmpServer := synchronizer.NewAuthServerRedirection()
 
-	go tmpServer.Start(port)
-	defer func() {
-		ticker.Stop()
-		tmpServer.Stop()
-	}()
+	go tmpServer.Start(googleAuthPort)
+	defer tmpServer.Stop()
+
+	timeout := time.NewTimer(googleAuthTimeout)
+	defer timeout.Stop()
 
 	go func() {
-		for range ticker.C {
-			done <- true
+		select {
+		case <-timeout.C:
 			slog.Debug("Google authorization timeout")
 			runtime.EventsEmit(a.ctx, "on-google-authorization-timeout")
-			break
+			settle()
+		case <-done:
 		}
 	}()
 
 	tmpServer.Handler(func(authorizationCode string) {
+		// The browser still has to render the landing page before the server
+		// goes away, so the wait ends a moment after the code arrives.
 		defer func() {
 			time.Sleep(3 * time.Second)
-			done <- true
+			settle()
 		}()
 
-		slog.Debug("Google authorization received", "code", authorizationCode)
+		slog.Debug("Google authorization received")
 
 		if strings.TrimSpace(authorizationCode) == "" {
 			return
 		}
 
-		_, err := googleClient.SaveAuthToken(authorizationCode, addr)
-		if err != nil {
+		if _, err := googleClient.SaveAuthToken(authorizationCode, addr); err != nil {
 			slog.Error("Error saving Google authorization token", "error", err)
 			runtime.EventsEmit(a.ctx, "on-google-authorization-error", err.Error())
 			return
 		}
 	})
 
-	if authURL, err := googleClient.GenerateAuthURL(addr); err != nil {
+	authURL, err := googleClient.GenerateAuthURL(addr)
+	if err != nil {
 		return err
-	} else {
-		runtime.BrowserOpenURL(a.ctx, authURL)
 	}
+	runtime.BrowserOpenURL(a.ctx, authURL)
 
 	<-done
 

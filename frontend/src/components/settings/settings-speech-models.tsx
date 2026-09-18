@@ -11,18 +11,18 @@ import { ModelBody } from "./speech-model-card";
 import { SpeechModelBrowser } from "./speech-model-browser";
 
 export function SpeechModelsInputs() {
-  const { state, dispatch } = useSettings();
+  const { config, updateConfig } = useSettings();
   const models = useSpeechModelsStore((store) => store.models);
   const hasLegacyFiles = useSpeechModelsStore((store) => store.hasLegacyFiles);
   const checkLegacyFiles = useSpeechModelsStore(
-    (store) => store.checkLegacyFiles
+    (store) => store.checkLegacyFiles,
   );
 
   useEffect(() => {
     checkLegacyFiles();
   }, []);
 
-  const selected = models.find((model) => model.ID === state.SpeechModelID);
+  const selected = models.find((model) => model.ID === config?.SpeechModelID);
   const suggested = models.find((model) => model.Suggested);
 
   return (
@@ -33,8 +33,8 @@ export function SpeechModelsInputs() {
             Speech model
           </Label>
           <SpeechModelBrowser
-            selectedID={state.SpeechModelID}
-            onSelect={(model) => dispatch({ SpeechModelID: model.ID })}
+            selectedID={config?.SpeechModelID}
+            onSelect={(model) => updateConfig({ SpeechModelID: model.ID })}
           >
             <Button size="sm" variant="outline" className="h-8">
               {selected ? "Change model" : "Choose a model"}
@@ -50,7 +50,7 @@ export function SpeechModelsInputs() {
           <NoModel
             suggested={suggested?.Name}
             onSuggested={() =>
-              suggested && dispatch({ SpeechModelID: suggested.ID })
+              suggested && updateConfig({ SpeechModelID: suggested.ID })
             }
           />
         )}
@@ -75,7 +75,12 @@ function NoModel({
         downloaded.
       </p>
       {suggested && (
-        <Button size="sm" variant="secondary" className="h-8 shrink-0" onClick={onSuggested}>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="h-8 shrink-0"
+          onClick={onSuggested}
+        >
           <Sparkles className="h-3.5 w-3.5" />
           Use {suggested}
         </Button>
@@ -86,7 +91,7 @@ function NoModel({
 
 function LegacyFilesNotice() {
   const removeLegacyFiles = useSpeechModelsStore(
-    (store) => store.removeLegacyFiles
+    (store) => store.removeLegacyFiles,
   );
 
   const confirm = () => {
@@ -98,7 +103,7 @@ function LegacyFilesNotice() {
         onClick: () => {
           removeLegacyFiles()
             .then((removed) =>
-              toast.success(`Removed ${removed} old model file(s)`)
+              toast.success(`Removed ${removed} old model file(s)`),
             )
             .catch((err) => toast.error(String(err)));
         },

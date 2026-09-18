@@ -3,12 +3,10 @@ import { useActivePageStore } from "@/store/active-page";
 import { useLocalPagesStore } from "@/store/local-pages";
 import NovelEditor from "../noveljs/advanced-editor";
 import { useDebouncedCallback } from "use-debounce";
-import { useConfigStore } from "@/store/config";
 
 import hljs from "highlight.js";
 
 export function ContentEditor() {
-  const config = useConfigStore((state) => state.config);
   const activePageStore = useActivePageStore();
   const savePageBlocks = useLocalPagesStore((state) => state.savePageBlocks);
 
@@ -44,7 +42,6 @@ export function ContentEditor() {
   return (
     <NovelEditor
       key={activePageStore.version}
-      openAIApiKey={config?.OpenAIApiKey}
       initialContent={activePageStore.page?.blocks}
       onUpdate={debouncedUpdates}
       className="w-full block mx-auto max-w-[846px]"

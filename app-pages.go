@@ -4,6 +4,7 @@
 package main
 
 import (
+	"errors"
 	"myscript/internal/notion"
 	"myscript/internal/repository"
 
@@ -13,12 +14,12 @@ import (
 // --- Notion Pages ---
 
 func (a *App) getNotionClient() *notion.NotionClient {
-	config := a.GetConfig()
-	if config == nil || config.NotionApiKey == nil || *config.NotionApiKey == "" {
+	apiKey := a.notionAPIKey()
+	if apiKey == "" {
 		return nil
 	}
 
-	return notion.NewClient(*config.NotionApiKey)
+	return notion.NewClient(apiKey)
 }
 
 func (a *App) GetNotionPages() ([]notionapi.Object, error) {
@@ -32,6 +33,9 @@ func (a *App) GetNotionPages() ([]notionapi.Object, error) {
 
 func (a *App) GetNotionPageBlocks(pageID string) ([]*notion.NotionBlock, error) {
 	client := a.getNotionClient()
+	if client == nil {
+		return nil, errors.New("no Notion API key configured")
+	}
 
 	return client.GetPageBlocks(pageID)
 }

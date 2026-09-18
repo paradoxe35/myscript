@@ -66,6 +66,8 @@ func main() {
 	// Set global variable (used in change log repository)
 	repository.SetUnSyncedDB(unSyncedDB)
 
+	repository.AdoptLegacyKeys(mainDB, unSyncedDB)
+
 	// Repositories
 	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)
 	syncStateRepository := repository.NewSyncStateRepository(unSyncedDB)

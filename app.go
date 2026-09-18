@@ -18,11 +18,12 @@ import (
 type App struct {
 	ctx context.Context
 
-	mainDB       *gorm.DB
-	unSyncedDB   *gorm.DB
-	speech       *stt.Service
-	updater      *updater.Updater
-	synchronizer *Synchronizer
+	mainDB        *gorm.DB
+	unSyncedDB    *gorm.DB
+	speech        *stt.Service
+	updater       *updater.Updater
+	synchronizer  *Synchronizer
+	aiCompletions *aiCompletions
 }
 
 type Synchronizer struct {
@@ -88,7 +89,7 @@ func WithSync(sync *synchronizer.Synchronizer) SynchronizerOption {
 
 // NewApp creates a new App application struct
 func NewApp(options ...AppOption) *App {
-	app := &App{}
+	app := &App{aiCompletions: newAICompletions()}
 
 	for _, option := range options {
 		option(app)
@@ -104,6 +105,8 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	a.aiCompletions.cancelAll()
+	a.synchronizer.sync.StopScheduler()
 	a.speech.Close()
 }
 

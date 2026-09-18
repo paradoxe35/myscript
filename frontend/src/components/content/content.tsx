@@ -1,3 +1,4 @@
+import { appScrollElement } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
 import { useEffect, useRef, useState } from "react";
@@ -31,7 +32,7 @@ function ResetScroll() {
 
   useEffect(() => {
     requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "instant" });
+      appScrollElement()?.scrollTo({ top: 0, behavior: "instant" });
     });
   }, [activePageStore.getPageId()]);
 

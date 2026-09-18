@@ -161,8 +161,19 @@
   * {
     @apply border-border;
   }
+
+  /*
+   * The document never scrolls: the app shell fills the viewport and scrolling
+   * happens inside it. overscroll-behavior stops WebKit bouncing the root on
+   * top of that, which is what made the header and content drift on macOS.
+   */
+  html,
   body {
-    @apply bg-background text-foreground;
+    @apply h-full overflow-hidden overscroll-none bg-background text-foreground;
+  }
+
+  #root {
+    @apply h-full overflow-hidden overscroll-none;
   }
 }
 

@@ -1,251 +1,122 @@
-import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { PropsWithChildren } from "react";
-import { Separator } from "../ui/separator";
-import { ApiKeyInput } from "../ui/api-key-input";
-import { TRANSCRIBER_SOURCES, useSettings, TranscriberSource } from "./context";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { SpeechModelsInputs } from "./settings-speech-models";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { SettingsCloud } from "./settings-cloud";
+import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { useTheme } from "../theme-provider";
-import { MoonIcon, SunIcon } from "lucide-react";
+import { Cloud, FileText, Mic, Settings2, Sparkles } from "lucide-react";
+import { PropsWithChildren, useState } from "react";
+import { useSettings } from "./context";
+import { AISection } from "./sections/ai-section";
+import { BackupSection } from "./sections/backup-section";
+import { GeneralSection } from "./sections/general-section";
+import { NotionSection } from "./sections/notion-section";
+import { SpeechSection } from "./sections/speech-section";
+
+type SectionKey = "general" | "ai" | "notion" | "speech" | "backup";
+
+type Section = {
+  key: SectionKey;
+  label: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  render: () => React.ReactNode;
+};
+
+const SECTIONS: Section[] = [
+  {
+    key: "speech",
+    label: "Speech",
+    description: "Transcription engine and models",
+    icon: Mic,
+    render: () => <SpeechSection />,
+  },
+  {
+    key: "ai",
+    label: "AI",
+    description: "Providers for the writing assistant",
+    icon: Sparkles,
+    render: () => <AISection />,
+  },
+  {
+    key: "notion",
+    label: "Notion",
+    description: "Use your Notion pages as scripts",
+    icon: FileText,
+    render: () => <NotionSection />,
+  },
+  {
+    key: "backup",
+    label: "Backup",
+    description: "Sync your scripts with Google Drive",
+    icon: Cloud,
+    render: () => <BackupSection />,
+  },
+  {
+    key: "general",
+    label: "General",
+    description: "Appearance and version",
+    icon: Settings2,
+    render: () => <GeneralSection />,
+  },
+];
 
 export function SettingsModal(props: PropsWithChildren) {
-  const { state, cloud, appVersion, configModified, handleSave } =
-    useSettings();
+  const { cloud } = useSettings();
+  const [current, setCurrent] = useState<SectionKey>("speech");
+
+  const sections = SECTIONS.filter(
+    (section) => section.key !== "backup" || cloud.cloudEnabled,
+  );
+  const section = sections.find((item) => item.key === current) ?? sections[0];
 
   return (
     <Dialog>
       <DialogTrigger asChild>{props.children}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-          <DialogDescription className="text-xs dark:text-white/50 text-slate-900/50">
-            Version: {appVersion}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[860px] gap-0 overflow-hidden p-0 sm:max-w-[860px]">
+        <div className="flex h-[560px]">
+          <nav className="flex w-52 shrink-0 flex-col gap-1 border-r bg-muted/30 p-3">
+            <DialogTitle className="px-2 pb-2 pt-1 text-sm font-semibold">
+              {APP_NAME} settings
+            </DialogTitle>
 
-        <Tabs defaultValue="api-keys" className="w-full">
-          <TabsList
-            className={cn(
-              "grid w-full grid-cols-3",
-              !cloud.cloudEnabled && "grid-cols-2"
-            )}
-          >
-            <TabsTrigger value="api-keys">API Keys</TabsTrigger>
+            {sections.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setCurrent(item.key)}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition",
+                  "hover:bg-accent",
+                  item.key === section.key &&
+                    "bg-accent font-medium text-accent-foreground",
+                )}
+              >
+                <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                {item.label}
+              </button>
+            ))}
+          </nav>
 
-            <TabsTrigger value="speech-recognition">
-              Speech Recognition
-            </TabsTrigger>
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <header className="flex flex-col gap-0.5 border-b px-6 py-4">
+              <h2 className="text-base font-semibold">{section.label}</h2>
+              <DialogDescription className="text-xs">
+                {section.description}
+              </DialogDescription>
+            </header>
 
-            {cloud.cloudEnabled && (
-              <TabsTrigger value="cloud">Backup</TabsTrigger>
-            )}
-          </TabsList>
-
-          {/* Notion API Key */}
-          <TabsContent value="api-keys" className="min-h-48">
-            <div className="grid gap-4 py-4">
-              <NotionInputs />
-              <Separator />
-
-              {/* OpenAI API Key */}
-              <OpenAIApiKey />
-              <Separator />
-            </div>
-          </TabsContent>
-
-          {/* Speech Recognition */}
-          <TabsContent value="speech-recognition" className="min-h-48">
-            <div className="grid gap-4 py-4">
-              <div className="flex flex-col gap-4 relative">
-                <Label>Speech Recognition</Label>
-                <SelectSpeechSource />
-              </div>
-
-              {state.TranscriberSource === "local" && <SpeechModelsInputs />}
-
-              {state.TranscriberSource === "openai" && (
-                <OpenAIApiKeyTranscriber />
-              )}
-
-              {state.TranscriberSource === "witai" && <WitAIHint />}
-
-              {state.TranscriberSource === "groq" && (
-                <>
-                  <Separator />
-
-                  <GroqApiKey />
-                </>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Cloud */}
-          {cloud.cloudEnabled && (
-            <TabsContent value="cloud" className="min-h-48">
-              <SettingsCloud />
-            </TabsContent>
-          )}
-        </Tabs>
-
-        <DialogFooter className="sm:justify-between items-center">
-          <ThemeSwitch />
-
-          <Button type="submit" disabled={!configModified} onClick={handleSave}>
-            Save changes
-          </Button>
-        </DialogFooter>
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="px-6 py-5">{section.render()}</div>
+            </ScrollArea>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ThemeSwitch() {
-  const { theme, setTheme } = useTheme();
-
-  return (
-    <Button
-      variant="secondary"
-      size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-    >
-      {theme === "dark" ? <MoonIcon /> : <SunIcon />}
-    </Button>
-  );
-}
-
-function NotionInputs() {
-  const { state, dispatch } = useSettings();
-
-  return (
-    <div className="flex flex-col gap-4">
-      <Label>Notion API Key</Label>
-      <ApiKeyInput
-        className="col-span-3"
-        tabIndex={-1}
-        value={state.NotionApiKey}
-        onChange={(e) => dispatch({ NotionApiKey: e.target.value })}
-      />
-    </div>
-  );
-}
-
-function WitAIHint() {
-  return (
-    <>
-      <p className="text-xs dark:text-white/50 text-slate-900/50">
-        <b>Wit.ai</b> doesn't require any extra configuration. However, it may
-        not be as accurate as OpenAI.
-      </p>
-
-      <p className="text-xs dark:text-white/50 text-slate-900/50">
-        <em>Internet connection is required</em>
-      </p>
-    </>
-  );
-}
-
-function OpenAIApiKey() {
-  const { state, dispatch } = useSettings();
-
-  return (
-    <div className="flex flex-col gap-3 relative">
-      <Label className="text-xs">OpenAI API Key</Label>
-
-      <ApiKeyInput
-        className="col-span-3"
-        tabIndex={-1}
-        value={state.OpenAIApiKey}
-        onChange={(e) => dispatch({ OpenAIApiKey: e.target.value })}
-      />
-
-      <p className="text-xs dark:text-white/50 text-slate-900/50">
-        <em>For speech recognition and text generation.</em>
-      </p>
-    </div>
-  );
-}
-
-const GROQ_TRANSCRIBE_MODEL = "whisper-large-v3-turbo";
-
-function GroqApiKey() {
-  const { state, dispatch } = useSettings();
-
-  return (
-    <div className="flex flex-col gap-3 relative">
-      <Label className="text-xs">Groq API Key</Label>
-
-      <ApiKeyInput
-        className="col-span-3"
-        tabIndex={-1}
-        value={state.GroqApiKey}
-        onChange={(e) => dispatch({ GroqApiKey: e.target.value })}
-      />
-
-      <p className="text-xs dark:text-white/50 text-slate-900/50">
-        <em>It uses the {GROQ_TRANSCRIBE_MODEL} model.</em>
-      </p>
-    </div>
-  );
-}
-
-function OpenAIApiKeyTranscriber() {
-  return (
-    <>
-      <p className="text-xs dark:text-white/50 text-slate-900/50">
-        <em>Internet connection is required</em>
-      </p>
-    </>
-  );
-}
-
-function SelectSpeechSource() {
-  const { state, dispatch } = useSettings();
-
-  const items = Object.values(TRANSCRIBER_SOURCES);
-
-  return (
-    <Select
-      value={state.TranscriberSource}
-      onValueChange={(value: TranscriberSource) => {
-        dispatch({ TranscriberSource: value });
-      }}
-    >
-      <SelectTrigger className="w-[190px]">
-        <SelectValue placeholder="Select a source" />
-      </SelectTrigger>
-
-      <SelectContent>
-        <SelectGroup>
-          {items.map((item) => {
-            return (
-              <SelectItem key={item.key} value={item.key}>
-                {item.name}
-              </SelectItem>
-            );
-          })}
-        </SelectGroup>
-      </SelectContent>
-    </Select>
   );
 }
