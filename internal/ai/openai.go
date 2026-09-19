@@ -33,7 +33,6 @@ type openAIRequest struct {
 	Model           string               `json:"model"`
 	Messages        []openAIMessage      `json:"messages"`
 	Temperature     float64              `json:"temperature"`
-	MaxTokens       int                  `json:"max_tokens,omitempty"`
 	Stream          bool                 `json:"stream"`
 	ReasoningEffort string               `json:"reasoning_effort,omitempty"`
 	Reasoning       *openRouterReasoning `json:"reasoning,omitempty"`
@@ -70,7 +69,6 @@ func (p *openAIProvider) Stream(ctx context.Context, req Request, emit func(stri
 			Model:       p.settings.Model,
 			Messages:    messages,
 			Temperature: p.settings.Temperature,
-			MaxTokens:   maxOutputTokens,
 			Stream:      true,
 		}
 

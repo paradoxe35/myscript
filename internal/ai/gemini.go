@@ -66,7 +66,7 @@ func (p *geminiProvider) Stream(ctx context.Context, req Request, emit func(stri
 		Contents: []geminiContent{{Role: "user", Parts: []geminiPart{{Text: req.Prompt}}}},
 		GenerationConfig: geminiGeneration{
 			Temperature:     p.settings.Temperature,
-			MaxOutputTokens: maxOutputTokens,
+			MaxOutputTokens: geminiMaxOutputTokens,
 		},
 	}
 	if req.System != "" {

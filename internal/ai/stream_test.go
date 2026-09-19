@@ -211,8 +211,10 @@ func TestValidateReportsWhatIsMissing(t *testing.T) {
 	}
 }
 
-// Gemini stops at its own modest default, so every request states the ceiling.
-func TestBothProtocolsCapTheAnswer(t *testing.T) {
+// Gemini caps an unspecified request at 8192 rather than at what the model can
+// do, so the ceiling is stated. OpenAI-compatible endpoints must not receive it:
+// max_tokens is deprecated and the newer reasoning models reject it.
+func TestOnlyGeminiIsToldTheCeiling(t *testing.T) {
 	var openAI []capturedRequest
 	openAIServer := fakeProvider(t, "data: [DONE]\n\n", &openAI)
 
@@ -222,8 +224,11 @@ func TestBothProtocolsCapTheAnswer(t *testing.T) {
 	})
 	streamText(t, provider)
 
-	if got := openAI[0].body["max_tokens"]; got != float64(maxOutputTokens) {
-		t.Errorf("max_tokens = %v, want %d", got, maxOutputTokens)
+	if _, sent := openAI[0].body["max_tokens"]; sent {
+		t.Error("max_tokens is deprecated and rejected by the reasoning models")
+	}
+	if _, sent := openAI[0].body["max_completion_tokens"]; sent {
+		t.Error("the endpoint's own default is the context window; do not cap it")
 	}
 
 	var gemini []capturedRequest
@@ -241,7 +246,10 @@ func TestBothProtocolsCapTheAnswer(t *testing.T) {
 	if !ok {
 		t.Fatalf("no generationConfig in %v", gemini[0].body)
 	}
-	if got := config["maxOutputTokens"]; got != float64(maxOutputTokens) {
-		t.Errorf("maxOutputTokens = %v, want %d", got, maxOutputTokens)
+	if got := config["maxOutputTokens"]; got != float64(geminiMaxOutputTokens) {
+		t.Errorf("maxOutputTokens = %v, want %d", got, geminiMaxOutputTokens)
+	}
+	if geminiMaxOutputTokens <= 8192 {
+		t.Errorf("%d is Gemini's own default, so asking for it changes nothing", geminiMaxOutputTokens)
 	}
 }

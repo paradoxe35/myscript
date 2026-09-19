@@ -19,10 +19,12 @@ const (
 
 const defaultTemperature = 0.7
 
-// maxOutputTokens caps every answer. Gemini otherwise stops at its own modest
-// default, which cut long answers short; this is room for a few pages of prose
-// without letting a runaway reply bill indefinitely.
-const maxOutputTokens = 8192
+// geminiMaxOutputTokens is asked for explicitly because Gemini caps an
+// unspecified request at 8192 rather than at what the model can do, which cut
+// long answers short. OpenAI-compatible endpoints are left alone: their own
+// default is the context window, and max_tokens is deprecated in favour of
+// max_completion_tokens, which the newer reasoning models reject outright.
+const geminiMaxOutputTokens = 32768
 
 var ErrNoProvider = errors.New("no AI provider is configured")
 
