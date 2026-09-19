@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"myscript/internal/repository"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -16,6 +17,8 @@ import (
 	oauth2v2 "google.golang.org/api/oauth2/v2"
 	"google.golang.org/api/option"
 )
+
+const revokeURL = "https://oauth2.googleapis.com/revoke"
 
 var SCOPES = []string{
 	"https://www.googleapis.com/auth/userinfo.email",
@@ -63,29 +66,72 @@ func (c *GoogleClient) GetSavedToken() *repository.GoogleAuthToken {
 	return c.repository.GetGoogleAuthToken()
 }
 
+// GetClientFromSavedToken refreshes the saved token when it is due and returns
+// a client that keeps refreshing, saving each new token as it goes.
 func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
-	token := c.repository.GetGoogleAuthToken()
+	config, err := c.getConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	saved := c.repository.GetGoogleAuthToken()
+	if saved == nil {
+		return nil, ErrNoToken
+	}
+
+	previous := saved.AuthToken.Data()
+
+	refreshed, err := config.TokenSource(context.Background(), previous).Token()
+	if err != nil {
+		return nil, err
+	}
+
+	refreshed = keepRefreshToken(previous, refreshed)
+	if previous == nil || refreshed.AccessToken != previous.AccessToken {
+		c.repository.UpdateGoogleAuthToken(refreshed)
+	}
+
+	source := &persistingTokenSource{
+		source:     config.TokenSource(context.Background(), refreshed),
+		repository: c.repository,
+		previous:   refreshed,
+	}
+
+	return oauth2.NewClient(context.Background(), source), nil
+}
+
+// Revoke tells Google to forget the grant, so disconnecting here also
+// disconnects on the account's side rather than leaving a live token behind.
+func (c *GoogleClient) Revoke() error {
+	saved := c.repository.GetGoogleAuthToken()
+	if saved == nil {
+		return nil
+	}
+
+	token := saved.AuthToken.Data()
 	if token == nil {
-		return nil, fmt.Errorf("invalid Google credentials, no token found")
+		return nil
 	}
 
-	authToken := token.AuthToken.Data()
+	value := token.RefreshToken
+	if value == "" {
+		value = token.AccessToken
+	}
+	if value == "" {
+		return nil
+	}
 
-	tokenSource, err := c.config.TokenSource(context.Background(), token.AuthToken.Data()).Token()
+	response, err := http.PostForm(revokeURL, url.Values{"token": {value}})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer response.Body.Close()
 
-	if tokenSource.AccessToken != authToken.AccessToken {
-		c.repository.UpdateGoogleAuthToken(tokenSource)
+	// 400 means Google already considers it gone, which is the outcome we wanted.
+	if response.StatusCode >= 300 && response.StatusCode != http.StatusBadRequest {
+		return fmt.Errorf("revoking the Google token returned %s", response.Status)
 	}
-
-	client, err := c.GetClient(tokenSource)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
+	return nil
 }
 
 func (c *GoogleClient) GenerateAuthURL(redirectURI string) (string, error) {
@@ -170,7 +216,7 @@ func (c *GoogleClient) verifyScopes(token *oauth2.Token) error {
 
 func (c *GoogleClient) getConfig() (*oauth2.Config, error) {
 	if c.config == nil {
-		return nil, fmt.Errorf("invalid Google credentials, no config found")
+		return nil, ErrNoCredentials
 	}
 	return c.config, nil
 }

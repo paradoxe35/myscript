@@ -29,12 +29,18 @@ func (a *App) GetGoogleAuthToken() *repository.GoogleAuthToken {
 		GetGoogleAuthToken()
 }
 
+// DeleteGoogleAuthToken disconnects here and, best effort, on the account too,
+// so a revoked build does not leave a live grant behind.
 func (a *App) DeleteGoogleAuthToken() {
+	a.synchronizer.sync.StopScheduler()
+
+	if err := a.synchronizer.googleClient.Revoke(); err != nil {
+		slog.Warn("Could not revoke the Google token", "error", err)
+	}
+
 	repository.
 		NewGoogleAuthTokenRepository(a.unSyncedDB).
 		DeleteGoogleAuthToken()
-
-	a.synchronizer.sync.StopScheduler()
 }
 
 func (a *App) RefreshGoogleAuthToken() (*repository.GoogleAuthToken, error) {
@@ -90,6 +96,14 @@ func (a *App) StartSynchronizer() error {
 	// Set on sync failure callback
 	a.synchronizer.sync.SetOnSyncFailure(func(err error) {
 		runtime.EventsEmit(a.ctx, "on-sync-failure", err.Error())
+	})
+
+	// A grant that keeps being refused is cleared, so the UI can ask for a new
+	// sign-in instead of failing every ten seconds.
+	a.synchronizer.sync.SetOnAuthLost(func(err error) {
+		slog.Error("Google authorization lost", "error", err)
+		a.DeleteGoogleAuthToken()
+		runtime.EventsEmit(a.ctx, "on-google-authorization-lost", err.Error())
 	})
 
 	return a.synchronizer.sync.StartScheduler()

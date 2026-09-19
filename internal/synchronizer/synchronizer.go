@@ -7,11 +7,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"myscript/internal/database"
+	"myscript/internal/google"
 	"myscript/internal/repository"
 	"myscript/internal/utils"
 	"os"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +23,11 @@ import (
 )
 
 const MAX_CHANGE_LOGS_APPLY_FAILURES = 5
+
+// Drive rate limits a burst, and a grant that is refused this many times in a
+// row is not going to start working on the next tick.
+const PUSH_CONCURRENCY = 8
+const MAX_CONSECUTIVE_AUTH_FAILURES = 3
 const MAX_SNAPSHOT_APPLY_FAILURES = 10
 const SCHEDULER_INTERVAL = time.Second * 10
 
@@ -37,8 +45,10 @@ type Synchronizer struct {
 	driveService  DriveService
 	stop          chan struct{}
 	isSyncing     bool
+	authFailures  int
 	onSyncSuccess func(affectedTables database.AffectedTables)
 	onSyncFailure func(err error)
+	onAuthLost    func(err error)
 
 	// Only the sync worker reads or writes these, and two workers never overlap.
 	affectedTables          database.AffectedTables
@@ -104,6 +114,14 @@ func (s *Synchronizer) SetOnSyncFailure(onSyncFailure func(err error)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onSyncFailure = onSyncFailure
+}
+
+// SetOnAuthLost is called once the grant has been refused often enough that
+// only signing in again will help.
+func (s *Synchronizer) SetOnAuthLost(onAuthLost func(err error)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.onAuthLost = onAuthLost
 }
 
 // drive is read through the mutex because the frontend can swap the service in
@@ -204,30 +222,67 @@ func (s *Synchronizer) endSync() {
 }
 
 func (s *Synchronizer) schedulerWorker() {
-	// Reset affected tables
 	s.resetAffectedTables()
 
-	// Apply remote changes and create snapshots
 	var failure error
 	if err := s.applyRemoteChanges(); err != nil {
 		failure = err
 	}
-	// This should come after ApplyRemoteChanges
+	// After the pull, so a snapshot captures what was just applied.
 	if err := s.createDBSnapshot(); err != nil {
 		failure = err
 	}
 
-	onSuccess, onFailure := s.callbacks()
-	if failure != nil {
-		if onFailure != nil {
-			onFailure(failure)
+	// Pushing on top of a failed pull can send a stale local delete back and
+	// undo a record the pull would have restored, so the push waits for a
+	// clean cycle.
+	if failure == nil {
+		if err := s.syncChangesLogsToDrive(); err != nil {
+			failure = err
 		}
-	} else if onSuccess != nil {
-		onSuccess(s.affectedTables)
 	}
 
-	// Synchronize changes (this should be the last step)
-	s.syncChangesLogsToDrive()
+	s.report(failure)
+}
+
+// report tells the host how the cycle went, and gives up on a grant that keeps
+// being refused rather than retrying it every ten seconds forever.
+func (s *Synchronizer) report(failure error) {
+	onSuccess, onFailure := s.callbacks()
+
+	if failure == nil {
+		s.mu.Lock()
+		s.authFailures = 0
+		s.mu.Unlock()
+
+		if onSuccess != nil {
+			onSuccess(s.affectedTables)
+		}
+		return
+	}
+
+	slog.Error("Synchronizer: sync cycle failed", "error", failure)
+	if onFailure != nil {
+		onFailure(failure)
+	}
+
+	if !google.IsAuthError(failure) {
+		return
+	}
+
+	s.mu.Lock()
+	s.authFailures++
+	lost := s.authFailures >= MAX_CONSECUTIVE_AUTH_FAILURES
+	onAuthLost := s.onAuthLost
+	s.mu.Unlock()
+
+	if lost {
+		slog.Error("Synchronizer: giving up after repeated authentication failures")
+		s.StopScheduler()
+		if onAuthLost != nil {
+			onAuthLost(failure)
+		}
+	}
 }
 
 func (s *Synchronizer) resetAffectedTables() {
@@ -405,6 +460,8 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 	})
 }
 
+// syncChangesLogsToDrive uploads what has not reached Drive yet. Changes to one
+// row go up in order; different rows go up together.
 func (s *Synchronizer) syncChangesLogsToDrive() error {
 	drive := s.drive()
 	if drive == nil {
@@ -416,35 +473,101 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 		return nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(len(changes))
+	groups := groupChangesByRow(changes)
+	slog.Debug("Synchronizer: pushing local changes", "changes", len(changes), "rows", len(groups))
 
-	for _, change := range changes {
-		go func(change repository.ChangeLog) {
+	var (
+		wg       sync.WaitGroup
+		mu       sync.Mutex
+		failures int
+		slots    = make(chan struct{}, PUSH_CONCURRENCY)
+	)
+
+	for _, group := range groups {
+		wg.Add(1)
+		slots <- struct{}{}
+
+		go func(group []repository.ChangeLog) {
 			defer wg.Done()
+			defer func() { <-slots }()
 
-			// Delete change log from drive
-			deletedFiles, err := drive.DeleteChangeLog(change)
-			if err == nil && len(deletedFiles) > 0 {
-				for _, file := range deletedFiles {
-					s.processedChangeRepository.DeleteProcessedChange(file.ID)
+			for _, change := range group {
+				if err := s.pushChangeLog(drive, change); err != nil {
+					slog.Error("Synchronizer: could not upload a change",
+						"change", change.ChangeID, "error", err)
+					mu.Lock()
+					failures++
+					mu.Unlock()
+					// The rest of this row would land out of order.
+					return
 				}
 			}
-
-			// Upload change log to drive
-			if file, err := drive.UploadChangeLog(change); err != nil {
-				slog.Error("Synchronizer[syncChangesLogsToDrive] Failed to upload change logs", "error", err, "change", change.ID)
-				return
-			} else {
-				s.processedChangeRepository.SaveProcessedChange(file.ID)
-				s.changeLogRepository.MarkChangeLogAsSyncedIfNotChanged(change)
-			}
-		}(change)
+		}(group)
 	}
 
 	wg.Wait()
 
+	if failures > 0 {
+		return fmt.Errorf("could not upload %d of %d local changes", failures, len(groups))
+	}
 	return nil
+}
+
+func (s *Synchronizer) pushChangeLog(drive DriveService, change repository.ChangeLog) error {
+	// Replacing the previous copy is best effort: a stale one left behind is
+	// applied and then superseded, while failing here would block the upload.
+	if deleted, err := drive.DeleteChangeLog(change); err == nil {
+		for _, file := range deleted {
+			s.processedChangeRepository.DeleteProcessedChange(file.ID)
+		}
+	} else {
+		slog.Warn("Synchronizer: could not remove the previous copy of a change",
+			"change", change.ChangeID, "error", err)
+	}
+
+	file, err := drive.UploadChangeLog(change)
+	if err != nil {
+		return err
+	}
+
+	s.processedChangeRepository.SaveProcessedChange(file.ID)
+	s.changeLogRepository.MarkChangeLogAsSyncedIfNotChanged(change)
+	return nil
+}
+
+// groupChangesByRow keeps one row's history together and in order, so an update
+// never overtakes the insert it depends on.
+func groupChangesByRow(changes []repository.ChangeLog) [][]repository.ChangeLog {
+	ordered := append([]repository.ChangeLog(nil), changes...)
+	sort.SliceStable(ordered, func(i, j int) bool {
+		left, right := changeOrder(ordered[i]), changeOrder(ordered[j])
+		if left.Equal(right) {
+			return ordered[i].ID < ordered[j].ID
+		}
+		return left.Before(right)
+	})
+
+	groups := make([][]repository.ChangeLog, 0, len(ordered))
+	index := make(map[string]int, len(ordered))
+
+	for _, change := range ordered {
+		key := change.TableName + ":" + change.RowID
+		if at, ok := index[key]; ok {
+			groups[at] = append(groups[at], change)
+			continue
+		}
+		index[key] = len(groups)
+		groups = append(groups, []repository.ChangeLog{change})
+	}
+
+	return groups
+}
+
+func changeOrder(change repository.ChangeLog) time.Time {
+	if !change.UpdatedAt.IsZero() {
+		return change.UpdatedAt
+	}
+	return change.CreatedAt
 }
 
 func (s *Synchronizer) createDBSnapshot() error {

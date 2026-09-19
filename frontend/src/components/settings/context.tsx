@@ -124,6 +124,18 @@ function useCloudSettings() {
     });
   }, []);
 
+  // The backend clears a grant Google keeps refusing, so the UI stops showing
+  // a connected account that cannot sync.
+  useEffect(() => {
+    return EventsOn("on-google-authorization-lost", () => {
+      getGoogleAuthToken();
+      toast.warning("Google Drive disconnected", {
+        description:
+          "The authorization expired or was revoked. Connect again to resume syncing.",
+      });
+    });
+  }, [getGoogleAuthToken]);
+
   const onAuthorized = useCallback(async () => {
     const token = await getGoogleAuthToken();
     if (!token) return;
