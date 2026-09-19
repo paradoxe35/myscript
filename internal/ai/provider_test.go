@@ -6,15 +6,15 @@ package ai
 import "testing"
 
 func TestResolvedFillsBuiltInDefaults(t *testing.T) {
-	settings := Settings{Name: KindAnthropic}.Resolved()
+	settings := Settings{Name: KindOpenRouter}.Resolved()
 
-	if settings.Kind != KindAnthropic {
+	if settings.Kind != KindOpenRouter {
 		t.Errorf("Kind = %q", settings.Kind)
 	}
-	if settings.BaseURL != anthropicBaseURL {
+	if settings.BaseURL != openRouterBaseURL {
 		t.Errorf("BaseURL = %q", settings.BaseURL)
 	}
-	if settings.Model != DefaultModel(KindAnthropic) {
+	if settings.Model != DefaultModel(KindOpenRouter) {
 		t.Errorf("Model = %q", settings.Model)
 	}
 	if settings.Temperature != defaultTemperature {
@@ -39,7 +39,7 @@ func TestResolvedLeavesCustomProvidersAlone(t *testing.T) {
 func TestNewSelectsTheProviderForTheKind(t *testing.T) {
 	cases := map[string]any{
 		KindOpenAI:           &openAIProvider{},
-		KindAnthropic:        &anthropicProvider{},
+		KindOpenRouter:       &openAIProvider{},
 		KindGemini:           &geminiProvider{},
 		KindOpenAICompatible: &openAIProvider{},
 	}
@@ -80,8 +80,6 @@ func typeName(value any) string {
 	switch value.(type) {
 	case *openAIProvider:
 		return "openai"
-	case *anthropicProvider:
-		return "anthropic"
 	case *geminiProvider:
 		return "gemini"
 	default:

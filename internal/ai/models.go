@@ -34,15 +34,6 @@ func catalogEndpointFor(settings Settings) catalogEndpoint {
 	}
 
 	switch settings.Kind {
-	case KindAnthropic:
-		return catalogEndpoint{
-			url: base + "/v1/models?limit=1000",
-			headers: map[string]string{
-				"x-api-key":         settings.APIKey,
-				"anthropic-version": anthropicVersion,
-			},
-		}
-
 	case KindGemini:
 		return catalogEndpoint{
 			url:     base + "/v1beta/models?pageSize=1000",

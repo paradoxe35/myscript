@@ -191,3 +191,28 @@ func TestProviderSettingsSurviveAReload(t *testing.T) {
 		t.Errorf("got %+v", reloaded)
 	}
 }
+
+func TestActiveFallsBackWhenTheProviderIsGone(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+
+	// A provider retired between releases, such as a build where Claude was built in.
+	NewConfigRepository(mainDB).SaveConfig(&Config{AIProvider: "anthropic"})
+
+	if active := NewAIProviderRepository(mainDB, unsynced).Active(); active != ai.KindOpenAI {
+		t.Errorf("active = %q, want a provider that still exists", active)
+	}
+}
+
+func TestOpenRouterIsBuiltIn(t *testing.T) {
+	provider, ok := newProviders(t).Find(ai.KindOpenRouter)
+
+	if !ok {
+		t.Fatal("openrouter should be listed")
+	}
+	if provider.Custom {
+		t.Error("a built-in is not custom and cannot be deleted")
+	}
+	if provider.BaseURL != ai.DefaultBaseURL(ai.KindOpenRouter) {
+		t.Errorf("BaseURL = %q", provider.BaseURL)
+	}
+}

@@ -46,26 +46,26 @@ func TestListModelsUsesTheProviderEndpoint(t *testing.T) {
 	var path, query, key string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path, query, key = r.URL.Path, r.URL.RawQuery, r.Header.Get("x-api-key")
-		io.WriteString(w, `{"data":[{"id":"claude-3-5-haiku-latest"}]}`)
+		path, query, key = r.URL.Path, r.URL.RawQuery, r.Header.Get("Authorization")
+		io.WriteString(w, `{"data":[{"id":"openai/gpt-4o-mini"}]}`)
 	}))
 	defer server.Close()
 
 	models, err := ListModels(context.Background(), Settings{
-		Name: "anthropic", Kind: KindAnthropic, APIKey: "key", BaseURL: server.URL,
+		Name: "openrouter", Kind: KindOpenRouter, APIKey: "key", BaseURL: server.URL,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(models) != 1 || models[0].ID != "claude-3-5-haiku-latest" {
+	if len(models) != 1 || models[0].ID != "openai/gpt-4o-mini" {
 		t.Errorf("got %+v", models)
 	}
-	if path != "/v1/models" || query != "limit=1000" {
+	if path != "/models" || query != "" {
 		t.Errorf("requested %s?%s", path, query)
 	}
-	if key != "key" {
-		t.Errorf("x-api-key = %q", key)
+	if key != "Bearer key" {
+		t.Errorf("Authorization = %q", key)
 	}
 }
 

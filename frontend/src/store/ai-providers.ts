@@ -16,12 +16,12 @@ export type AIProvider = main.AIProvider;
 export type AIModel = ai.ModelInfo;
 
 export const OPENAI = "openai";
-export const ANTHROPIC = "anthropic";
+export const OPENROUTER = "openrouter";
 export const GEMINI = "gemini";
 
 export const PROVIDER_LABELS: Record<string, string> = {
   [OPENAI]: "OpenAI",
-  [ANTHROPIC]: "Claude",
+  [OPENROUTER]: "OpenRouter",
   [GEMINI]: "Gemini",
 };
 

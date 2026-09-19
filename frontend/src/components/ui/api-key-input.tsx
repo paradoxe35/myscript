@@ -15,7 +15,7 @@ const ApiKeyInput = React.forwardRef<HTMLInputElement, ApiKeyInputProps>(
     };
 
     return (
-      <div className="relative">
+      <div className="relative w-full min-w-0">
         <input
           type={isVisible ? "text" : "password"}
           className={cn(

@@ -9,7 +9,10 @@ import (
 	"fmt"
 )
 
-const openAIBaseURL = "https://api.openai.com/v1"
+const (
+	openAIBaseURL     = "https://api.openai.com/v1"
+	openRouterBaseURL = "https://openrouter.ai/api/v1"
+)
 
 type openAIProvider struct {
 	settings Settings

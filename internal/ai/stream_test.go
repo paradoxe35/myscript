@@ -131,50 +131,27 @@ data: [DONE]
 	}
 }
 
-func TestAnthropicStreamsTextDeltas(t *testing.T) {
+func TestOpenRouterUsesItsOwnReasoningShape(t *testing.T) {
 	var requests []capturedRequest
-	server := fakeProvider(t, `event: content_block_delta
-data: {"delta":{"type":"text_delta","text":"Bon"}}
+	server := fakeProvider(t, "data: [DONE]\n\n", &requests)
 
-event: content_block_delta
-data: {"delta":{"type":"text_delta","text":"jour"}}
+	// The style is chosen by host, so a custom provider pointing at OpenRouter
+	// gets the same treatment.
+	provider, _ := New(Settings{
+		Name: "openrouter", Kind: KindOpenRouter, APIKey: "sk", Model: "openai/gpt-4o-mini",
+		BaseURL: server.URL + "/openrouter.ai", LowReasoning: true,
+	})
+	streamText(t, provider)
 
-event: message_stop
-data: {}
-
-`, &requests)
-
-	provider, _ := New(Settings{Name: "anthropic", Kind: KindAnthropic, APIKey: "key", BaseURL: server.URL, Model: "claude"})
-
-	if got := streamText(t, provider); got != "Bonjour" {
-		t.Errorf("got %q", got)
+	reasoning, ok := requests[0].body["reasoning"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected OpenRouter's reasoning object, got %v", requests[0].body)
 	}
-	if requests[0].path != "/v1/messages" {
-		t.Errorf("path = %q", requests[0].path)
+	if reasoning["effort"] != "low" || reasoning["exclude"] != true {
+		t.Errorf("got %v", reasoning)
 	}
-	if requests[0].headers.Get("x-api-key") != "key" {
-		t.Error("the key goes in x-api-key")
-	}
-	if requests[0].headers.Get("anthropic-version") != anthropicVersion {
-		t.Error("the version header is required")
-	}
-	if requests[0].body["system"] != "be brief" {
-		t.Error("the system prompt belongs in its own field")
-	}
-}
-
-func TestAnthropicSurfacesMidStreamErrors(t *testing.T) {
-	var requests []capturedRequest
-	server := fakeProvider(t, `event: error
-data: {"error":{"message":"overloaded"}}
-
-`, &requests)
-
-	provider, _ := New(Settings{Name: "anthropic", Kind: KindAnthropic, APIKey: "key", BaseURL: server.URL, Model: "claude"})
-
-	_, err := Complete(context.Background(), provider, Request{Prompt: "hi"})
-	if err == nil || !strings.Contains(err.Error(), "overloaded") {
-		t.Fatalf("got %v", err)
+	if _, present := requests[0].body["reasoning_effort"]; present {
+		t.Error("sending both shapes at once is rejected by OpenRouter")
 	}
 }
 

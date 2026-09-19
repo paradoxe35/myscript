@@ -12,7 +12,7 @@ import (
 
 const (
 	KindOpenAI           = "openai"
-	KindAnthropic        = "anthropic"
+	KindOpenRouter       = "openrouter"
 	KindGemini           = "gemini"
 	KindOpenAICompatible = "openai-compatible"
 )
@@ -21,7 +21,7 @@ const defaultTemperature = 0.7
 
 var ErrNoProvider = errors.New("no AI provider is configured")
 
-func BuiltIn() []string { return []string{KindOpenAI, KindAnthropic, KindGemini} }
+func BuiltIn() []string { return []string{KindOpenAI, KindOpenRouter, KindGemini} }
 
 func IsBuiltIn(name string) bool {
 	for _, kind := range BuiltIn() {
@@ -34,8 +34,8 @@ func IsBuiltIn(name string) bool {
 
 func DefaultBaseURL(kind string) string {
 	switch kind {
-	case KindAnthropic:
-		return anthropicBaseURL
+	case KindOpenRouter:
+		return openRouterBaseURL
 	case KindGemini:
 		return geminiBaseURL
 	default:
@@ -45,8 +45,8 @@ func DefaultBaseURL(kind string) string {
 
 func DefaultModel(kind string) string {
 	switch kind {
-	case KindAnthropic:
-		return "claude-3-5-haiku-latest"
+	case KindOpenRouter:
+		return "openai/gpt-4o-mini"
 	case KindGemini:
 		return "gemini-2.5-flash"
 	default:
@@ -117,11 +117,9 @@ func New(settings Settings) (Provider, error) {
 	}
 
 	switch settings.Kind {
-	case KindAnthropic:
-		return &anthropicProvider{settings: settings, client: newHTTPClient()}, nil
 	case KindGemini:
 		return &geminiProvider{settings: settings, client: newHTTPClient()}, nil
-	case KindOpenAI, KindOpenAICompatible, "":
+	case KindOpenAI, KindOpenRouter, KindOpenAICompatible, "":
 		return &openAIProvider{settings: settings, client: newHTTPClient()}, nil
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", settings.Kind)

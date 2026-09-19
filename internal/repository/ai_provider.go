@@ -126,12 +126,20 @@ func (r *AIProviderRepository) Delete(name string) error {
 	return nil
 }
 
+// Active falls back when the stored choice no longer exists, which is what a
+// provider being retired between releases looks like.
 func (r *AIProviderRepository) Active() string {
-	config := r.config.GetConfig()
-	if config.AIProvider == "" {
+	name := r.config.GetConfig().AIProvider
+	if name == "" {
 		return ai.KindOpenAI
 	}
-	return config.AIProvider
+
+	for _, provider := range r.List() {
+		if strings.EqualFold(provider.Name, name) {
+			return provider.Name
+		}
+	}
+	return ai.KindOpenAI
 }
 
 func (r *AIProviderRepository) SetActive(name string) error {
