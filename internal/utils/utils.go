@@ -6,6 +6,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -67,8 +68,9 @@ func probeInternet() bool {
 	ctx, cancel := context.WithTimeout(context.Background(), connectivityTimeout)
 	defer cancel()
 
-	// HEAD: only reachability matters, and the probe returns no body anyway.
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, connectivityProbe, nil)
+	// GET, not HEAD: the endpoint answers 400 to HEAD, which leaves the pooled
+	// connection in a state the next request complains about.
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, connectivityProbe, nil)
 	if err != nil {
 		return false
 	}
@@ -77,7 +79,10 @@ func probeInternet() bool {
 	if err != nil {
 		return false
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
+	// Drain so the connection can be reused instead of being torn down.
+	io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<10))
 	return true
 }
 
