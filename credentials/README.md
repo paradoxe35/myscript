@@ -1,2 +1,1 @@
-- `github-token.txt`: GitHub token for the Updater (check for new releases)
 - `google-credentials.json`: Google OAuth credentials for the Google Drive integration

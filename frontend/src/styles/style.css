@@ -181,8 +181,19 @@
   .prose-zoom {
     font-size: calc(1.125rem * var(--content-zoom, 1));
   }
+
   .title-zoom {
     font-size: calc(1.875rem * var(--content-zoom, 1));
+  }
+
+  /*
+   * The column grows with the text, so zooming enlarges the words without
+   * halving how many fit on a line. It still never exceeds the space available.
+   */
+  .content-column {
+    width: 100%;
+    max-width: min(100%, calc(846px * var(--content-zoom, 1)));
+    margin-inline: auto;
   }
 }
 

@@ -1,3 +1,4 @@
+import { useAutoGrow } from "@/hooks/use-auto-grow";
 import { appScrollElement } from "@/lib/dom";
 import { cn } from "@/lib/utils";
 import { useActivePageStore } from "@/store/active-page";
@@ -47,6 +48,12 @@ function ContentTitle() {
   const activePageStore = useActivePageStore();
   const [title, setTitle] = useState("");
 
+  // The zoom changes the font size without changing any box, so the observer
+  // inside the hook cannot see it.
+  const zoom = useContentZoomStore((state) => state.zoom);
+
+  useAutoGrow(textareaRef, title, zoom);
+
   const activePage = activePageStore.page;
   const pageId = activePageStore.getPageId();
 
@@ -78,15 +85,6 @@ function ContentTitle() {
       }
     }, 100);
   }, [pageId]);
-
-  // Auto grow textarea height
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [title]);
 
   // Save page title when input change
   const setTitleCallback = useDebouncedCallback((title: string) => {
@@ -122,10 +120,10 @@ function ContentTitle() {
         onChange={handleChange}
         rows={1}
         className={cn(
-          "px-8 sm:px-12 max-w-[846px]",
+          "content-column px-8 sm:px-12",
           "font-bold title-zoom bg-background text-foreground py-2 rounded-md placeholder:text-foreground/30",
-          "mb-2 justify-self-center outline-none border-none w-full block",
-          "resize-none overflow-hidden"
+          "mb-2 outline-none border-none w-full block",
+          "resize-none overflow-hidden",
         )}
       />
     </div>

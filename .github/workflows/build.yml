@@ -163,11 +163,9 @@ jobs:
 
       - name: Write credentials from secrets
         env:
-          REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           WITAI_KEYS: ${{ secrets.WITAI_KEYS }}
         run: |
-          printf '%s' "$REPOSITORY_TOKEN" > credentials/github-token.txt
           printf '%s' "$GOOGLE_CREDENTIALS" > credentials/google-credentials.json
           node scripts/embed-witai-keys.js
 

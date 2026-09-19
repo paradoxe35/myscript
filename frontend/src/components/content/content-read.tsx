@@ -32,7 +32,7 @@ export function ContentRead() {
       ref={containerRef}
       onClick={onClick}
       className={cn(
-        "px-8 sm:px-12 max-w-[846px] w-full block mx-auto",
+        "content-column px-8 sm:px-12 block",
         "prose prose-lg dark:prose-invert prose-zoom",
         readMode && "reader"
       )}

@@ -53,7 +53,6 @@ func main() {
 
 	// Updater
 	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
-	appUpdater.SetToken(readGitHubToken())
 
 	// Speech models
 	stt.Init(filesystem.HOME_DIR)

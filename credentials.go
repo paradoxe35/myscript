@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io/fs"
 	"log/slog"
-	"strings"
 )
 
 func readFile(file string) []byte {
@@ -32,12 +31,4 @@ func readFile(file string) []byte {
 
 func readGoogleCredentials() []byte {
 	return readFile("google-credentials.json")
-}
-
-func readGitHubToken() string {
-	data := readFile("github-token.txt")
-	// Handle Windows/Unix line endings
-	token := strings.TrimSpace(strings.ReplaceAll(string(data), "\r\n", "\n"))
-
-	return token
 }

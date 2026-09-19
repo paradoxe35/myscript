@@ -44,7 +44,7 @@ export function ContentEditor() {
       key={activePageStore.version}
       initialContent={activePageStore.page?.blocks}
       onUpdate={debouncedUpdates}
-      className="w-full block mx-auto max-w-[846px]"
+      className="content-column block"
     />
   );
 }
