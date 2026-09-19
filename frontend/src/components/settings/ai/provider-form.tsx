@@ -2,6 +2,7 @@ import { ApiKeyInput } from "@/components/ui/api-key-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   AIModel,
   providerLabel,
@@ -196,7 +197,7 @@ type ToggleProps = {
 
 function Toggle({ checked, onChange, label, hint }: ToggleProps) {
   return (
-    <label className="flex cursor-pointer items-start gap-2.5 rounded-md py-1">
+    <Label className="flex cursor-pointer items-start gap-2.5 rounded-md py-1 font-normal">
       <Checkbox
         checked={checked}
         onCheckedChange={(value) => onChange(value === true)}
@@ -206,6 +207,6 @@ function Toggle({ checked, onChange, label, hint }: ToggleProps) {
         <span className="text-sm leading-none">{label}</span>
         {hint && <Hint>{hint}</Hint>}
       </span>
-    </label>
+    </Label>
   );
 }

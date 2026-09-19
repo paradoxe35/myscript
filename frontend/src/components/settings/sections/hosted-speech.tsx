@@ -1,5 +1,6 @@
 import { ApiKeyInput } from "@/components/ui/api-key-input";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -132,28 +133,27 @@ export function HostedSpeech() {
 
 function ModelField({ service }: { service: SpeechService | undefined }) {
   const { config, updateConfig } = useSettings();
-  const suggestions = service?.Models ?? [];
+
+  const options = (service?.Models ?? []).map((model) => ({ value: model }));
 
   return (
     <Field
       label="Model"
       hint={
-        suggestions.length === 0 ? "Whatever the endpoint serves." : undefined
+        options.length === 0
+          ? "Whatever the endpoint serves."
+          : "Pick one, or type another the service supports."
       }
     >
-      <Input
-        list={suggestions.length > 0 ? "speech-model-suggestions" : undefined}
+      <Combobox
         value={config?.RemoteModel || ""}
-        placeholder={suggestions[0] ?? "Model name"}
-        onChange={(event) => updateConfig({ RemoteModel: event.target.value })}
+        options={options}
+        onChange={(model) => updateConfig({ RemoteModel: model })}
+        placeholder="Choose a model"
+        searchPlaceholder="Search or type a model…"
+        emptyLabel="Type the model name the service expects."
+        allowCustom
       />
-      {suggestions.length > 0 && (
-        <datalist id="speech-model-suggestions">
-          {suggestions.map((model) => (
-            <option key={model} value={model} />
-          ))}
-        </datalist>
-      )}
     </Field>
   );
 }

@@ -1,3 +1,4 @@
+import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useSpeechModelsStore } from "@/store/speech-models";
 import { useEffect, useState } from "react";
@@ -41,22 +42,28 @@ export function SpeechSection() {
       >
         <div className="flex flex-col gap-2">
           {sources.map((option) => (
-            <button
+            <Card
               key={option.key}
-              type="button"
+              role="radio"
+              tabIndex={0}
+              aria-checked={source === option.key}
               onClick={() => updateConfig({ TranscriberSource: option.key })}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  updateConfig({ TranscriberSource: option.key });
+                }
+              }}
               className={cn(
-                "flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition",
-                "hover:bg-accent",
+                "cursor-pointer px-3 py-2.5 shadow-none transition",
+                "hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                 source === option.key &&
                   "border-primary bg-primary/5 hover:bg-primary/5",
               )}
             >
-              <span className="text-sm font-medium">{option.name}</span>
-              <span className="text-xs text-muted-foreground">
-                {option.description}
-              </span>
-            </button>
+              <p className="text-sm font-medium">{option.name}</p>
+              <Hint>{option.description}</Hint>
+            </Card>
           ))}
         </div>
       </SettingsGroup>

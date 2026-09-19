@@ -1,3 +1,5 @@
+import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { PropsWithChildren } from "react";
 
@@ -22,9 +24,7 @@ export function SettingsGroup({
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
           <h3 className="text-sm font-medium leading-none">{title}</h3>
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
+          {description && <Hint>{description}</Hint>}
         </div>
         {action}
       </header>
@@ -50,12 +50,9 @@ export function Field({
 }: FieldProps) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label
-        htmlFor={htmlFor}
-        className="text-xs font-medium text-muted-foreground"
-      >
+      <Label htmlFor={htmlFor} className="text-xs text-muted-foreground">
         {label}
-      </label>
+      </Label>
       {children}
       {hint && <p className="text-xs text-muted-foreground/80">{hint}</p>}
     </div>
@@ -67,9 +64,9 @@ export function SettingsCard({
   children,
 }: PropsWithChildren<{ className?: string }>) {
   return (
-    <div className={cn("rounded-lg border bg-card/50 p-4", className)}>
+    <Card className={cn("bg-card/50 p-4 shadow-none", className)}>
       {children}
-    </div>
+    </Card>
   );
 }
 

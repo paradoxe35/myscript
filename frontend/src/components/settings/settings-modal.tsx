@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
@@ -86,20 +87,15 @@ export function SettingsModal(props: PropsWithChildren) {
             </DialogTitle>
 
             {sections.map((item) => (
-              <button
+              <Button
                 key={item.key}
-                type="button"
+                variant={item.key === section.key ? "secondary" : "ghost"}
                 onClick={() => setCurrent(item.key)}
-                className={cn(
-                  "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition",
-                  "hover:bg-accent",
-                  item.key === section.key &&
-                    "bg-accent font-medium text-accent-foreground",
-                )}
+                className="justify-start gap-2.5 px-2.5 font-normal"
               >
                 <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                 {item.label}
-              </button>
+              </Button>
             ))}
           </nav>
 

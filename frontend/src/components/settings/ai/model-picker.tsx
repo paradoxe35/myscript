@@ -65,20 +65,19 @@ export function ModelPicker({
         <ScrollArea className="h-[320px] -mx-1 px-1">
           <div className="flex flex-col gap-1">
             {visible.map((model) => (
-              <button
+              <Button
                 key={model.ID}
-                type="button"
+                variant="ghost"
                 onClick={() => {
                   onSelect(model);
                   onOpenChange(false);
                 }}
                 className={cn(
-                  "flex items-center justify-between gap-3 rounded-md border border-transparent px-3 py-2 text-left text-sm transition",
-                  "hover:bg-accent",
-                  model.ID === selected && "border-primary bg-primary/5",
+                  "h-auto justify-between gap-3 px-3 py-2 font-normal",
+                  model.ID === selected && "border border-primary bg-primary/5",
                 )}
               >
-                <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 flex-col items-start">
                   <span className="truncate font-medium">{model.ID}</span>
                   {describe(model) && (
                     <span className="truncate text-xs text-muted-foreground">
@@ -90,7 +89,7 @@ export function ModelPicker({
                 {model.ID === selected && (
                   <Check className="h-4 w-4 shrink-0 text-primary" />
                 )}
-              </button>
+              </Button>
             ))}
 
             {visible.length === 0 && (

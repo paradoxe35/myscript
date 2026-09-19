@@ -97,15 +97,14 @@ export function AISection() {
       >
         <div className="flex flex-wrap gap-2">
           {providers.map((provider) => (
-            <button
+            <Button
               key={provider.Name}
-              type="button"
+              variant={provider.Name === selectedName ? "secondary" : "outline"}
+              size="sm"
               onClick={() => setSelectedName(provider.Name)}
               className={cn(
-                "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition",
-                "hover:bg-accent",
-                provider.Name === selectedName &&
-                  "border-primary bg-primary/5 hover:bg-primary/5",
+                "gap-2 rounded-full font-normal",
+                provider.Name === selectedName && "border-primary",
               )}
             >
               <span
@@ -120,7 +119,7 @@ export function AISection() {
               {provider.Name === active && (
                 <Sparkles className="h-3 w-3 text-primary" />
               )}
-            </button>
+            </Button>
           ))}
         </div>
 

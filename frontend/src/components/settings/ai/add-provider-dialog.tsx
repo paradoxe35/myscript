@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAIProvidersStore } from "@/store/ai-providers";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -113,7 +114,7 @@ export function AddProviderDialog({
             </Field>
           )}
 
-          <label className="flex cursor-pointer items-start gap-2.5">
+          <Label className="flex cursor-pointer items-start gap-2.5 font-normal">
             <Checkbox
               checked={form.noAPIKey}
               onCheckedChange={(value) => update({ noAPIKey: value === true })}
@@ -123,7 +124,7 @@ export function AddProviderDialog({
               <span className="text-sm leading-none">Needs no API key</span>
               <Hint>For a model running on this computer.</Hint>
             </span>
-          </label>
+          </Label>
         </div>
 
         <DialogFooter>
