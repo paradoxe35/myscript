@@ -6,6 +6,8 @@ package repository
 import (
 	"myscript/internal/ai"
 	"testing"
+
+	"gorm.io/datatypes"
 )
 
 func newProviders(t *testing.T) *AIProviderRepository {
@@ -214,5 +216,26 @@ func TestOpenRouterIsBuiltIn(t *testing.T) {
 	}
 	if provider.BaseURL != ai.DefaultBaseURL(ai.KindOpenRouter) {
 		t.Errorf("BaseURL = %q", provider.BaseURL)
+	}
+}
+
+// A Config row can hold the JSON literal null, which decodes to a nil map
+// rather than an error. Writing to it used to panic on the first save.
+func TestSaveWhenTheProvidersColumnHoldsNull(t *testing.T) {
+	for _, raw := range []string{"null", "", "{}", "not json"} {
+		t.Run(raw, func(t *testing.T) {
+			mainDB, unsynced := newStores(t)
+			NewConfigRepository(mainDB).SaveConfig(&Config{AIProviders: datatypes.JSON(raw)})
+
+			repo := NewAIProviderRepository(mainDB, unsynced)
+			if err := repo.Save(AIProvider{Name: "openrouter", Model: "openrouter/free"}); err != nil {
+				t.Fatalf("save: %v", err)
+			}
+
+			provider, ok := repo.Find("openrouter")
+			if !ok || provider.Model != "openrouter/free" {
+				t.Errorf("got %+v, ok=%v", provider, ok)
+			}
+		})
 	}
 }

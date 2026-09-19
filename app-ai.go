@@ -5,9 +5,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"myscript/internal/ai"
 	"myscript/internal/repository"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -51,6 +53,17 @@ type AICompletionEvent struct {
 	Error string
 }
 
+// recoverAsError turns a panic into a returned error. A binding is an RPC
+// boundary: Wails logs the panic but never settles the promise, so without
+// this the window waits on an answer that can no longer come.
+func recoverAsError(err *error) {
+	if panicked := recover(); panicked != nil {
+		slog.Error("Recovered from a panic in a bound method",
+			"panic", panicked, "stack", string(debug.Stack()))
+		*err = fmt.Errorf("unexpected failure: %v", panicked)
+	}
+}
+
 func (a *App) aiProviders() *repository.AIProviderRepository {
 	return repository.NewAIProviderRepository(a.mainDB, a.unSyncedDB)
 }
@@ -85,11 +98,14 @@ func (a *App) GetActiveAIProvider() string {
 	return a.aiProviders().Active()
 }
 
-func (a *App) SetActiveAIProvider(name string) error {
+func (a *App) SetActiveAIProvider(name string) (err error) {
+	defer recoverAsError(&err)
 	return a.aiProviders().SetActive(name)
 }
 
-func (a *App) SaveAIProvider(provider AIProvider, apiKey string) error {
+func (a *App) SaveAIProvider(provider AIProvider, apiKey string) (err error) {
+	defer recoverAsError(&err)
+
 	repo := a.aiProviders()
 
 	record := repository.AIProvider{
@@ -110,7 +126,8 @@ func (a *App) SaveAIProvider(provider AIProvider, apiKey string) error {
 	return repo.SetAPIKey(provider.Name, apiKey)
 }
 
-func (a *App) DeleteAIProvider(name string) error {
+func (a *App) DeleteAIProvider(name string) (err error) {
+	defer recoverAsError(&err)
 	return a.aiProviders().Delete(name)
 }
 
@@ -120,7 +137,9 @@ func (a *App) GetAIProviderAPIKey(name string) string {
 
 // ListAIModels asks a provider what it can run, using the values on screen so
 // an unsaved edit can be tried before committing to it.
-func (a *App) ListAIModels(provider AIProvider, apiKey string) ([]ai.ModelInfo, error) {
+func (a *App) ListAIModels(provider AIProvider, apiKey string) (models []ai.ModelInfo, err error) {
+	defer recoverAsError(&err)
+
 	settings := ai.Settings{
 		Name:    provider.Name,
 		Kind:    provider.Kind,
@@ -136,7 +155,9 @@ func (a *App) ListAIModels(provider AIProvider, apiKey string) ([]ai.ModelInfo, 
 	return ai.ListModels(context.Background(), settings)
 }
 
-func (a *App) TestAIProvider(provider AIProvider, apiKey string) error {
+func (a *App) TestAIProvider(provider AIProvider, apiKey string) (err error) {
+	defer recoverAsError(&err)
+
 	settings := ai.Settings{
 		Name:         provider.Name,
 		Kind:         provider.Kind,
@@ -170,7 +191,9 @@ func (a *App) TestAIProvider(provider AIProvider, apiKey string) error {
 
 // StartAICompletion returns as soon as the request is accepted; the answer
 // arrives chunk by chunk as events keyed by the returned id.
-func (a *App) StartAICompletion(request AICompletionRequest) (string, error) {
+func (a *App) StartAICompletion(request AICompletionRequest) (id string, err error) {
+	defer recoverAsError(&err)
+
 	repo := a.aiProviders()
 
 	name := request.Provider
@@ -196,7 +219,7 @@ func (a *App) StartAICompletion(request AICompletionRequest) (string, error) {
 		return "", err
 	}
 
-	id := uuid.New().String()
+	id = uuid.New().String()
 	ctx, cancel := context.WithCancel(context.Background())
 	a.aiCompletions.start(id, cancel)
 

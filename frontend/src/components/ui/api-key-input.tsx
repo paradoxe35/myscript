@@ -1,47 +1,55 @@
 import * as React from "react";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export interface ApiKeyInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {}
 
 const ApiKeyInput = React.forwardRef<HTMLInputElement, ApiKeyInputProps>(
-  ({ className, ...props }, ref) => {
-    const [isVisible, setIsVisible] = React.useState(false);
-
-    const toggleVisibility = () => {
-      setIsVisible(!isVisible);
-    };
+  ({ className, disabled, ...props }, ref) => {
+    const [visible, setVisible] = React.useState(false);
 
     return (
       <div className="relative w-full min-w-0">
         <input
-          type={isVisible ? "text" : "password"}
+          ref={ref}
+          type={visible ? "text" : "password"}
+          disabled={disabled}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
           className={cn(
-            "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+            "h-9 w-full rounded-md border border-input bg-background py-1 pl-3 text-sm shadow-sm transition-colors",
+            // Room for the toggle, so a long key never runs under it.
+            "pr-10",
+            "font-mono tracking-tight placeholder:font-sans placeholder:tracking-normal placeholder:text-muted-foreground",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50",
             className
           )}
-          ref={ref}
           {...props}
         />
-        <Button
+
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          className="absolute right-0 top-0 h-full px-3 py-1 hover:bg-transparent"
-          onClick={toggleVisibility}
-          tabIndex={-1}
-        >
-          {isVisible ? (
-            <EyeOffIcon className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <EyeIcon className="h-4 w-4 text-muted-foreground" />
+          disabled={disabled}
+          onClick={() => setVisible((shown) => !shown)}
+          aria-label={visible ? "Hide API key" : "Show API key"}
+          aria-pressed={visible}
+          className={cn(
+            "absolute inset-y-0 right-0 flex w-10 items-center justify-center rounded-r-md",
+            "text-muted-foreground transition-colors hover:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "disabled:cursor-not-allowed disabled:opacity-50"
           )}
-          <span className="sr-only">
-            {isVisible ? "Hide API key" : "Show API key"}
-          </span>
-        </Button>
+        >
+          {visible ? (
+            <EyeOffIcon className="h-4 w-4" />
+          ) : (
+            <EyeIcon className="h-4 w-4" />
+          )}
+        </button>
       </div>
     );
   }

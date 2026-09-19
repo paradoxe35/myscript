@@ -199,12 +199,12 @@ func (r *AIProviderRepository) Configured(name string) bool {
 func (r *AIProviderRepository) stored() map[string]AIProvider {
 	providers := map[string]AIProvider{}
 
-	raw := r.config.GetConfig().AIProviders
-	if len(raw) == 0 {
-		return providers
-	}
-	if err := json.Unmarshal(raw, &providers); err != nil {
-		return map[string]AIProvider{}
+	if raw := r.config.GetConfig().AIProviders; len(raw) > 0 {
+		// Decoding the JSON literal null leaves the map nil rather than failing,
+		// and writing to it would panic.
+		if err := json.Unmarshal(raw, &providers); err != nil || providers == nil {
+			providers = map[string]AIProvider{}
+		}
 	}
 
 	for name, provider := range providers {
