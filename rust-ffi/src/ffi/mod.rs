@@ -4,8 +4,8 @@
 pub mod speech;
 pub mod types;
 
-pub use types::*;
 use std::os::raw::c_char;
+pub use types::*;
 
 /// Returns the last error as a C string (free with `myscript_stt_free_string`), or NULL if none.
 #[unsafe(no_mangle)]

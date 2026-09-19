@@ -51,7 +51,10 @@ impl Engine {
     }
 
     pub fn transcribe(&mut self, samples: &[f32], language: Option<&str>) -> Result<String> {
-        let loaded = self.loaded.as_mut().ok_or_else(|| anyhow!("no model loaded"))?;
+        let loaded = self
+            .loaded
+            .as_mut()
+            .ok_or_else(|| anyhow!("no model loaded"))?;
 
         let options = RunOptions {
             language: language.map(str::to_owned),
@@ -76,7 +79,10 @@ mod tests {
         let mut engine = Engine::new();
 
         let message = engine.load(&missing).expect_err("must fail").to_string();
-        assert!(message.contains(&missing.display().to_string()), "{message}");
+        assert!(
+            message.contains(&missing.display().to_string()),
+            "{message}"
+        );
         assert!(!engine.loaded());
     }
 

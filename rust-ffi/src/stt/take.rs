@@ -226,11 +226,16 @@ mod tests {
 
         let (reply, done) = channel();
         running.commands.send(Command::Stop(reply)).unwrap();
-        done.recv_timeout(Duration::from_secs(2)).expect("stop is answered");
+        done.recv_timeout(Duration::from_secs(2))
+            .expect("stop is answered");
         assert!(matches!(running.handle.join().unwrap(), Outcome::Ended));
 
         let log = running.log.lock().unwrap();
-        assert_eq!(log.utterances.len(), 3, "two pauses and the stop close three utterances");
+        assert_eq!(
+            log.utterances.len(),
+            3,
+            "two pauses and the stop close three utterances"
+        );
         assert!(log.utterances[0] < log.utterances[1]);
         assert!(log.finished);
         assert!(!log.discarded);
@@ -244,7 +249,8 @@ mod tests {
 
         let (reply, done) = channel();
         running.commands.send(Command::Cancel(reply)).unwrap();
-        done.recv_timeout(Duration::from_secs(2)).expect("cancel is answered");
+        done.recv_timeout(Duration::from_secs(2))
+            .expect("cancel is answered");
         running.handle.join().unwrap();
 
         let log = running.log.lock().unwrap();

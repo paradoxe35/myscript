@@ -37,7 +37,9 @@ impl Host {
     }
 
     pub fn error(&self, message: &str) {
-        let Ok(message) = CString::new(message) else { return };
+        let Ok(message) = CString::new(message) else {
+            return;
+        };
         let callback = self.callbacks.error;
         guarded(|| callback(message.as_ptr()));
     }

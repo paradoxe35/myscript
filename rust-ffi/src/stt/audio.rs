@@ -4,6 +4,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
 use std::thread;
+use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -132,7 +133,8 @@ impl Recorder {
         self.commands
             .send(Command::Start(tx))
             .map_err(|_| anyhow!("recorder thread is gone"))?;
-        rx.recv().map_err(|_| anyhow!("recorder dropped the reply"))?
+        rx.recv()
+            .map_err(|_| anyhow!("recorder dropped the reply"))?
     }
 
     /// Returns once the take has ended and its last utterance is delivered.
@@ -440,7 +442,12 @@ fn build_stream(
     samples: Sender<Vec<f32>>,
     levels: Sender<f32>,
 ) -> Result<cpal::Stream> {
-    let error = |e| log::error!("audio stream error: {e}");
+    let mut throttle = ErrorThrottle::default();
+    let error = move |e: cpal::Error| {
+        if let Some(line) = throttle.record(&e.to_string(), Instant::now()) {
+            log::error!("audio stream error: {line}");
+        }
+    };
 
     let stream = match selected.format {
         SampleFormat::F32 => device.build_input_stream(
@@ -474,6 +481,44 @@ fn build_stream(
 }
 
 /// Runs on the realtime audio callback: send and return, never block.
+/// A driver reports an underrun once per audio period, so one bad take can log
+/// hundreds of identical lines. Report the first, then how many followed.
+const ERROR_SUMMARY_INTERVAL: Duration = Duration::from_secs(5);
+
+#[derive(Default)]
+struct ErrorThrottle {
+    last: Option<String>,
+    repeats: u64,
+    since: Option<Instant>,
+}
+
+impl ErrorThrottle {
+    fn record(&mut self, message: &str, now: Instant) -> Option<String> {
+        if self.last.as_deref() != Some(message) {
+            self.last = Some(message.to_owned());
+            self.repeats = 0;
+            self.since = Some(now);
+            return Some(message.to_owned());
+        }
+
+        self.repeats += 1;
+
+        let elapsed = self.since.map_or(Duration::ZERO, |start| now - start);
+        if elapsed < ERROR_SUMMARY_INTERVAL {
+            return None;
+        }
+
+        let summary = format!(
+            "{message} ({} more in the last {}s)",
+            self.repeats,
+            elapsed.as_secs()
+        );
+        self.repeats = 0;
+        self.since = Some(now);
+        Some(summary)
+    }
+}
+
 fn forward(data: Vec<f32>, samples: &Sender<Vec<f32>>, levels: &Sender<f32>) {
     if !data.is_empty() {
         let sum: f32 = data.iter().map(|s| s * s).sum();
@@ -510,7 +555,10 @@ mod tests {
         let missing = std::env::temp_dir().join("myscript-nonexistent-model.gguf");
 
         let message = recorder.load(missing.clone()).unwrap_err().to_string();
-        assert!(message.contains(&missing.display().to_string()), "{message}");
+        assert!(
+            message.contains(&missing.display().to_string()),
+            "{message}"
+        );
 
         recorder.shutdown();
     }
@@ -523,6 +571,44 @@ mod tests {
         recorder.cancel().unwrap();
         recorder.unload();
         recorder.shutdown();
+    }
+
+    #[test]
+    fn the_first_error_is_reported_and_repeats_are_folded() {
+        let mut throttle = ErrorThrottle::default();
+        let start = Instant::now();
+
+        assert_eq!(
+            throttle.record("underrun", start).as_deref(),
+            Some("underrun")
+        );
+        assert!(throttle.record("underrun", start).is_none());
+        assert!(
+            throttle
+                .record("underrun", start + Duration::from_secs(1))
+                .is_none()
+        );
+
+        let summary = throttle
+            .record("underrun", start + ERROR_SUMMARY_INTERVAL)
+            .expect("a summary is due");
+        assert!(summary.contains("underrun"), "{summary}");
+        assert!(
+            summary.contains('3'),
+            "the repeats should be counted: {summary}"
+        );
+    }
+
+    #[test]
+    fn a_different_error_is_reported_at_once() {
+        let mut throttle = ErrorThrottle::default();
+        let start = Instant::now();
+
+        throttle.record("underrun", start);
+        assert_eq!(
+            throttle.record("device lost", start).as_deref(),
+            Some("device lost")
+        );
     }
 
     #[test]

@@ -132,7 +132,10 @@ pub unsafe extern "C" fn myscript_stt_set_device(handle: SttHandle, name: *const
 /// Sets the spoken language as an ISO code; null or empty asks the model to
 /// detect, which only some can. Takes effect on the next take.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn myscript_stt_set_language(handle: SttHandle, code: *const c_char) -> c_int {
+pub unsafe extern "C" fn myscript_stt_set_language(
+    handle: SttHandle,
+    code: *const c_char,
+) -> c_int {
     let Some(speech) = speech(handle) else {
         return FFIErrorCode::NullPointer as c_int;
     };

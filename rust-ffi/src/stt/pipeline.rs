@@ -228,7 +228,10 @@ mod tests {
         assert_eq!(utterances.len(), 1);
 
         let seconds = utterances[0].len() as f32 / SAMPLE_RATE as f32;
-        assert!((1.3..=1.6).contains(&seconds), "1 s of tone plus the pause: {seconds}");
+        assert!(
+            (1.3..=1.6).contains(&seconds),
+            "1 s of tone plus the pause: {seconds}"
+        );
     }
 
     #[test]
