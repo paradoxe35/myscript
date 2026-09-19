@@ -27,6 +27,15 @@ var Whisper = Named([]string{
 	"sr", "sk", "sl", "es", "sw", "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "cy", "yi",
 })
 
+// All is every language with a known name, for services that accept any.
+func All() []Language {
+	codes := make([]string, 0, len(names))
+	for code := range names {
+		codes = append(codes, code)
+	}
+	return Named(codes)
+}
+
 // Validate accepts only what the Whisper endpoints take.
 func Validate(code string) error {
 	for _, language := range Whisper {

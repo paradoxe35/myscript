@@ -23,10 +23,18 @@ type Secret struct {
 }
 
 const (
-	SecretNotionAPIKey       = "notion.api_key"
+	SecretNotionAPIKey = "notion.api_key"
+
+	// Kept only so a key written before hosted services were unified can be adopted.
 	SecretSpeechOpenAIAPIKey = "speech.openai.api_key"
 	SecretSpeechGroqAPIKey   = "speech.groq.api_key"
 )
+
+// SpeechServiceSecret keys the credential per service, so switching between
+// them does not throw away the key you are not using.
+func SpeechServiceSecret(preset string) string {
+	return "speech.remote." + preset + ".api_key"
+}
 
 func AIProviderSecret(provider string) string {
 	return "ai." + provider + ".api_key"

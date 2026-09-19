@@ -21,7 +21,7 @@ import {
 } from "~wails/main/App";
 import { repository } from "~wails/models";
 
-export type TranscriberSource = "local" | "openai" | "witai" | "groq";
+export type TranscriberSource = "local" | "remote" | "witai";
 
 export const TRANSCRIBER_SOURCES: Array<{
   key: TranscriberSource;
@@ -34,14 +34,9 @@ export const TRANSCRIBER_SOURCES: Array<{
     description: "Private and offline, once a model is downloaded.",
   },
   {
-    key: "openai",
-    name: "OpenAI Whisper",
-    description: "Accurate, needs an internet connection and an API key.",
-  },
-  {
-    key: "groq",
-    name: "Groq",
-    description: "Whisper on Groq's hardware. Fast, needs an API key.",
+    key: "remote",
+    name: "Hosted service",
+    description: "OpenAI, Groq, Gemini or your own endpoint. Needs an API key.",
   },
   {
     key: "witai",

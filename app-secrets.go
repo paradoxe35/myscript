@@ -11,9 +11,7 @@ import (
 // Credentials the settings screen owns, mapped to the names they are stored
 // under. Anything outside this list is refused.
 var appSecrets = map[string]string{
-	"notion":        repository.SecretNotionAPIKey,
-	"speech.openai": repository.SecretSpeechOpenAIAPIKey,
-	"speech.groq":   repository.SecretSpeechGroqAPIKey,
+	"notion": repository.SecretNotionAPIKey,
 }
 
 func (a *App) secrets() *repository.SecretRepository {

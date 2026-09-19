@@ -9,7 +9,7 @@ import {
 } from "../context";
 import { Hint, SettingsCard, SettingsGroup, SettingsPanel } from "../fields";
 import { SpeechModelsInputs } from "../settings-speech-models";
-import { SecretField } from "./secret-field";
+import { HostedSpeech } from "./hosted-speech";
 
 export function SpeechSection() {
   const { config, updateConfig } = useSettings();
@@ -75,25 +75,8 @@ function SourceSetup({ source }: { source: TranscriberSource }) {
     case "local":
       return <SpeechModelsInputs />;
 
-    case "openai":
-      return (
-        <SecretField
-          secret="speech.openai"
-          label="OpenAI API key"
-          placeholder="sk-..."
-          hint="Used for transcription only; the writing assistant has its own key."
-        />
-      );
-
-    case "groq":
-      return (
-        <SecretField
-          secret="speech.groq"
-          label="Groq API key"
-          placeholder="gsk_..."
-          hint="Transcribes with whisper-large-v3-turbo."
-        />
-      );
+    case "remote":
+      return <HostedSpeech />;
 
     case "witai":
       return (

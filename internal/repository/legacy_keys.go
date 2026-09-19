@@ -46,6 +46,38 @@ func AdoptLegacyKeys(mainDB, unSyncedDB *gorm.DB) {
 	slog.Info("Moved API keys out of the synced configuration into the local secret store")
 }
 
+// AdoptHostedSpeech moves a build that named its transcription service directly
+// onto the hosted-service settings that replaced them.
+func AdoptHostedSpeech(mainDB, unSyncedDB *gorm.DB) {
+	configs := NewConfigRepository(mainDB)
+	secrets := NewSecretRepository(unSyncedDB)
+
+	config := configs.GetConfig()
+
+	preset, legacyKey := "", ""
+	switch config.TranscriberSource {
+	case "openai":
+		preset, legacyKey = "openai", SecretSpeechOpenAIAPIKey
+	case "groq":
+		preset, legacyKey = "groq", SecretSpeechGroqAPIKey
+	default:
+		return
+	}
+
+	if key := secrets.Get(legacyKey); key != "" && !secrets.Has(SpeechServiceSecret(preset)) {
+		if err := secrets.Set(SpeechServiceSecret(preset), key); err != nil {
+			slog.Error("Could not move a transcription key", "service", preset, "error", err)
+			return
+		}
+	}
+
+	config.TranscriberSource = "remote"
+	config.RemoteProvider = preset
+	configs.SaveConfig(config)
+
+	slog.Info("Moved the transcription service onto the hosted settings", "service", preset)
+}
+
 func adopt(secrets *SecretRepository, name string, legacy *string) bool {
 	if legacy == nil || strings.TrimSpace(*legacy) == "" {
 		return false

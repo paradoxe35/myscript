@@ -63,6 +63,10 @@ export function GetSecret(arg1:string):Promise<string>;
 
 export function GetSpeechModels():Promise<Array<main.SpeechModel>>;
 
+export function GetSpeechServiceAPIKey(arg1:string):Promise<string>;
+
+export function GetSpeechServices():Promise<Array<main.SpeechService>>;
+
 export function HasConfiguredAIProvider():Promise<boolean>;
 
 export function HasLegacyWhisperFiles():Promise<boolean>;
@@ -92,6 +96,8 @@ export function SaveConfig(arg1:repository.Config):Promise<repository.Config>;
 export function SaveLocalPage(arg1:repository.Page):Promise<repository.Page>;
 
 export function SaveSecret(arg1:string,arg2:string):Promise<void>;
+
+export function SaveSpeechServiceAPIKey(arg1:string,arg2:string):Promise<void>;
 
 export function SetActiveAIProvider(arg1:string):Promise<void>;
 

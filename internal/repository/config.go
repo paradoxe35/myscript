@@ -13,8 +13,13 @@ import (
 type Config struct {
 	gorm.Model
 
-	TranscriberSource string  `gorm:"column:transcriber_source;default:local"` // local, openai, witai, groq
+	TranscriberSource string  `gorm:"column:transcriber_source;default:local"` // local, remote, witai
 	SpeechModelID     *string `gorm:"column:speech_model_id"`                  // catalogue id of the local model
+
+	// The hosted transcription service, when TranscriberSource is "remote".
+	RemoteProvider string `gorm:"column:remote_provider"`
+	RemoteModel    string `gorm:"column:remote_model"`
+	RemoteBaseURL  string `gorm:"column:remote_base_url"`
 
 	AIProvider  string         `gorm:"column:ai_provider"`
 	AIProviders datatypes.JSON `gorm:"column:ai_providers"`

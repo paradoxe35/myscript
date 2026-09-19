@@ -111,3 +111,49 @@ func TestAdoptLegacyKeysDoesNothingWithoutThem(t *testing.T) {
 		t.Errorf("stored %d secrets, want none", count)
 	}
 }
+
+func TestAdoptHostedSpeechMovesANamedService(t *testing.T) {
+	for source, preset := range map[string]string{"openai": "openai", "groq": "groq"} {
+		t.Run(source, func(t *testing.T) {
+			mainDB, unsynced := newStores(t)
+
+			legacy := map[string]string{
+				"openai": SecretSpeechOpenAIAPIKey,
+				"groq":   SecretSpeechGroqAPIKey,
+			}[source]
+
+			secrets := NewSecretRepository(unsynced)
+			secrets.Set(legacy, "the-key")
+
+			configs := NewConfigRepository(mainDB)
+			configs.SaveConfig(&Config{TranscriberSource: source})
+
+			AdoptHostedSpeech(mainDB, unsynced)
+
+			config := configs.GetConfig()
+			if config.TranscriberSource != "remote" {
+				t.Errorf("TranscriberSource = %q", config.TranscriberSource)
+			}
+			if config.RemoteProvider != preset {
+				t.Errorf("RemoteProvider = %q", config.RemoteProvider)
+			}
+			if got := secrets.Get(SpeechServiceSecret(preset)); got != "the-key" {
+				t.Errorf("the key should follow the service, got %q", got)
+			}
+		})
+	}
+}
+
+func TestAdoptHostedSpeechLeavesOtherSourcesAlone(t *testing.T) {
+	for _, source := range []string{"local", "witai", "remote"} {
+		mainDB, unsynced := newStores(t)
+		configs := NewConfigRepository(mainDB)
+		configs.SaveConfig(&Config{TranscriberSource: source})
+
+		AdoptHostedSpeech(mainDB, unsynced)
+
+		if got := configs.GetConfig().TranscriberSource; got != source {
+			t.Errorf("%s became %q", source, got)
+		}
+	}
+}

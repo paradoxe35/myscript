@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { GetSecret, SaveSecret } from "~wails/main/App";
 
-export type SecretKey = "notion" | "speech.openai" | "speech.groq";
+export type SecretKey = "notion";
 
 type SecretsStore = {
   values: Partial<Record<SecretKey, string>>;

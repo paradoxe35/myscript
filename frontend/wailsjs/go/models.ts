@@ -162,6 +162,28 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class SpeechService {
+	    ID: string;
+	    Name: string;
+	    BaseURL: string;
+	    Models: string[];
+	    KeyHint: string;
+	    Custom: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SpeechService(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.ID = source["ID"];
+	        this.Name = source["Name"];
+	        this.BaseURL = source["BaseURL"];
+	        this.Models = source["Models"];
+	        this.KeyHint = source["KeyHint"];
+	        this.Custom = source["Custom"];
+	    }
+	}
 
 }
 
@@ -270,6 +292,9 @@ export namespace repository {
 	    DeletedAt: any;
 	    TranscriberSource: string;
 	    SpeechModelID?: string;
+	    RemoteProvider: string;
+	    RemoteModel: string;
+	    RemoteBaseURL: string;
 	    AIProvider: string;
 	    AIProviders: number[];
 	    NotionApiKey?: string;
@@ -290,6 +315,9 @@ export namespace repository {
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
 	        this.TranscriberSource = source["TranscriberSource"];
 	        this.SpeechModelID = source["SpeechModelID"];
+	        this.RemoteProvider = source["RemoteProvider"];
+	        this.RemoteModel = source["RemoteModel"];
+	        this.RemoteBaseURL = source["RemoteBaseURL"];
 	        this.AIProvider = source["AIProvider"];
 	        this.AIProviders = source["AIProviders"];
 	        this.NotionApiKey = source["NotionApiKey"];

@@ -171,13 +171,24 @@ function useLanguages(
 
   // A model that declares no languages (a dropped-in file) is left to detect.
   const available = useMemo<languages.Language[]>(() => {
-    if (!localSource) return transcriberStore.languages;
+    if (!localSource) {
+      // A hosted service detects when no language is sent. A Wit app is built
+      // for exactly one language, so it never does.
+      return config?.TranscriberSource === "remote"
+        ? [AUTO_DETECT_LANGUAGE, ...transcriberStore.languages]
+        : transcriberStore.languages;
+    }
     if (!selectedModel) return [];
     const spoken = selectedModel.Languages || [];
     return selectedModel.LanguageDetect || spoken.length === 0
       ? [AUTO_DETECT_LANGUAGE, ...spoken]
       : spoken;
-  }, [localSource, transcriberStore.languages, selectedModel]);
+  }, [
+    localSource,
+    config?.TranscriberSource,
+    transcriberStore.languages,
+    selectedModel,
+  ]);
 
   // The remembered language sorts first, and stays there while the user browses.
   const languages = useMemo(() => {

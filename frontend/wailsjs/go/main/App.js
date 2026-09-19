@@ -110,6 +110,14 @@ export function GetSpeechModels() {
   return window['go']['main']['App']['GetSpeechModels']();
 }
 
+export function GetSpeechServiceAPIKey(arg1) {
+  return window['go']['main']['App']['GetSpeechServiceAPIKey'](arg1);
+}
+
+export function GetSpeechServices() {
+  return window['go']['main']['App']['GetSpeechServices']();
+}
+
 export function HasConfiguredAIProvider() {
   return window['go']['main']['App']['HasConfiguredAIProvider']();
 }
@@ -168,6 +176,10 @@ export function SaveLocalPage(arg1) {
 
 export function SaveSecret(arg1, arg2) {
   return window['go']['main']['App']['SaveSecret'](arg1, arg2);
+}
+
+export function SaveSpeechServiceAPIKey(arg1, arg2) {
+  return window['go']['main']['App']['SaveSpeechServiceAPIKey'](arg1, arg2);
 }
 
 export function SetActiveAIProvider(arg1) {

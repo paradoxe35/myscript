@@ -67,6 +67,7 @@ func main() {
 	repository.SetUnSyncedDB(unSyncedDB)
 
 	repository.AdoptLegacyKeys(mainDB, unSyncedDB)
+	repository.AdoptHostedSpeech(mainDB, unSyncedDB)
 
 	// Repositories
 	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)

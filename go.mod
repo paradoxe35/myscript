@@ -3,15 +3,13 @@ module myscript
 go 1.25.0
 
 require (
-	github.com/conneroisu/groq-go v0.9.5
 	github.com/go-audio/wav v1.1.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/jomei/notionapi v1.13.2
-	github.com/openai/openai-go v0.1.0-alpha.41
 	github.com/shirou/gopsutil/v4 v4.24.11
-	github.com/wailsapp/wails/v2 v2.16.0
+	github.com/wailsapp/wails/v2 v2.14.0
 	golang.org/x/oauth2 v0.25.0
 	google.golang.org/api v0.219.0
 	gorm.io/datatypes v1.2.5
@@ -27,7 +25,6 @@ require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/ebitengine/purego v0.8.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -61,10 +58,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/samber/lo v1.49.1 // indirect
-	github.com/tidwall/gjson v1.14.4 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
-	github.com/tidwall/pretty v1.2.1 // indirect
-	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/tkrajina/go-reflector v0.5.8 // indirect
