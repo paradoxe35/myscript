@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/jomei/notionapi v1.13.2
 	github.com/shirou/gopsutil/v4 v4.24.11
-	github.com/wailsapp/wails/v2 v2.14.0
+	github.com/wailsapp/wails/v2 v2.16.0
 	golang.org/x/oauth2 v0.25.0
 	google.golang.org/api v0.219.0
 	gorm.io/datatypes v1.2.5
