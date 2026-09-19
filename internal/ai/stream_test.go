@@ -210,3 +210,38 @@ func TestValidateReportsWhatIsMissing(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+// Gemini stops at its own modest default, so every request states the ceiling.
+func TestBothProtocolsCapTheAnswer(t *testing.T) {
+	var openAI []capturedRequest
+	openAIServer := fakeProvider(t, "data: [DONE]\n\n", &openAI)
+
+	provider, _ := New(Settings{
+		Name: "openai", Kind: KindOpenAI, APIKey: "sk",
+		BaseURL: openAIServer.URL, Model: "gpt-4o-mini",
+	})
+	streamText(t, provider)
+
+	if got := openAI[0].body["max_tokens"]; got != float64(maxOutputTokens) {
+		t.Errorf("max_tokens = %v, want %d", got, maxOutputTokens)
+	}
+
+	var gemini []capturedRequest
+	geminiServer := fakeProvider(t, `data: {"candidates":[{"content":{"parts":[{"text":"ok"}]}}]}
+
+`, &gemini)
+
+	provider, _ = New(Settings{
+		Name: "gemini", Kind: KindGemini, APIKey: "key",
+		BaseURL: geminiServer.URL, Model: "gemini-2.5-flash",
+	})
+	streamText(t, provider)
+
+	config, ok := gemini[0].body["generationConfig"].(map[string]any)
+	if !ok {
+		t.Fatalf("no generationConfig in %v", gemini[0].body)
+	}
+	if got := config["maxOutputTokens"]; got != float64(maxOutputTokens) {
+		t.Errorf("maxOutputTokens = %v, want %d", got, maxOutputTokens)
+	}
+}

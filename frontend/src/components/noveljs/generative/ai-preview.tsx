@@ -2,16 +2,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import Markdown from "react-markdown";
 
-/** The answer is Markdown, so the preview renders it rather than showing its syntax. */
-export function AIPreview({
-  markdown,
-  className,
-}: {
-  markdown: string;
-  className?: string;
-}) {
+/**
+ * The answer is Markdown, so the preview renders it rather than showing its
+ * syntax. The height cap lives on the viewport: on the root it would only clip,
+ * leaving a long answer unreadable.
+ */
+export function AIPreview({ markdown }: { markdown: string }) {
   return (
-    <ScrollArea className={cn("max-h-[300px] border-b", className)}>
+    <ScrollArea className="border-b" viewportClassName="max-h-[320px]">
       <div
         className={cn(
           "prose prose-sm max-w-none px-4 py-3 dark:prose-invert",

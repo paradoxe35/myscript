@@ -19,6 +19,11 @@ const (
 
 const defaultTemperature = 0.7
 
+// maxOutputTokens caps every answer. Gemini otherwise stops at its own modest
+// default, which cut long answers short; this is room for a few pages of prose
+// without letting a runaway reply bill indefinitely.
+const maxOutputTokens = 8192
+
 var ErrNoProvider = errors.New("no AI provider is configured")
 
 func BuiltIn() []string { return []string{KindOpenAI, KindOpenRouter, KindGemini} }

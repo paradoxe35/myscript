@@ -34,7 +34,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
   return (
     <Command className="w-[350px]">
       {hasCompletion && (
-        <AIPreview markdown={completion} className="max-h-[400px]" />
+        <AIPreview markdown={completion} />
       )}
 
       {isLoading && (

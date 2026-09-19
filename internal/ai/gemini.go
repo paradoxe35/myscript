@@ -30,8 +30,9 @@ type geminiThinking struct {
 }
 
 type geminiGeneration struct {
-	Temperature    float64         `json:"temperature"`
-	ThinkingConfig *geminiThinking `json:"thinkingConfig,omitempty"`
+	Temperature     float64         `json:"temperature"`
+	MaxOutputTokens int             `json:"maxOutputTokens,omitempty"`
+	ThinkingConfig  *geminiThinking `json:"thinkingConfig,omitempty"`
 }
 
 type geminiRequest struct {
@@ -62,8 +63,11 @@ func (p *geminiProvider) Stream(ctx context.Context, req Request, emit func(stri
 	}
 
 	body := geminiRequest{
-		Contents:         []geminiContent{{Role: "user", Parts: []geminiPart{{Text: req.Prompt}}}},
-		GenerationConfig: geminiGeneration{Temperature: p.settings.Temperature},
+		Contents: []geminiContent{{Role: "user", Parts: []geminiPart{{Text: req.Prompt}}}},
+		GenerationConfig: geminiGeneration{
+			Temperature:     p.settings.Temperature,
+			MaxOutputTokens: maxOutputTokens,
+		},
 	}
 	if req.System != "" {
 		body.SystemInstruction = &geminiContent{Parts: []geminiPart{{Text: req.System}}}
