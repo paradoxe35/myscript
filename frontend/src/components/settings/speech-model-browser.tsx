@@ -1,4 +1,4 @@
-import { Cpu, Search, Sparkles } from "lucide-react";
+import { Cpu, Search } from "lucide-react";
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -38,7 +38,11 @@ type BrowserProps = PropsWithChildren<{
   onSelect: (model: main.SpeechModel) => void;
 }>;
 
-export function SpeechModelBrowser({ selectedID, onSelect, children }: BrowserProps) {
+export function SpeechModelBrowser({
+  selectedID,
+  onSelect,
+  children,
+}: BrowserProps) {
   const [open, setOpen] = useState(false);
 
   const choose = (model: main.SpeechModel) => {
@@ -76,12 +80,10 @@ function ModelList({ selectedID, onSelect }: Omit<BrowserProps, "children">) {
     fetchMachine();
   }, []);
 
-  const browsing = query.trim() === "" && filter === "all";
   const visible = useMemo(
     () => models.filter((model) => matches(model, query, filter)),
-    [models, query, filter]
+    [models, query, filter],
   );
-  const suggested = models.find((model) => model.Suggested);
   const downloaded = visible.filter((model) => model.Downloaded);
   const available = visible.filter((model) => !model.Downloaded);
 
@@ -114,14 +116,6 @@ function ModelList({ selectedID, onSelect }: Omit<BrowserProps, "children">) {
 
       <ScrollArea className="h-[55vh] max-h-[460px] -mx-2 px-2">
         <div className="flex flex-col gap-4 pb-2">
-          {browsing && suggested && (
-            <SuggestedCard
-              model={suggested}
-              active={selectedID === suggested.ID}
-              onSelect={() => onSelect(suggested)}
-            />
-          )}
-
           {visible.length === 0 && (
             <p className="text-xs text-center py-8 dark:text-white/50 text-slate-900/50">
               No model matches.
@@ -139,10 +133,7 @@ function ModelList({ selectedID, onSelect }: Omit<BrowserProps, "children">) {
             ))}
           </Section>
 
-          <Section
-            title={browsing ? "More models" : "Available"}
-            count={available.length}
-          >
+          <Section title="Available" count={available.length}>
             {available.map((model) => (
               <ModelRow
                 key={model.ID}
@@ -218,24 +209,12 @@ function MachineChip({ machine }: { machine: main.MachineInfo }) {
   );
 }
 
-function SuggestedCard({ model, active, onSelect }: ModelProps) {
-  return (
-    <div className="rounded-lg border border-primary/40 bg-primary/5 p-3 flex flex-col gap-2">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-primary">
-        <Sparkles className="h-3 w-3" />
-        Suggested for this computer
-      </div>
-      <ModelBody model={model} active={active} onSelect={onSelect} />
-    </div>
-  );
-}
-
 function ModelRow({ model, active, onSelect }: ModelProps) {
   return (
     <li
       className={cn(
         "rounded-md border p-3 transition-colors",
-        active && "border-primary bg-primary/5"
+        active && "border-primary bg-primary/5",
       )}
     >
       <ModelBody model={model} active={active} onSelect={onSelect} />
