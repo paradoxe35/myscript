@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useSpeechModelsStore } from "@/store/speech-models";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { IsWitAIAvailable } from "~wails/main/App";
 import {
   TranscriberSource,
   TRANSCRIBER_SOURCES,
@@ -14,11 +15,23 @@ export function SpeechSection() {
   const { config, updateConfig } = useSettings();
   const fetchModels = useSpeechModelsStore((store) => store.fetchModels);
 
+  // Wit.ai keys are embedded at build time; without them the option would only
+  // fail once someone tried to record.
+  const [witAIAvailable, setWitAIAvailable] = useState(false);
+
   const source = (config?.TranscriberSource || "local") as TranscriberSource;
+
+  useEffect(() => {
+    IsWitAIAvailable().then(setWitAIAvailable);
+  }, []);
 
   useEffect(() => {
     if (source === "local") fetchModels();
   }, [source]);
+
+  const sources = TRANSCRIBER_SOURCES.filter(
+    (option) => option.key !== "witai" || witAIAvailable,
+  );
 
   return (
     <SettingsPanel>
@@ -27,7 +40,7 @@ export function SpeechSection() {
         description="How MyScript follows along while you read."
       >
         <div className="flex flex-col gap-2">
-          {TRANSCRIBER_SOURCES.map((option) => (
+          {sources.map((option) => (
             <button
               key={option.key}
               type="button"

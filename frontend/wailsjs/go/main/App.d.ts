@@ -73,6 +73,8 @@ export function IsGoogleAuthEnabled():Promise<boolean>;
 
 export function IsRecording():Promise<boolean>;
 
+export function IsWitAIAvailable():Promise<boolean>;
+
 export function ListAIModels(arg1:main.AIProvider,arg2:string):Promise<Array<ai.ModelInfo>>;
 
 export function PerformUpdate():Promise<void>;

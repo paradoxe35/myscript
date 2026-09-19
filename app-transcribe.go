@@ -33,17 +33,23 @@ func (a *App) GetLanguages() []languages.Language {
 	}
 }
 
+// IsWitAIAvailable reports whether this build embeds Wit.ai keys; without them
+// the option is hidden rather than offered and failing at runtime.
+func (a *App) IsWitAIAvailable() bool {
+	return witai.Available()
+}
+
 func (a *App) remoteTranscriber(source string) (stt.Transcriber, error) {
 	secrets := a.secrets()
 
 	switch source {
 	case "witai":
 		return func(wav []byte, language string) (string, error) {
-			apiKey := witai.GetAPIKey(language)
-			if apiKey == nil {
-				return "", fmt.Errorf("no API key found for language %s", language)
+			token, ok := witai.Token(language)
+			if !ok {
+				return "", fmt.Errorf("this build has no Wit.ai key for %s", language)
 			}
-			return witai.WitAITranscribeFromBuffer(wav, apiKey.Key)
+			return witai.WitAITranscribeFromBuffer(wav, token)
 		}, nil
 
 	case "openai":

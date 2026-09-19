@@ -130,6 +130,10 @@ export function IsRecording() {
   return window['go']['main']['App']['IsRecording']();
 }
 
+export function IsWitAIAvailable() {
+  return window['go']['main']['App']['IsWitAIAvailable']();
+}
+
 export function ListAIModels(arg1, arg2) {
   return window['go']['main']['App']['ListAIModels'](arg1, arg2);
 }

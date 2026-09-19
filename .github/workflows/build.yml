@@ -165,11 +165,11 @@ jobs:
         env:
           REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          WAIT_API_KEYS: ${{ secrets.WAIT_API_KEYS }}
+          WITAI_KEYS: ${{ secrets.WITAI_KEYS }}
         run: |
           printf '%s' "$REPOSITORY_TOKEN" > credentials/github-token.txt
           printf '%s' "$GOOGLE_CREDENTIALS" > credentials/google-credentials.json
-          (cd internal/transcribe/wait.ai && node keys.js "$WAIT_API_KEYS")
+          node scripts/embed-witai-keys.js
 
       - name: Stamp version
         env:
@@ -193,16 +193,16 @@ jobs:
 
       - name: Build for Linux
         if: matrix.platform == 'linux'
-        run: wails build -platform linux/${{ matrix.arch }} -skipbindings -tags webkit2_41,witai_keys -o myscript-${{ matrix.arch }}
+        run: wails build -platform linux/${{ matrix.arch }} -skipbindings -tags webkit2_41 -o myscript-${{ matrix.arch }}
 
       - name: Build for Windows
         if: matrix.platform == 'windows'
-        run: wails build -platform windows/${{ matrix.arch }} -skipbindings -webview2 embed -nsis -tags witai_keys
+        run: wails build -platform windows/${{ matrix.arch }} -skipbindings -webview2 embed -nsis
 
       - name: Build for macOS
         if: matrix.platform == 'darwin'
         run: |
-          wails build -platform darwin/${{ matrix.arch }} -skipbindings -tags witai_keys
+          wails build -platform darwin/${{ matrix.arch }} -skipbindings
           cd build/bin && zip -r -X myscript-darwin-${{ matrix.arch }}.zip *.app
 
       - name: Package for Linux

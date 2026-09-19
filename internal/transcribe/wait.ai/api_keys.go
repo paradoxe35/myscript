@@ -5,11 +5,6 @@ package witai
 
 import "myscript/internal/transcribe/languages"
 
-type ApiKey struct {
-	Key      string
-	Language string
-}
-
 var LANGUAGES = []languages.Language{
 	{Name: "English", Code: "en"},
 	{Name: "French", Code: "fr"},
@@ -43,27 +38,15 @@ var LANGUAGES = []languages.Language{
 	{Name: "Vietnamese", Code: "vi"},
 }
 
+// GetSupportedLanguages lists the languages this build has a key for.
 func GetSupportedLanguages() []languages.Language {
-	var languages []languages.Language
+	supported := make([]languages.Language, 0, len(LANGUAGES))
 
-	for _, lang := range LANGUAGES {
-		for _, key := range API_KEYS {
-			if key.Language == lang.Code {
-				languages = append(languages, lang)
-				continue
-			}
+	for _, language := range LANGUAGES {
+		if _, ok := Token(language.Code); ok {
+			supported = append(supported, language)
 		}
 	}
 
-	return languages
-}
-
-func GetAPIKey(lan string) *ApiKey {
-	for _, key := range API_KEYS {
-		if key.Language == lan {
-			return &key
-		}
-	}
-
-	return nil
+	return supported
 }
