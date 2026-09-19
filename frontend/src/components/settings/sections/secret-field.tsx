@@ -11,6 +11,7 @@ type SecretFieldProps = {
   label: string;
   hint?: string;
   placeholder?: string;
+  onSaved?: () => void;
 };
 
 export function SecretField({
@@ -18,6 +19,7 @@ export function SecretField({
   label,
   hint,
   placeholder,
+  onSaved,
 }: SecretFieldProps) {
   const load = useSecretsStore((store) => store.load);
   const store = useSecretsStore((state) => state.save);
@@ -39,6 +41,7 @@ export function SecretField({
       await store(secret, value.trim());
       setSaved(value.trim());
       setValue(value.trim());
+      onSaved?.();
       toast.success(`${label} saved`);
     } catch (error) {
       toast.error(String(error));

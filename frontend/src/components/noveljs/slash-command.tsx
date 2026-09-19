@@ -1,5 +1,6 @@
 import {
   CheckSquare,
+  Sparkles,
   Code,
   Heading1,
   Heading2,
@@ -16,8 +17,19 @@ import { Command, createSuggestionItems, renderItems } from "novel";
 import { uploadFn } from "./image-upload";
 import { useAsyncPromptModal } from "../async-prompt-modal";
 import { toast } from "sonner";
+import { useEditorAIStore } from "@/store/editor-ai";
 
 export const suggestionItems = createSuggestionItems([
+  {
+    title: "Ask AI",
+    description: "Write or brainstorm with AI.",
+    searchTerms: ["ai", "gpt", "write", "generate", "prompt"],
+    icon: <Sparkles size={18} />,
+    command: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).run();
+      useEditorAIStore.getState().openPrompt();
+    },
+  },
   {
     title: "Text",
     description: "Just start typing with plain text.",

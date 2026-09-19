@@ -14,6 +14,7 @@ const (
 	TaskLonger   Task = "longer"
 	TaskFix      Task = "fix"
 	TaskCommand  Task = "zap"
+	TaskWrite    Task = "write"
 )
 
 const markdownNote = "Use Markdown formatting when appropriate."
@@ -34,6 +35,9 @@ var taskInstructions = map[Task]string{
 		briefNote + " " + markdownNote,
 
 	TaskCommand: "You are a writing assistant that rewrites text according to the user's instruction. " + markdownNote,
+
+	TaskWrite: "You are a writing assistant. Write what the user asks for, continuing naturally from " +
+		"any text they give you. Reply with the writing only, no preamble. " + markdownNote,
 }
 
 func BuildRequest(task Task, text, command string) (Request, error) {
@@ -42,9 +46,16 @@ func BuildRequest(task Task, text, command string) (Request, error) {
 		return Request{}, fmt.Errorf("unknown writing task: %s", task)
 	}
 
-	prompt := fmt.Sprintf("The existing text is: %s", text)
-	if task == TaskCommand {
+	var prompt string
+	switch {
+	case task == TaskWrite && text == "":
+		prompt = command
+	case task == TaskWrite:
+		prompt = fmt.Sprintf("What comes before:\n%s\n\nWrite: %s", text, command)
+	case task == TaskCommand:
 		prompt = fmt.Sprintf("For this text: %s\n\nFollow this instruction: %s", text, command)
+	default:
+		prompt = fmt.Sprintf("The existing text is: %s", text)
 	}
 
 	return Request{System: instruction, Prompt: prompt}, nil

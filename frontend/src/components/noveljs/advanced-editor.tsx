@@ -12,7 +12,7 @@ import {
   handleImageDrop,
   handleImagePaste,
 } from "novel";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { defaultExtensions } from "./extensions";
 import { ColorSelector } from "./selectors/color-selector";
 import { LinkSelector } from "./selectors/link-selector";
@@ -21,9 +21,11 @@ import { MathSelector } from "./selectors/math-selector";
 import { Separator } from "@/components/ui/separator";
 
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
+import { AIPrompt } from "./generative/ai-prompt";
 import { uploadFn } from "./image-upload";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
+import { useAIProvidersStore } from "@/store/ai-providers";
 
 import { cn } from "@/lib/utils";
 
@@ -36,10 +38,21 @@ type EditorProps = {
 };
 
 const NovelEditor = (props: EditorProps) => {
+  const aiEnabled = useAIProvidersStore((store) => store.enabled);
+  const checkAIEnabled = useAIProvidersStore((store) => store.checkEnabled);
+
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
+
+  useEffect(() => {
+    checkAIEnabled();
+  }, []);
+
+  const commands = suggestionItems.filter(
+    (item) => aiEnabled || item.title !== "Ask AI",
+  );
 
   return (
     <div className={cn("relative w-full max-w-screen-md", props.className)}>
@@ -69,7 +82,7 @@ const NovelEditor = (props: EditorProps) => {
               No results
             </EditorCommandEmpty>
             <EditorCommandList>
-              {suggestionItems.map((item) => (
+              {commands.map((item) => (
                 <EditorCommandItem
                   value={item.title}
                   onCommand={(val) => item.command?.(val)}
@@ -102,6 +115,7 @@ const NovelEditor = (props: EditorProps) => {
             <Separator orientation="vertical" className="h-auto" />
             <ColorSelector open={openColor} onOpenChange={setOpenColor} />
           </GenerativeMenuSwitch>
+          <AIPrompt />
         </EditorContent>
       </EditorRoot>
     </div>

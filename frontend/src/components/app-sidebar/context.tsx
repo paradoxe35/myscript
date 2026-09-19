@@ -109,6 +109,10 @@ function useSidebarItems() {
     }
   }, [notionPagesStore, activePageStore, activePage]);
 
+  useEffect(() => {
+    notionPagesStore.getPages();
+  }, []);
+
   // Refresh notion pages when the user is online
   useEffect(() => {
     addEventListener("online", refreshNotionPages);

@@ -20,7 +20,8 @@ export type Option =
   | "shorter"
   | "longer"
   | "fix"
-  | "zap";
+  | "zap"
+  | "write";
 
 type OptionItem = {
   value: Option;

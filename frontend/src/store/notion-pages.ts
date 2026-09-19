@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { useConfigStore } from "./config";
 import { NotionPage, NotionSimplePage } from "@/types";
+import { useActivePageStore } from "./active-page";
 import { GetNotionPages } from "~wails/main/App";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -9,6 +9,8 @@ type NotionPagesStore = {
   getSimplifiedPages(): Array<NotionSimplePage>;
   getPages: () => Promise<void>;
   resetPages: () => Promise<void>;
+  /** After the token changes: the list and whatever page is open are both stale. */
+  refresh: () => Promise<void>;
 };
 
 export const useNotionPagesStore = create(
@@ -17,12 +19,19 @@ export const useNotionPagesStore = create(
       pages: [],
 
       getPages: async () => {
-        const pages = await GetNotionPages();
-        set({ pages });
+        set({ pages: (await GetNotionPages()) || [] });
       },
 
       resetPages: async () => {
         set({ pages: [] });
+      },
+
+      refresh: async () => {
+        await get().getPages();
+
+        if (useActivePageStore.getState().page?.__typename === "notion_page") {
+          useActivePageStore.getState().fetchPageBlocks();
+        }
       },
 
       getSimplifiedPages() {
@@ -40,16 +49,6 @@ export const useNotionPagesStore = create(
     {
       name: "notion-pages",
       storage: createJSONStorage(() => localStorage),
-    }
-  )
+    },
+  ),
 );
-
-useConfigStore.subscribe((state) => {
-  const notionPagesState = useNotionPagesStore.getState();
-  if (!state.config?.NotionApiKey) {
-    notionPagesState.resetPages();
-    return;
-  }
-
-  notionPagesState.getPages();
-});
