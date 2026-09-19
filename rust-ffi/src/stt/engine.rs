@@ -15,6 +15,18 @@ struct Loaded {
     session: transcribe_cpp::Session,
 }
 
+/// ggml's default takes every core, which starves the capture thread and makes
+/// the driver drop audio mid-take. Leave one core for it, and stop at 8: these
+/// models gain little beyond that and each extra thread is more contention.
+fn inference_threads() -> i32 {
+    let cores = std::thread::available_parallelism().map_or(2, |count| count.get());
+    threads_for_cores(cores)
+}
+
+fn threads_for_cores(cores: usize) -> i32 {
+    cores.saturating_sub(1).clamp(1, 8) as i32
+}
+
 impl Engine {
     pub fn new() -> Self {
         Self { loaded: None }
@@ -40,7 +52,10 @@ impl Engine {
             transcribe_cpp::Model::load_with(path, &transcribe_cpp::ModelOptions::default())
                 .map_err(|e| anyhow!("failed to load {}: {e}", path.display()))?;
         let session = model
-            .session_with(&transcribe_cpp::SessionOptions::default())
+            .session_with(&transcribe_cpp::SessionOptions {
+                n_threads: inference_threads(),
+                ..Default::default()
+            })
             .map_err(|e| anyhow!("failed to open a session: {e}"))?;
 
         self.loaded = Some(Loaded {
@@ -84,6 +99,14 @@ mod tests {
             "{message}"
         );
         assert!(!engine.loaded());
+    }
+
+    #[test]
+    fn a_core_is_left_for_the_capture_thread() {
+        assert_eq!(threads_for_cores(1), 1, "a single core still has to work");
+        assert_eq!(threads_for_cores(2), 1);
+        assert_eq!(threads_for_cores(4), 3);
+        assert_eq!(threads_for_cores(20), 8, "more threads only add contention");
     }
 
     #[test]
