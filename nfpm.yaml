@@ -32,8 +32,11 @@ contents:
     file_info:
       mode: 0644
 
-# Desktop integration and microphone capture dependencies
+# Desktop integration and microphone capture dependencies.
+# The webview is what actually renders the app: without it the binary installs
+# and then fails to open a window.
 depends:
+  - libwebkit2gtk-4.1-0
   - libasound2 | libasound2t64
   - libgtk-3-0
   - libnotify4
@@ -43,6 +46,32 @@ depends:
   - xdg-utils
   - libatspi2.0-0
   - libappindicator3-1
+
+# Package names are distribution-specific, so the Debian list above would make
+# the rpm and arch packages refuse to install.
+overrides:
+  rpm:
+    depends:
+      - webkit2gtk4.1
+      - alsa-lib
+      - gtk3
+      - libnotify
+      - nss
+      - libXScrnSaver
+      - libXtst
+      - xdg-utils
+      - at-spi2-atk
+  archlinux:
+    depends:
+      - webkit2gtk-4.1
+      - alsa-lib
+      - gtk3
+      - libnotify
+      - nss
+      - libxss
+      - libxtst
+      - xdg-utils
+      - at-spi2-atk
 
 # Maintainer scripts (create these in build/linux/)
 scripts:

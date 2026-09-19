@@ -6,5 +6,5 @@ Exec=/usr/bin/myscript
 Icon=myscript
 Terminal=false
 Type=Application
-Categories=Office;Productivity;
+Categories=Office;WordProcessor;
 Keywords=Notion;Content;Writing;

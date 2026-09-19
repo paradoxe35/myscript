@@ -4,9 +4,6 @@
 package updater
 
 import (
-	"archive/tar"
-	"archive/zip"
-	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
@@ -18,343 +15,349 @@ import (
 
 	"github.com/google/go-github/v50/github"
 	"github.com/hashicorp/go-version"
-	"golang.org/x/oauth2"
+	"github.com/minio/selfupdate"
 )
 
-// Updater handles application updates
+const ASSET_NAME = "myscript"
+
 type Updater struct {
 	Owner      string
 	Repo       string
 	CurrentVer string
-	Token      string // GitHub access token for private repos
+
+	client *github.Client
 }
 
-const ASSET_NAME = "myscript"
-
-// NewUpdater creates a new Updater instance
 func NewUpdater(owner, repo, currentVer string) *Updater {
 	return &Updater{
 		Owner:      owner,
 		Repo:       repo,
 		CurrentVer: currentVer,
+		client:     github.NewClient(nil),
 	}
 }
 
-// SetToken sets the GitHub access token for private repositories
-func (u *Updater) SetToken(token string) {
-	u.Token = token
-}
-
-func (u *Updater) getClient() *github.Client {
-	if u.Token == "" {
-		return github.NewClient(nil)
-	}
-
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: u.Token},
-	)
-	tc := oauth2.NewClient(context.Background(), ts)
-
-	return github.NewClient(tc)
-}
-
-// CheckForUpdate checks for available updates
+// CheckForUpdate returns the newer tag when one is published for this platform,
+// or an empty string when the app is current.
 func (u *Updater) CheckForUpdate() (string, error) {
-	client := u.getClient()
-
-	release, _, err := client.Repositories.GetLatestRelease(context.Background(), u.Owner, u.Repo)
+	release, err := u.latestRelease()
 	if err != nil {
 		return "", err
 	}
 
-	currentVersion, err := version.NewVersion(u.CurrentVer)
+	current, err := version.NewVersion(u.CurrentVer)
 	if err != nil {
 		return "", err
 	}
 
-	latestVersion, err := version.NewVersion(release.GetTagName())
+	latest, err := version.NewVersion(release.GetTagName())
 	if err != nil {
 		return "", err
 	}
 
-	if latestVersion.GreaterThan(currentVersion) && u.ItHasReleaseAssets(release) {
-		return release.GetTagName(), nil
+	if !latest.GreaterThan(current) {
+		return "", nil
 	}
 
-	return "", nil
+	// Offering an update the release cannot deliver would strand the user on a
+	// failing dialog, so the asset has to be there before we announce anything.
+	if findAsset(release, u.assetName()) == nil {
+		return "", nil
+	}
+
+	return release.GetTagName(), nil
 }
 
-func (u *Updater) ItHasReleaseAssets(release *github.RepositoryRelease) bool {
-	var myReleaseAssets []string
-
-	for _, asset := range release.Assets {
-		if strings.Contains(asset.GetName(), ASSET_NAME) {
-			myReleaseAssets = append(myReleaseAssets, asset.GetName())
-		}
-	}
-
-	return len(myReleaseAssets) > 0
-}
-
-// PerformUpdate executes the update process
 func (u *Updater) PerformUpdate() error {
-	client := u.getClient()
-	release, _, err := client.Repositories.GetLatestRelease(context.Background(), u.Owner, u.Repo)
+	release, err := u.latestRelease()
 	if err != nil {
 		return err
 	}
 
-	assetName := u.getAssetName()
-
-	var asset *github.ReleaseAsset
-	for _, a := range release.Assets {
-		if a.GetName() == assetName {
-			asset = a
-			break
-		}
-	}
-
+	name := u.assetName()
+	asset := findAsset(release, name)
 	if asset == nil {
-		return fmt.Errorf("asset not found: %s", assetName)
+		return fmt.Errorf("this release has no download for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
-	downloadPath := filepath.Join(os.TempDir(), asset.GetName())
-	if err := u.downloadFile(client, asset, downloadPath); err != nil {
+	if err := u.ensureWritable(); err != nil {
 		return err
 	}
 
-	if runtime.GOOS == "windows" {
-		return u.handleWindowsUpdate(downloadPath)
-	}
-	return u.handleUnixUpdate(downloadPath)
-}
-
-func (u *Updater) getAssetName() string {
-	os := runtime.GOOS
-	arch := runtime.GOARCH
-
-	if os == "windows" {
-		return fmt.Sprintf(ASSET_NAME+"-windows-%s-installer.exe", arch)
-	}
-
-	ext := "tar.gz"
-	if os == "darwin" {
-		ext = "zip"
-	} else if os == "linux" && u.isDebian() {
-		ext = "deb"
-	}
-
-	return fmt.Sprintf(ASSET_NAME+"-%s-%s.%s", os, arch, ext)
-}
-
-func (u *Updater) downloadFile(client *github.Client, asset *github.ReleaseAsset, downloadPath string) error {
-	// Download the asset using authenticated client
-	rc, _, err := client.Repositories.DownloadReleaseAsset(
-		context.Background(),
-		u.Owner,
-		u.Repo,
-		asset.GetID(),
-		client.Client(),
-	)
-	if err != nil {
-		return err
-	}
-	defer rc.Close()
-
-	out, err := os.Create(downloadPath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, rc)
+	// Fetched before the download so a release that cannot be verified costs
+	// the user a request rather than the whole transfer.
+	checksum, err := u.checksumFor(release, name)
 	if err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (u *Updater) handleWindowsUpdate(installerPath string) error {
-	cmd := exec.Command(installerPath)
-	if err := cmd.Start(); err != nil {
+	download := filepath.Join(os.TempDir(), name)
+	if err := u.download(asset, download); err != nil {
 		return err
 	}
-	os.Exit(0)
-	return nil
+	defer os.Remove(download)
+
+	if err := verifyChecksum(download, checksum); err != nil {
+		return err
+	}
+
+	return u.install(download)
 }
 
-func (u *Updater) handleUnixUpdate(archivePath string) error {
-	var err error
+func (u *Updater) install(download string) error {
 	switch {
-	case strings.HasSuffix(archivePath, ".deb"):
-		err = u.handleDebianUpdate(archivePath)
-	case strings.HasSuffix(archivePath, ".zip"):
-		err = u.extractZip(archivePath)
-	case strings.HasSuffix(archivePath, ".tar.gz"):
-		err = u.extractTarGz(archivePath)
-	default:
-		return fmt.Errorf("unsupported archive format")
-	}
+	case runtime.GOOS == "windows":
+		return runInstaller(download)
 
-	if err != nil {
-		return err
-	}
-
-	return u.restartApplication()
-}
-
-func (u *Updater) handleDebianUpdate(debPath string) error {
-	// Check if running as root
-	if os.Geteuid() != 0 {
-		return fmt.Errorf("debian package installation requires root privileges")
-	}
-
-	// Install the .deb package using dpkg
-	cmd := exec.Command("dpkg", "-i", debPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		// If dpkg fails, try to fix dependencies
-		fixCmd := exec.Command("apt-get", "install", "-f", "-y")
-		fixCmd.Stdout = os.Stdout
-		fixCmd.Stderr = os.Stderr
-		if fixErr := fixCmd.Run(); fixErr != nil {
-			return fmt.Errorf("failed to install package and fix dependencies: %v", fixErr)
+	case runtime.GOOS == "darwin":
+		if err := installBundle(download); err != nil {
+			return err
 		}
+		return relaunchBundle()
 
-		// Retry the installation
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("failed to install package: %v", err)
-		}
-	}
-
-	// Clean up the downloaded .deb file
-	if err := os.Remove(debPath); err != nil {
-		fmt.Printf("Warning: failed to remove temporary file %s: %v\n", debPath, err)
-	}
-
-	return nil
-}
-
-func (u *Updater) isDebian() bool {
-	// Check for the existence of /etc/debian_version
-	if _, err := os.Stat("/etc/debian_version"); err == nil {
-		return true
-	}
-
-	// Alternative check using lsb_release command
-	cmd := exec.Command("lsb_release", "-i")
-	output, err := cmd.Output()
-	if err != nil {
-		return false
-	}
-
-	id := strings.ToLower(string(output))
-	return strings.Contains(id, "debian") ||
-		strings.Contains(id, "ubuntu") ||
-		strings.Contains(id, "mint") ||
-		strings.Contains(id, "elementary") ||
-		strings.Contains(id, "pop")
-}
-
-func (u *Updater) extractZip(archivePath string) error {
-	r, err := zip.OpenReader(archivePath)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	exePath, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	for _, f := range r.File {
-		if !f.FileInfo().IsDir() {
-			rc, err := f.Open()
-			if err != nil {
-				return err
-			}
-			defer rc.Close()
-
-			return u.replaceExecutable(rc, exePath)
-		}
-	}
-
-	return fmt.Errorf("no files found in archive")
-}
-
-func (u *Updater) extractTarGz(archivePath string) error {
-	f, err := os.Open(archivePath)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	gzr, err := gzip.NewReader(f)
-	if err != nil {
-		return err
-	}
-	defer gzr.Close()
-
-	tr := tar.NewReader(gzr)
-
-	exePath, err := os.Executable()
-	if err != nil {
-		return err
-	}
-
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
+	case runningAsAppImage():
+		if err := installAppImage(download); err != nil {
 			return err
 		}
 
-		if !hdr.FileInfo().IsDir() {
-			return u.replaceExecutable(tr, exePath)
+	default:
+		if err := installBinary(download); err != nil {
+			return err
 		}
 	}
 
-	return fmt.Errorf("no files found in archive")
+	return restart()
 }
 
-func (u *Updater) replaceExecutable(src io.Reader, exePath string) error {
-	tmpPath := exePath + ".tmp"
+// The AppImage runtime exports the path of the .AppImage file it mounted. The
+// executable itself sits on a read-only squashfs, so that outer file is what
+// an update has to replace.
+func appImagePath() string { return os.Getenv("APPIMAGE") }
 
-	// Write new binary
-	out, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+func runningAsAppImage() bool { return appImagePath() != "" }
+
+// installAppImage swaps the single-file application. The download is already
+// the executable, so there is nothing to unpack.
+func installAppImage(download string) error {
+	file, err := os.Open(download)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer file.Close()
 
-	if _, err = io.Copy(out, src); err != nil {
+	return selfupdate.Apply(file, selfupdate.Options{
+		TargetPath: appImagePath(),
+		TargetMode: 0o755,
+	})
+}
+
+// installBinary streams the new executable straight over the running one.
+// selfupdate does the atomic rename and rolls back if the swap half-fails.
+func installBinary(archivePath string) error {
+	binary, closer, err := openBinaryInTarGz(archivePath)
+	if err != nil {
+		return err
+	}
+	defer closer.Close()
+
+	return selfupdate.Apply(binary, selfupdate.Options{})
+}
+
+// installBundle replaces the whole .app. A macOS application is a directory,
+// so writing one file over the executable would leave a bundle whose parts
+// disagree and whose signature no longer matches.
+func installBundle(archivePath string) error {
+	bundle, err := currentBundle()
+	if err != nil {
 		return err
 	}
 
-	// Replace existing binary
-	if err = os.Rename(tmpPath, exePath); err != nil {
+	staged := bundle + ".new"
+	os.RemoveAll(staged)
+	defer os.RemoveAll(staged)
+
+	if err := unzipBundle(archivePath, staged); err != nil {
 		return err
 	}
 
+	previous := bundle + ".old"
+	os.RemoveAll(previous)
+
+	if err := os.Rename(bundle, previous); err != nil {
+		return err
+	}
+	if err := os.Rename(staged, bundle); err != nil {
+		os.Rename(previous, bundle)
+		return err
+	}
+
+	os.RemoveAll(previous)
 	return nil
 }
 
-func (u *Updater) restartApplication() error {
+// currentBundle walks up from the executable to the enclosing .app.
+func currentBundle() (string, error) {
 	exe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	if exe, err = filepath.EvalSymlinks(exe); err != nil {
+		return "", err
+	}
+
+	for dir := exe; ; {
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("this build is not inside an .app bundle")
+		}
+		if strings.HasSuffix(parent, ".app") {
+			return parent, nil
+		}
+		dir = parent
+	}
+}
+
+// ensureWritable fails before anything is downloaded when the install is owned
+// by root, which is what a package manager install looks like.
+func (u *Updater) ensureWritable() error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
+
+	target := appImagePath()
+	if target == "" {
+		var err error
+		if target, err = currentBundle(); err != nil {
+			if target, err = os.Executable(); err != nil {
+				return err
+			}
+		}
+	}
+
+	if err := (&selfupdate.Options{TargetPath: target}).CheckPermissions(); err != nil {
+		return fmt.Errorf(
+			"%s cannot update itself because %s is not writable — install the new version with your package manager instead",
+			ASSET_NAME, target,
+		)
+	}
+	return nil
+}
+
+func (u *Updater) assetName() string {
+	if runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s-windows-%s-installer.exe", ASSET_NAME, runtime.GOARCH)
+	}
+
+	if runtime.GOOS == "darwin" {
+		return fmt.Sprintf("%s-darwin-%s.zip", ASSET_NAME, runtime.GOARCH)
+	}
+	if runningAsAppImage() {
+		return fmt.Sprintf("%s-linux-%s.AppImage", ASSET_NAME, runtime.GOARCH)
+	}
+
+	return fmt.Sprintf("%s-%s-%s.tar.gz", ASSET_NAME, runtime.GOOS, runtime.GOARCH)
+}
+
+func (u *Updater) latestRelease() (*github.RepositoryRelease, error) {
+	release, _, err := u.client.Repositories.GetLatestRelease(context.Background(), u.Owner, u.Repo)
+	return release, err
+}
+
+func (u *Updater) checksumFor(release *github.RepositoryRelease, name string) ([]byte, error) {
+	asset := findAsset(release, checksumsAsset)
+	if asset == nil {
+		return nil, fmt.Errorf("this release publishes no %s, so the download cannot be verified", checksumsAsset)
+	}
+
+	body, err := u.openAsset(asset)
+	if err != nil {
+		return nil, err
+	}
+	defer body.Close()
+
+	sums, err := parseChecksums(body)
+	if err != nil {
+		return nil, err
+	}
+
+	sum, ok := sums[name]
+	if !ok {
+		return nil, fmt.Errorf("%s does not list %s", checksumsAsset, name)
+	}
+	return sum, nil
+}
+
+func (u *Updater) download(asset *github.ReleaseAsset, path string) error {
+	body, err := u.openAsset(asset)
 	if err != nil {
 		return err
 	}
+	defer body.Close()
 
-	cmd := exec.Command(exe, os.Args[1:]...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Start()
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, body)
+	return err
+}
+
+func (u *Updater) openAsset(asset *github.ReleaseAsset) (io.ReadCloser, error) {
+	body, _, err := u.client.Repositories.DownloadReleaseAsset(
+		context.Background(), u.Owner, u.Repo, asset.GetID(), u.client.Client(),
+	)
+	return body, err
+}
+
+func findAsset(release *github.RepositoryRelease, name string) *github.ReleaseAsset {
+	for _, asset := range release.Assets {
+		if asset.GetName() == name {
+			return asset
+		}
+	}
+	return nil
+}
+
+func runInstaller(path string) error {
+	if err := exec.Command(path).Start(); err != nil {
+		return err
+	}
 	os.Exit(0)
+	return nil
+}
 
+// relaunchBundle goes through `open` so the new process is started by Launch
+// Services with the bundle's identity, rather than as a bare child process.
+func relaunchBundle() error {
+	bundle, err := currentBundle()
+	if err != nil {
+		return err
+	}
+	if err := exec.Command("open", "-n", bundle).Start(); err != nil {
+		return err
+	}
+	os.Exit(0)
+	return nil
+}
+
+func restart() error {
+	exe := appImagePath()
+	if exe == "" {
+		var err error
+		if exe, err = os.Executable(); err != nil {
+			return err
+		}
+	}
+
+	command := exec.Command(exe, os.Args[1:]...)
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	if err := command.Start(); err != nil {
+		return err
+	}
+
+	os.Exit(0)
 	return nil
 }

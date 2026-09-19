@@ -84,6 +84,13 @@ jobs:
           go vet ./...
           go test ./...
 
+      # Catches a dependency going vulnerable between releases, which is how
+      # the grpc and stdlib advisories reached this tree in the first place.
+      - name: Vulnerability scan
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
   build:
     name: Build ${{ matrix.platform }}/${{ matrix.arch }}
     needs: test
@@ -197,22 +204,49 @@ jobs:
         if: matrix.platform == 'windows'
         run: wails build -platform windows/${{ matrix.arch }} -skipbindings -webview2 embed -nsis
 
-      - name: Build for macOS
+      # ditto, not zip: a .app carries symlinks and extended attributes that
+      # `zip` silently drops, which breaks the bundle the updater installs.
+      # The ZIP is what the in-app updater downloads; the DMG is for people.
+      - name: Package for macOS
         if: matrix.platform == 'darwin'
         run: |
           wails build -platform darwin/${{ matrix.arch }} -skipbindings
-          cd build/bin && zip -r -X myscript-darwin-${{ matrix.arch }}.zip *.app
+          cd build/bin
+          app=$(ls -d *.app | head -n 1)
+          test -n "$app" || { echo "wails produced no .app bundle"; exit 1; }
 
+          ditto -c -k --sequesterRsrc --keepParent "$app" myscript-darwin-${{ matrix.arch }}.zip
+
+          staging=$(mktemp -d)
+          cp -R "$app" "$staging/"
+          ln -s /Applications "$staging/Applications"
+          hdiutil create -volname MyScript -srcfolder "$staging" -ov -format UDZO \
+            myscript-darwin-${{ matrix.arch }}.dmg
+          rm -rf "$staging"
+
+      # The tarball and the AppImage are what the in-app updater downloads, each
+      # replacing itself in place. The distro packages are for people, and those
+      # installs update through the package manager instead.
       - name: Package for Linux
         if: matrix.platform == 'linux'
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          docker run --rm -v "$PWD:/src" -w /src -e VERSION goreleaser/nfpm package \
-            --config nfpm.yaml --target build/bin --packager deb
+          for packager in deb rpm archlinux; do
+            docker run --rm -v "$PWD:/src" -w /src -e VERSION goreleaser/nfpm package \
+              --config nfpm.yaml --target build/bin --packager "$packager"
+          done
           cd build/bin
           mv *.deb myscript-linux-${{ matrix.arch }}.deb
+          mv *.rpm myscript-linux-${{ matrix.arch }}.rpm
+          mv *.pkg.tar.zst myscript-linux-${{ matrix.arch }}.pkg.tar.zst
           tar czf myscript-linux-${{ matrix.arch }}.tar.gz myscript-${{ matrix.arch }}
+
+      - name: Build AppImage
+        if: matrix.platform == 'linux'
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: bash scripts/build-appimage.sh ${{ matrix.arch }}
 
       - name: Name Windows artifacts
         if: matrix.platform == 'windows'
@@ -231,8 +265,12 @@ jobs:
           name: myscript-${{ matrix.platform }}-${{ matrix.arch }}
           path: |
             build/bin/*.deb
+            build/bin/*.rpm
+            build/bin/*.pkg.tar.zst
+            build/bin/*.AppImage
             build/bin/*.tar.gz
             build/bin/*.zip
+            build/bin/*.dmg
             build/bin/*.exe
           if-no-files-found: error
           retention-days: 1
