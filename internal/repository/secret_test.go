@@ -157,3 +157,23 @@ func TestAdoptHostedSpeechLeavesOtherSourcesAlone(t *testing.T) {
 		}
 	}
 }
+
+func TestRecordingTheSameProcessedFileTwiceKeepsOneRow(t *testing.T) {
+	db := newDB(t, &ProcessedChange{})
+	repo := NewProcessedChangeRepository(db)
+
+	for range 3 {
+		if err := repo.SaveProcessedChange("file-1"); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var rows int64
+	db.Model(&ProcessedChange{}).Count(&rows)
+	if rows != 1 {
+		t.Errorf("got %d rows for one file, a cycle would add one every time", rows)
+	}
+	if !repo.ChangeProcessed("file-1") {
+		t.Error("the file should still be recognised as processed")
+	}
+}

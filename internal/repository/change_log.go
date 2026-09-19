@@ -6,10 +6,12 @@ package repository
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // UNSYNCED MODEL
@@ -61,23 +63,71 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 		Synced:    false,
 	}
 
-	// Check if the change already exists
-	var existing ChangeLog
-	if unSyncedDB.Where("change_id = ?", change.ChangeID).
-		First(&existing).Error == nil {
-		change.ID = existing.ID
-		change.CreatedAt = existing.CreatedAt
+	// One statement: reading first and saving after races another writer into
+	// the unique index, and that error would surface on the user's own save.
+	return unSyncedDB.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "change_id"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"new_data":   change.NewData,
+			"synced":     false,
+			"updated_at": time.Now(),
+			"deleted_at": nil,
+		}),
+	}).Create(&change).Error
+}
 
-		return unSyncedDB.Save(&change).Error
+// InvalidateStaleChangeLogs drops local changes for rows a pull just rewrote.
+// Without it a local delete made before the pull would be pushed afterwards and
+// erase the record everywhere, having already been overruled here.
+func (r *ChangeLogRepository) InvalidateStaleChangeLogs(affected map[string][]string) int64 {
+	var invalidated int64
+
+	for table, rows := range affected {
+		for _, batch := range batches(unique(rows), 400) {
+			result := r.db.Model(&ChangeLog{}).
+				Where("table_name = ? AND synced = ? AND row_id IN ?", table, false, batch).
+				Update("synced", true)
+			invalidated += result.RowsAffected
+		}
 	}
 
-	return unSyncedDB.Create(&change).Error
+	if invalidated > 0 {
+		slog.Info("Dropped local changes overruled by the pull", "changes", invalidated)
+	}
+	return invalidated
+}
+
+func unique(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	out := make([]string, 0, len(values))
+
+	for _, value := range values {
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+// SQLite caps how many values one statement can bind.
+func batches(values []string, size int) [][]string {
+	var out [][]string
+	for start := 0; start < len(values); start += size {
+		end := min(start+size, len(values))
+		out = append(out, values[start:end])
+	}
+	return out
 }
 
 func (r *ChangeLogRepository) GetUnSyncedChanges() []ChangeLog {
 	var changes []ChangeLog
 
-	r.db.Where("synced = ?", false).Find(&changes)
+	r.db.Where("synced = ?", false).Order("updated_at asc, id asc").Find(&changes)
 
 	return changes
 }

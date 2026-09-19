@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // UNSYNCED MODEL
 
 type ProcessedChange struct {
 	gorm.Model
-	FileID string `gorm:"index"`
+	FileID string `gorm:"uniqueIndex"`
 }
 
 type ProcessedChangeRepository struct {
@@ -56,9 +57,8 @@ func (r *ProcessedChangeRepository) DeleteOldProcessedChanges(timeOffset time.Ti
 }
 
 func (r *ProcessedChangeRepository) SaveProcessedChange(fileID string) error {
-	item := &ProcessedChange{
-		FileID: fileID,
-	}
-
-	return r.db.Save(item).Error
+	// Save with a zero id inserts, so re-recording a file used to add a row
+	// every cycle rather than leaving the one already there.
+	return r.db.Clauses(clause.OnConflict{DoNothing: true}).
+		Create(&ProcessedChange{FileID: fileID}).Error
 }

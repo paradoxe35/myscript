@@ -5,6 +5,7 @@ package database
 
 import (
 	"fmt"
+	"log/slog"
 	"myscript/internal/repository"
 	"path/filepath"
 
@@ -70,15 +71,46 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// Migrate schemas
-	db.AutoMigrate(&repository.ChangeLog{})
-	db.AutoMigrate(&repository.ProcessedChange{})
-	db.AutoMigrate(&repository.RemoteApplyFailure{})
-	db.AutoMigrate(&repository.GoogleAuthToken{})
-	db.AutoMigrate(&repository.SyncState{})
-	db.AutoMigrate(&repository.Secret{})
+	// Older builds recorded one row per file per sync cycle. The unique index
+	// below cannot be created over those, and AutoMigrate would fail silently.
+	dropDuplicateFileIDs(db, "processed_changes")
+	dropDuplicateFileIDs(db, "apply_failures")
+	dropDuplicateFileIDs(db, "remote_apply_failures")
+
+	migrate(db,
+		&repository.ChangeLog{},
+		&repository.ProcessedChange{},
+		&repository.RemoteApplyFailure{},
+		&repository.GoogleAuthToken{},
+		&repository.SyncState{},
+		&repository.Secret{},
+	)
 
 	return db
+}
+
+func migrate(db *gorm.DB, models ...any) {
+	for _, model := range models {
+		if err := db.AutoMigrate(model); err != nil {
+			slog.Error("Could not migrate a table", "model", fmt.Sprintf("%T", model), "error", err)
+		}
+	}
+}
+
+// dropDuplicateFileIDs keeps the most recent row per file, which is the one a
+// unique index would have kept anyway.
+func dropDuplicateFileIDs(db *gorm.DB, table string) {
+	if !db.Migrator().HasTable(table) {
+		return
+	}
+
+	statement := fmt.Sprintf(
+		"DELETE FROM %s WHERE id NOT IN (SELECT MAX(id) FROM %s GROUP BY file_id)",
+		table, table,
+	)
+	if err := db.Exec(statement).Error; err != nil {
+		slog.Warn("Could not remove duplicate rows before migrating", "table", table, "error", err)
+	}
 }
 
 type DatabaseInfo struct {

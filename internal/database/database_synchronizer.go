@@ -97,7 +97,7 @@ func (s *DatabaseSynchronizer) SynchronizeChangeLog(changeLog repository.ChangeL
 			Where("id = ?", changeLog.RowID).
 			Delete(nil)
 
-		s.addAffectedTable(changeLog.TableName, nil)
+		s.addAffectedRow(changeLog.TableName, changeLog.RowID)
 
 	}
 
@@ -180,22 +180,24 @@ func (s *DatabaseSynchronizer) GetAffectedTables() AffectedTables {
 }
 
 func (s *DatabaseSynchronizer) addAffectedTable(tableName string, record interface{}) {
+	s.addAffectedRow(tableName, repository.GetModelID(record))
+}
+
+// addAffectedRow notes a row the pull touched. Rows accumulate: a later delete
+// used to replace everything collected for the table, which left callers unable
+// to tell what had changed.
+func (s *DatabaseSynchronizer) addAffectedRow(tableName, rowID string) {
 	if s.affectedTables == nil {
 		s.affectedTables = make(AffectedTables)
 	}
-
-	if record == nil {
-		s.affectedTables[tableName] = []string{}
-		return
-	}
-
 	if _, ok := s.affectedTables[tableName]; !ok {
 		s.affectedTables[tableName] = []string{}
 	}
+	if rowID == "" {
+		return
+	}
 
-	recordId := repository.GetModelID(record)
-
-	s.affectedTables[tableName] = append(s.affectedTables[tableName], recordId)
+	s.affectedTables[tableName] = append(s.affectedTables[tableName], rowID)
 }
 
 func (s *DatabaseSynchronizer) synchronizeSourceEntity(entity interface{}) error {

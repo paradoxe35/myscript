@@ -13,7 +13,7 @@ import (
 
 type RemoteApplyFailure struct {
 	gorm.Model
-	FileID string
+	FileID string `gorm:"uniqueIndex"`
 	Count  int
 }
 

@@ -228,6 +228,12 @@ func (s *Synchronizer) schedulerWorker() {
 	if err := s.applyRemoteChanges(); err != nil {
 		failure = err
 	}
+
+	// A local change to a row the pull just rewrote has already been overruled.
+	// Pushing it afterwards would undo the pull on every other machine.
+	if len(s.affectedTables) > 0 {
+		s.changeLogRepository.InvalidateStaleChangeLogs(s.affectedTables)
+	}
 	// After the pull, so a snapshot captures what was just applied.
 	if err := s.createDBSnapshot(); err != nil {
 		failure = err
