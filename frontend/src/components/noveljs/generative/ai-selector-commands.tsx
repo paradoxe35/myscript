@@ -15,13 +15,7 @@ import {
 } from "@/components/ui/command";
 
 export type Option =
-  | "continue"
-  | "improve"
-  | "shorter"
-  | "longer"
-  | "fix"
-  | "zap"
-  | "write";
+  "continue" | "improve" | "shorter" | "longer" | "fix" | "zap" | "write";
 
 type OptionItem = {
   value: Option;
@@ -70,7 +64,7 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
             onSelect={(value) => {
               const slice = editor?.state.selection.content();
               const text = editor?.storage.markdown.serializer.serialize(
-                slice?.content
+                slice?.content,
               );
               onSelect(text, value as Option);
             }}

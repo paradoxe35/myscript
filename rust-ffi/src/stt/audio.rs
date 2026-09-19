@@ -444,8 +444,10 @@ fn build_stream(
 ) -> Result<cpal::Stream> {
     let mut throttle = ErrorThrottle::default();
     let error = move |e: cpal::Error| {
+        // The stream recovers on its own, so this is a warning: a glitch to
+        // know about when transcription looks off, not a failure.
         if let Some(line) = throttle.record(&e.to_string(), Instant::now()) {
-            log::error!("audio stream error: {line}");
+            log::warn!("audio glitch: {line}");
         }
     };
 
@@ -481,7 +483,7 @@ fn build_stream(
 }
 
 /// Runs on the realtime audio callback: send and return, never block.
-/// A driver reports an underrun once per audio period, so one bad take can log
+/// A driver can report a glitch once per audio period, so one bad take can log
 /// hundreds of identical lines. Report the first, then how many followed.
 const ERROR_SUMMARY_INTERVAL: Duration = Duration::from_secs(5);
 

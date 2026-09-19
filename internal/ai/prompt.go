@@ -17,7 +17,9 @@ const (
 	TaskWrite    Task = "write"
 )
 
-const markdownNote = "Use Markdown formatting when appropriate."
+const markdownNote = "Write in Markdown: use headings, lists, emphasis and code blocks " +
+	"where they help, and plain paragraphs where they do not. Never wrap the whole reply " +
+	"in a code fence."
 
 const briefNote = "Limit your response to no more than 200 characters, but make sure to construct complete sentences."
 

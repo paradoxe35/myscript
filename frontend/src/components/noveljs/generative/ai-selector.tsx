@@ -3,14 +3,13 @@ import { Command, CommandInput } from "@/components/ui/command";
 import { ArrowUp } from "lucide-react";
 import { addAIHighlight, useEditor } from "novel";
 import { useEffect, useState } from "react";
-import Markdown from "react-markdown";
 import { toast } from "sonner";
 import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
 import AICompletionCommands from "./ai-completion-command";
 import AISelectorCommands from "./ai-selector-commands";
+import { AIPreview } from "./ai-preview";
 import { useAICompletion } from "./use-ai-completion";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 
 interface AISelectorProps {
@@ -35,13 +34,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
   return (
     <Command className="w-[350px]">
       {hasCompletion && (
-        <div className="flex max-h-[400px]">
-          <ScrollArea>
-            <div className="prose p-2 px-4 prose-sm dark:prose-invert">
-              <Markdown>{completion}</Markdown>
-            </div>
-          </ScrollArea>
-        </div>
+        <AIPreview markdown={completion} className="max-h-[400px]" />
       )}
 
       {isLoading && (
@@ -82,14 +75,14 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
               className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full bg-blue-500 hover:bg-blue-900"
               onClick={() => {
                 if (completion) {
-                  return generate(completion, "zap", inputValue).then(
-                    () => setInputValue("")
+                  return generate(completion, "zap", inputValue).then(() =>
+                    setInputValue(""),
                   );
                 }
 
                 const slice = editor?.state.selection.content();
                 const text = editor?.storage.markdown.serializer.serialize(
-                  slice?.content
+                  slice?.content,
                 );
 
                 generate(text, "zap", inputValue).then(() => setInputValue(""));

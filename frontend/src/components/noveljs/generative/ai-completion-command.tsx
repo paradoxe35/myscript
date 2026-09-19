@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/command";
 import { useEditor } from "novel";
 import { Check, TextQuote, TrashIcon } from "lucide-react";
+import { insertMarkdownAt, replaceWithMarkdown } from "./markdown";
 
 const AICompletionCommands = ({
   completion,
@@ -22,19 +23,10 @@ const AICompletionCommands = ({
           className="gap-2 px-4"
           value="replace"
           onSelect={() => {
-            const selection = editor?.view.state.selection;
+            if (!editor) return;
 
-            editor
-              ?.chain()
-              .focus()
-              .insertContentAt(
-                {
-                  from: selection?.from ?? 0,
-                  to: selection?.to ?? 0,
-                },
-                completion
-              )
-              .run();
+            const { from, to } = editor.view.state.selection;
+            replaceWithMarkdown(editor, { from, to }, completion);
           }}
         >
           <Check className="h-4 w-4 text-muted-foreground" />
@@ -44,12 +36,13 @@ const AICompletionCommands = ({
           className="gap-2 px-4"
           value="insert"
           onSelect={() => {
-            const selection = editor?.view.state.selection;
-            editor
-              ?.chain()
-              .focus()
-              .insertContentAt(selection?.to ?? 0 + 1, completion)
-              .run();
+            if (!editor) return;
+
+            insertMarkdownAt(
+              editor,
+              editor.view.state.selection.to,
+              completion,
+            );
           }}
         >
           <TextQuote className="h-4 w-4 text-muted-foreground" />

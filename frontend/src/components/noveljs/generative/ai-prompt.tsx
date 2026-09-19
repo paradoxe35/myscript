@@ -5,15 +5,15 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEditorAIStore } from "@/store/editor-ai";
 import { ArrowUp, Check, RotateCcw, Trash2 } from "lucide-react";
 import { getPrevText, useEditor } from "novel";
 import { useEffect, useState } from "react";
-import Markdown from "react-markdown";
 import { toast } from "sonner";
 import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
+import { AIPreview } from "./ai-preview";
+import { insertMarkdown } from "./markdown";
 import { useAICompletion } from "./use-ai-completion";
 
 type Caret = { top: number; left: number };
@@ -57,7 +57,7 @@ export function AIPrompt() {
   };
 
   const insert = () => {
-    editor?.chain().focus().insertContent(completion).run();
+    if (editor) insertMarkdown(editor, completion);
     dismiss();
   };
 
@@ -74,13 +74,7 @@ export function AIPrompt() {
 
       <PopoverContent align="start" className="w-[420px] p-0" sideOffset={0}>
         <div>
-          {hasCompletion && (
-            <ScrollArea className="max-h-[300px] border-b">
-              <div className="prose prose-sm p-3 dark:prose-invert">
-                <Markdown>{completion}</Markdown>
-              </div>
-            </ScrollArea>
-          )}
+          {hasCompletion && <AIPreview markdown={completion} />}
 
           {isLoading && (
             <div className="flex h-12 items-center px-3 text-sm font-medium text-blue-500">
