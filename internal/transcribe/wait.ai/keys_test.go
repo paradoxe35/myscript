@@ -8,11 +8,14 @@ import "testing"
 func withKeys(t *testing.T, raw string) {
 	t.Helper()
 
+	// Restore rather than clear: a build with embedded keys would otherwise
+	// lose them for every test that runs after this one.
+	original := rawKeys
 	rawKeys = raw
 	parseKeys = newParseKeys()
 
 	t.Cleanup(func() {
-		rawKeys = ""
+		rawKeys = original
 		parseKeys = newParseKeys()
 	})
 }
