@@ -3,12 +3,16 @@ import { GetCache, SaveCache } from "~wails/main/App";
 
 type ReadProgress = { word: number; total: number };
 
+/** Picking up where you left off is what you want almost every time. */
+const RESUME_BY_DEFAULT = true;
+
 type ContentReadState = {
   resume: boolean;
   position: number;
   total: number;
 
   setResume: (resume: boolean) => void;
+  resetResume: () => void;
   setPosition: (position: number, total: number) => void;
 
   saveProgress: (pageId: string | number, progress: ReadProgress) => Promise<void>;
@@ -16,11 +20,13 @@ type ContentReadState = {
 };
 
 export const useContentReadStore = create<ContentReadState>((set) => ({
-  resume: false,
+  resume: RESUME_BY_DEFAULT,
   position: 0,
   total: 0,
 
   setResume: (resume) => set({ resume }),
+
+  resetResume: () => set({ resume: RESUME_BY_DEFAULT }),
 
   setPosition: (position, total) => set({ position, total }),
 

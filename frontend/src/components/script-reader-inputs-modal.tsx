@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { languages, main, stt } from "~wails/models";
 import { useActivePageStore } from "@/store/active-page";
 import { Checkbox } from "./ui/checkbox";
+import { Label } from "./ui/label";
 import { useContentReadStore } from "@/store/content-read";
 import { useSpeechModelsStore } from "@/store/speech-models";
 
@@ -374,13 +375,12 @@ function ResumeRead() {
   const contentReadStore = useContentReadStore();
 
   useEffect(() => {
-    contentReadStore.setResume(false);
+    contentReadStore.resetResume();
   }, [activePageStore.getPageId()]);
 
   useEffect(() => {
-    // Reset resume when read mode is off
     if (!activePageStore.readMode) {
-      contentReadStore.setResume(false);
+      contentReadStore.resetResume();
     }
   }, [activePageStore.readMode]);
 
@@ -394,12 +394,9 @@ function ResumeRead() {
         id="resume-read-position"
       />
 
-      <label
-        htmlFor="resume-read-position"
-        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-      >
+      <Label htmlFor="resume-read-position" className="leading-none">
         Resume reading position
-      </label>
+      </Label>
     </div>
   );
 }

@@ -153,6 +153,10 @@ export const useActivePageStore = create(
     {
       name: "active-page",
       storage: createJSONStorage(() => localStorage),
+      // Only the open page survives a restart. Reading is a mode you enter
+      // deliberately, so the app never comes back already reading.
+      partialize: (state) =>
+        ({ page: state.page }) as unknown as ActivePageStore,
     }
   )
 );
