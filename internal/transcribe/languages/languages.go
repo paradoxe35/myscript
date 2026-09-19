@@ -92,4 +92,14 @@ var names = map[string]string{
 	"oc": "Occitan", "ps": "Pashto", "sa": "Sanskrit", "sd": "Sindhi",
 	"sn": "Shona", "tg": "Tajik", "tk": "Turkmen", "tt": "Tatar",
 	"yi": "Yiddish",
+
+	// Wit.ai serves these beyond the Whisper set.
+	"ay": "Aymara", "ck": "Cherokee", "ci": "Sicilian", "dv": "Divehi",
+	"ff": "Fulah", "fy": "Western Frisian", "gd": "Scottish Gaelic", "gn": "Guarani",
+	"iu": "Inuktitut", "kl": "Kalaallisut", "ks": "Kashmiri", "ku": "Kurdish",
+	"ky": "Kyrgyz", "lg": "Ganda", "li": "Limburgish", "nr": "South Ndebele",
+	"ny": "Chichewa", "qu": "Quechua", "rm": "Romansh", "sc": "Sardinian",
+	"se": "Northern Sami", "ss": "Swati", "st": "Sotho", "ti": "Tigrinya",
+	"tn": "Tswana", "ts": "Tsonga", "ug": "Uyghur", "ve": "Venda",
+	"wo": "Wolof", "xh": "Xhosa",
 }

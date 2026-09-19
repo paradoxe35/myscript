@@ -6,6 +6,7 @@ package witai
 import (
 	"encoding/json"
 	"log/slog"
+	"myscript/internal/transcribe/languages"
 	"sync"
 )
 
@@ -57,4 +58,17 @@ func Token(language string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// GetSupportedLanguages lists what this build can transcribe, derived from the
+// embedded keys so adding one is the only step a new language needs.
+func GetSupportedLanguages() []languages.Language {
+	keys := parseKeys()
+
+	codes := make([]string, 0, len(keys))
+	for _, key := range keys {
+		codes = append(codes, key.Language)
+	}
+
+	return languages.Named(codes)
 }
