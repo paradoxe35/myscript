@@ -15,10 +15,12 @@ type Page struct {
 	HtmlContent string         `json:"html_content"`
 	Blocks      datatypes.JSON `json:"blocks"`
 	IsFolder    bool           `json:"is_folder"`
-	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
 	ParentID    *string        `gorm:"index"`
 	Children    []Page         `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
+
+	// Per machine, read from PageState; never written with the page.
+	Expanded bool `json:"expanded" gorm:"-"`
 }
 
 func (n *Page) AfterCreate(tx *gorm.DB) error {
@@ -35,28 +37,48 @@ func (n *Page) AfterDelete(tx *gorm.DB) error {
 
 type PageRepository struct {
 	BaseRepository
+	states *PageStateRepository
 }
 
-func NewPageRepository(db *gorm.DB) *PageRepository {
+func NewPageRepository(mainDB, unSyncedDB *gorm.DB) *PageRepository {
 	return &PageRepository{
-		BaseRepository: BaseRepository{db: db},
+		BaseRepository: BaseRepository{db: mainDB},
+		states:         NewPageStateRepository(unSyncedDB),
 	}
 }
 
 func (r *PageRepository) GetPages() []Page {
 	var pages []Page
-
 	r.db.Omit("html_content", "blocks").Find(&pages)
 
+	states := r.states.All()
+	for i := range pages {
+		pages[i].Expanded = states[pages[i].ID].Expanded
+	}
 	return pages
 }
 
 func (r *PageRepository) GetPage(ID string) *Page {
 	var page Page
-
 	r.db.First(&page, "id = ?", ID)
 
+	page.Expanded = r.states.Get(ID).Expanded
 	return &page
+}
+
+func (r *PageRepository) SavePage(page *Page) *Page {
+	r.db.Save(page)
+	return r.GetPage(page.ID)
+}
+
+// Partial updates go through the loaded row so the change log still carries
+// the whole page.
+func (r *PageRepository) UpdatePageTitle(ID, title string) *Page {
+	r.db.Model(r.GetPage(ID)).
+		Where("id = ?", ID).
+		Updates(MapUpdate{"title": title})
+
+	return r.GetPage(ID)
 }
 
 func (r *PageRepository) UpdatePageOrder(ID string, ParentID *string, order int) {
@@ -68,9 +90,8 @@ func (r *PageRepository) UpdatePageOrder(ID string, ParentID *string, order int)
 		})
 }
 
-func (r *PageRepository) SavePage(page *Page) *Page {
-	r.db.Save(page)
-	return page
+func (r *PageRepository) SetExpanded(ID string, expanded bool) error {
+	return r.states.SetExpanded(ID, expanded)
 }
 
 func (r *PageRepository) DeletePage(ID string) {
@@ -78,4 +99,5 @@ func (r *PageRepository) DeletePage(ID string) {
 
 	r.db.First(&page, "id = ?", ID)
 	r.db.Delete(&page)
+	r.states.Delete(ID)
 }

@@ -53,20 +53,21 @@ func (a *App) SaveSpeechServiceAPIKey(preset, apiKey string) error {
 
 // An empty list means the codes are not known and the language must be typed.
 func (a *App) GetLanguages() []languages.Language {
-	config := a.GetConfig()
+	settings := a.GetDeviceSettings()
 
-	switch config.TranscriberSource {
-	case "witai":
+	switch settings.TranscriberSource {
+	case repository.TranscriberWitAI:
 		return witai.GetSupportedLanguages()
 
-	case "remote":
+	case repository.TranscriberRemote:
+		config := a.GetConfig()
 		return remote.LanguagesFor(config.RemoteProvider, config.RemoteModel)
 
 	default:
-		if config.SpeechModelID == nil {
+		if settings.SpeechModelID == nil {
 			return nil
 		}
-		model, ok := stt.FindModel(*config.SpeechModelID)
+		model, ok := stt.FindModel(*settings.SpeechModelID)
 		if !ok {
 			return nil
 		}
@@ -74,9 +75,17 @@ func (a *App) GetLanguages() []languages.Language {
 	}
 }
 
+func (a *App) GetPageLanguage(pageID string) string {
+	return repository.NewCacheRepository(a.mainDB).PageLanguage(pageID)
+}
+
+func (a *App) SetPageLanguage(pageID, code string) error {
+	return repository.NewCacheRepository(a.mainDB).SetPageLanguage(pageID, code)
+}
+
 func (a *App) remoteTranscriber(source string) (stt.Transcriber, error) {
 	switch source {
-	case "witai":
+	case repository.TranscriberWitAI:
 		return func(wav []byte, language string) (string, error) {
 			token, ok := witai.Token(language)
 			if !ok {
@@ -85,7 +94,7 @@ func (a *App) remoteTranscriber(source string) (stt.Transcriber, error) {
 			return witai.WitAITranscribeFromBuffer(wav, token)
 		}, nil
 
-	case "remote":
+	case repository.TranscriberRemote:
 		settings := a.speechServiceSettings()
 		if !settings.Ready() {
 			return nil, fmt.Errorf("the transcription service needs an endpoint and a model")

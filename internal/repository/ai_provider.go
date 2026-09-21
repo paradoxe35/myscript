@@ -27,14 +27,18 @@ type AIProvider struct {
 	Custom       bool    `json:"custom,omitempty"`
 }
 
+// The provider list is shared through Config; the active choice and the keys
+// are per machine.
 type AIProviderRepository struct {
 	config  *ConfigRepository
+	device  *DeviceSettingsRepository
 	secrets *SecretRepository
 }
 
 func NewAIProviderRepository(mainDB, unSyncedDB *gorm.DB) *AIProviderRepository {
 	return &AIProviderRepository{
 		config:  NewConfigRepository(mainDB),
+		device:  NewDeviceSettingsRepository(unSyncedDB),
 		secrets: NewSecretRepository(unSyncedDB),
 	}
 }
@@ -61,7 +65,11 @@ func (r *AIProviderRepository) List() []AIProvider {
 }
 
 func (r *AIProviderRepository) Find(name string) (AIProvider, bool) {
-	for _, provider := range r.List() {
+	return find(r.List(), name)
+}
+
+func find(providers []AIProvider, name string) (AIProvider, bool) {
+	for _, provider := range providers {
 		if strings.EqualFold(provider.Name, name) {
 			return provider, true
 		}
@@ -119,35 +127,43 @@ func (r *AIProviderRepository) Delete(name string) error {
 		return err
 	}
 
-	if strings.EqualFold(r.Active(), name) {
-		return r.SetActive(ai.KindOpenAI)
+	if settings := r.device.Get(); strings.EqualFold(settings.AIProvider, name) {
+		settings.AIProvider = ""
+		r.device.Save(settings)
 	}
 	return nil
 }
 
-// Falls back when the stored choice no longer exists.
+// The provider to use: this machine's choice when it is usable here (a key
+// is stored, or none is needed), otherwise the first usable one in the list.
+// With nothing usable the choice stands, so the UI can point at what to set up.
 func (r *AIProviderRepository) Active() string {
-	name := r.config.GetConfig().AIProvider
-	if name == "" {
-		return ai.KindOpenAI
+	providers := r.List()
+	chosen, ok := find(providers, r.device.Get().AIProvider)
+	if !ok {
+		chosen = providers[0]
 	}
 
-	for _, provider := range r.List() {
-		if strings.EqualFold(provider.Name, name) {
+	if r.configured(chosen) {
+		return chosen.Name
+	}
+	for _, provider := range providers {
+		if r.configured(provider) {
 			return provider.Name
 		}
 	}
-	return ai.KindOpenAI
+	return chosen.Name
 }
 
 func (r *AIProviderRepository) SetActive(name string) error {
-	if _, ok := r.Find(name); !ok {
+	provider, ok := r.Find(name)
+	if !ok {
 		return fmt.Errorf("no provider named %q", name)
 	}
 
-	config := r.config.GetConfig()
-	config.AIProvider = name
-	r.config.SaveConfig(config)
+	settings := r.device.Get()
+	settings.AIProvider = provider.Name
+	r.device.Save(settings)
 	return nil
 }
 
@@ -164,7 +180,10 @@ func (r *AIProviderRepository) Settings(name string) (ai.Settings, error) {
 	if !ok {
 		return ai.Settings{}, fmt.Errorf("no provider named %q", name)
 	}
+	return r.settings(provider), nil
+}
 
+func (r *AIProviderRepository) settings(provider AIProvider) ai.Settings {
 	return ai.Settings{
 		Name:         provider.Name,
 		Kind:         provider.Kind,
@@ -175,21 +194,20 @@ func (r *AIProviderRepository) Settings(name string) (ai.Settings, error) {
 		NoAPIKey:     provider.NoAPIKey,
 		LowReasoning: provider.LowReasoning,
 		Custom:       provider.Custom,
-	}.Resolved(), nil
+	}.Resolved()
 }
 
 func (r *AIProviderRepository) Configured(name string) bool {
-	settings, err := r.Settings(name)
+	provider, ok := r.Find(name)
+	return ok && r.configured(provider)
+}
+
+func (r *AIProviderRepository) configured(provider AIProvider) bool {
+	client, err := ai.New(r.settings(provider))
 	if err != nil {
 		return false
 	}
-
-	provider, err := ai.New(settings)
-	if err != nil {
-		return false
-	}
-
-	return provider.Validate() == nil
+	return client.Validate() == nil
 }
 
 func (r *AIProviderRepository) stored() map[string]AIProvider {

@@ -16,3 +16,15 @@ func (a *App) SaveConfig(config *repository.Config) *repository.Config {
 
 	return a.GetConfig()
 }
+
+func (a *App) deviceSettings() *repository.DeviceSettingsRepository {
+	return repository.NewDeviceSettingsRepository(a.unSyncedDB)
+}
+
+func (a *App) GetDeviceSettings() repository.DeviceSettings {
+	return a.deviceSettings().Get()
+}
+
+func (a *App) SaveDeviceSettings(settings repository.DeviceSettings) repository.DeviceSettings {
+	return a.deviceSettings().Save(settings)
+}

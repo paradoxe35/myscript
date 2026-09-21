@@ -3,10 +3,9 @@ import { create } from "zustand";
 import { repository } from "~wails/models";
 import { persist, createJSONStorage } from "zustand/middleware";
 import {
-  GetCache,
+  GetCachedNotionPageBlocks,
   GetLocalPage,
   GetNotionPageBlocks,
-  SaveCache,
 } from "~wails/main/App";
 
 type NotionActivePage = {
@@ -113,31 +112,24 @@ export const useActivePageStore = create(
         }
 
         if (activePage?.__typename === "notion_page") {
-          const cacheKey = `${activePage?.__typename}:${activePage?.page.id}`;
+          const pageId = activePage.page.id;
+          let fresh = false;
 
-          GetCache(cacheKey).then((cache) => {
-            cache &&
-              set({
-                version: Date.now(),
-                page: {
-                  ...activePage,
-                  blocks: cache.value,
-                },
-              });
+          const showBlocks = (blocks: unknown) => {
+            if (get().getPageId() === pageId) {
+              set({ version: Date.now(), page: { ...activePage, blocks } });
+            }
+          };
+
+          // The cached copy renders at once; the fetch replaces it and wins
+          // if it lands first.
+          GetCachedNotionPageBlocks(pageId).then((blocks) => {
+            if (blocks && !fresh) showBlocks(blocks);
           });
 
-          GetNotionPageBlocks(activePage.page.id).then((blocks) => {
-            if (get().getPageId() === activePage?.page.id) {
-              set({
-                version: Date.now(),
-                page: {
-                  ...activePage,
-                  blocks,
-                },
-              });
-            }
-
-            SaveCache(cacheKey, blocks);
+          GetNotionPageBlocks(pageId).then((blocks) => {
+            fresh = true;
+            showBlocks(blocks);
           });
         }
       },

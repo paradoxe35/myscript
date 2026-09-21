@@ -1,4 +1,8 @@
 import { useConfigStore } from "@/store/config";
+import {
+  TranscriberSource,
+  useDeviceSettingsStore,
+} from "@/store/device-settings";
 import { useGoogleAuthTokenStore } from "@/store/google-auth-token";
 import { isGoogleAPIInvalidGrantError } from "@/store/google-auth-token";
 import { WithoutRepositoryBaseFields } from "@/types";
@@ -20,8 +24,6 @@ import {
   StartSynchronizer,
 } from "~wails/main/App";
 import { repository } from "~wails/models";
-
-export type TranscriberSource = "local" | "remote" | "witai";
 
 export const TRANSCRIBER_SOURCES: Array<{
   key: TranscriberSource;
@@ -45,11 +47,13 @@ export const TRANSCRIBER_SOURCES: Array<{
   },
 ];
 
-export type ConfigPatch = Partial<
-  WithoutRepositoryBaseFields<repository.Config>
->;
+type ConfigPatch = Partial<WithoutRepositoryBaseFields<repository.Config>>;
 
 type SettingsContextValue = ReturnType<typeof useSettingsState>;
+
+function reportSaveError(error: unknown) {
+  toast.error(`Could not save: ${error}`);
+}
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
@@ -60,23 +64,37 @@ function useSettingsState() {
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
   const writeConfig = useConfigStore((state) => state.writeConfig);
 
+  const deviceSettings = useDeviceSettingsStore((state) => state.settings);
+  const fetchDeviceSettings = useDeviceSettingsStore((state) => state.fetch);
+  const writeDeviceSettings = useDeviceSettingsStore((state) => state.write);
+
   const cloud = useCloudSettings();
 
   useEffect(() => {
     GetAppVersion().then(setAppVersion);
     fetchConfig();
+    fetchDeviceSettings();
   }, []);
 
   const updateConfig = useCallback(
-    (patch: ConfigPatch) => {
-      return writeConfig(patch).catch((error) => {
-        toast.error(`Could not save: ${error}`);
-      });
-    },
+    (patch: ConfigPatch) => writeConfig(patch).catch(reportSaveError),
     [writeConfig],
   );
 
-  return { appVersion, config, updateConfig, cloud };
+  const updateDeviceSettings = useCallback(
+    (patch: Partial<repository.DeviceSettings>) =>
+      writeDeviceSettings(patch).catch(reportSaveError),
+    [writeDeviceSettings],
+  );
+
+  return {
+    appVersion,
+    config,
+    updateConfig,
+    deviceSettings,
+    updateDeviceSettings,
+    cloud,
+  };
 }
 
 function useCloudSettings() {

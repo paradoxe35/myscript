@@ -154,11 +154,3 @@ func (a *App) RefreshSpeechModels() error {
 	defer cancel()
 	return stt.Refresh(ctx)
 }
-
-func (a *App) HasLegacyWhisperFiles() bool {
-	return len(a.speech.Store().LegacyFiles()) > 0
-}
-
-func (a *App) RemoveLegacyWhisperFiles() (int, error) {
-	return a.speech.Store().RemoveLegacyFiles()
-}

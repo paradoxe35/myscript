@@ -55,9 +55,11 @@ func NewMainDatabase(homeDir string) *gorm.DB {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	db.AutoMigrate(&repository.Config{})
-	db.AutoMigrate(&repository.Page{})
-	db.AutoMigrate(&repository.Cache{})
+	synced := []any{&repository.Config{}, &repository.Page{}, &repository.Cache{}}
+	migrate(db, synced...)
+	pruneColumns(db, synced...)
+	// Only the page language still lives here; other keys are per-device now.
+	db.Unscoped().Where("key NOT LIKE ?", "page-%-language").Delete(&repository.Cache{})
 
 	return db
 }
@@ -80,9 +82,42 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 		&repository.GoogleAuthToken{},
 		&repository.SyncState{},
 		&repository.Secret{},
+		&repository.DeviceSettings{},
+		&repository.PageState{},
+		&repository.LocalCache{},
 	)
 
 	return db
+}
+
+// Drops columns the models no longer declare. A snapshot only applies where
+// every column of it exists, so the synced schema has to match a fresh install.
+func pruneColumns(db *gorm.DB, models ...any) {
+	for _, model := range models {
+		stmt := &gorm.Statement{DB: db}
+		if err := stmt.Parse(model); err != nil {
+			continue
+		}
+		declared := make(map[string]bool, len(stmt.Schema.DBNames))
+		for _, name := range stmt.Schema.DBNames {
+			declared[name] = true
+		}
+
+		columns, err := db.Migrator().ColumnTypes(model)
+		if err != nil {
+			continue
+		}
+		for _, column := range columns {
+			if declared[column.Name()] {
+				continue
+			}
+			// GORM's SQLite DropColumn ignores columns added by ALTER TABLE.
+			drop := fmt.Sprintf("ALTER TABLE %q DROP COLUMN %q", stmt.Schema.Table, column.Name())
+			if err := db.Exec(drop).Error; err != nil {
+				slog.Warn("Could not drop a stale column", "table", stmt.Schema.Table, "column", column.Name(), "error", err)
+			}
+		}
+	}
 }
 
 func migrate(db *gorm.DB, models ...any) {

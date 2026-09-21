@@ -121,6 +121,9 @@ func TestDeleteRemovesACustomProviderAndItsKey(t *testing.T) {
 	if active := repo.Active(); active != ai.KindOpenAI {
 		t.Errorf("active = %q, deleting the active provider should fall back", active)
 	}
+	if chosen := NewDeviceSettingsRepository(unsynced).Get().AIProvider; chosen != "" {
+		t.Errorf("the device still names %q", chosen)
+	}
 }
 
 func TestBuiltInProvidersCannotBeDeleted(t *testing.T) {
@@ -198,10 +201,69 @@ func TestActiveFallsBackWhenTheProviderIsGone(t *testing.T) {
 	mainDB, unsynced := newStores(t)
 
 	// A provider retired between releases.
-	NewConfigRepository(mainDB).SaveConfig(&Config{AIProvider: "anthropic"})
+	NewDeviceSettingsRepository(unsynced).Save(DeviceSettings{AIProvider: "anthropic"})
 
 	if active := NewAIProviderRepository(mainDB, unsynced).Active(); active != ai.KindOpenAI {
 		t.Errorf("active = %q, want a provider that still exists", active)
+	}
+}
+
+func TestSetActiveIsKeptOnThisMachineOnly(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+	repo := NewAIProviderRepository(mainDB, unsynced)
+	repo.SetAPIKey(ai.KindGemini, "key")
+
+	if err := repo.SetActive(ai.KindGemini); err != nil {
+		t.Fatal(err)
+	}
+
+	if chosen := NewDeviceSettingsRepository(unsynced).Get().AIProvider; chosen != ai.KindGemini {
+		t.Errorf("device choice = %q", chosen)
+	}
+	var configs int64
+	mainDB.Model(&Config{}).Count(&configs)
+	if configs != 0 {
+		t.Error("choosing a provider must not touch the synced config")
+	}
+	if active := repo.Active(); active != ai.KindGemini {
+		t.Errorf("active = %q", active)
+	}
+}
+
+// The list syncs but the keys do not, so another machine's choice may be
+// unusable here; the first provider with a key stands in for it.
+func TestActivePrefersAProviderUsableOnThisMachine(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+	repo := NewAIProviderRepository(mainDB, unsynced)
+
+	repo.SetActive(ai.KindGemini)
+	repo.SetAPIKey(ai.KindOpenRouter, "key")
+
+	if active := repo.Active(); active != ai.KindOpenRouter {
+		t.Errorf("active = %q, want the provider with a key here", active)
+	}
+
+	repo.SetAPIKey(ai.KindGemini, "key")
+	if active := repo.Active(); active != ai.KindGemini {
+		t.Errorf("active = %q, the choice should stand once it has a key", active)
+	}
+}
+
+func TestActiveKeepsTheChoiceWhenNothingIsUsable(t *testing.T) {
+	repo := newProviders(t)
+	repo.SetActive(ai.KindGemini)
+
+	if active := repo.Active(); active != ai.KindGemini {
+		t.Errorf("active = %q, the UI should point at the chosen provider to set up", active)
+	}
+}
+
+func TestAKeylessProviderIsUsableWithoutAKey(t *testing.T) {
+	repo := newProviders(t)
+	repo.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "llama", NoAPIKey: true})
+
+	if active := repo.Active(); active != "local" {
+		t.Errorf("active = %q, want the only usable provider", active)
 	}
 }
 

@@ -1,6 +1,4 @@
 import { Sparkles } from "lucide-react";
-import { useEffect } from "react";
-import { toast } from "sonner";
 
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
@@ -11,18 +9,11 @@ import { ModelBody } from "./speech-model-card";
 import { SpeechModelBrowser } from "./speech-model-browser";
 
 export function SpeechModelsInputs() {
-  const { config, updateConfig } = useSettings();
+  const { deviceSettings, updateDeviceSettings } = useSettings();
   const models = useSpeechModelsStore((store) => store.models);
-  const hasLegacyFiles = useSpeechModelsStore((store) => store.hasLegacyFiles);
-  const checkLegacyFiles = useSpeechModelsStore(
-    (store) => store.checkLegacyFiles,
-  );
 
-  useEffect(() => {
-    checkLegacyFiles();
-  }, []);
-
-  const selected = models.find((model) => model.ID === config?.SpeechModelID);
+  const selectedID = deviceSettings?.SpeechModelID;
+  const selected = models.find((model) => model.ID === selectedID);
   const suggested = models.find((model) => model.Suggested);
 
   return (
@@ -33,8 +24,10 @@ export function SpeechModelsInputs() {
             Speech model
           </Label>
           <SpeechModelBrowser
-            selectedID={config?.SpeechModelID}
-            onSelect={(model) => updateConfig({ SpeechModelID: model.ID })}
+            selectedID={selectedID}
+            onSelect={(model) =>
+              updateDeviceSettings({ SpeechModelID: model.ID })
+            }
           >
             <Button size="sm" variant="outline" className="h-8">
               {selected ? "Change model" : "Choose a model"}
@@ -50,12 +43,10 @@ export function SpeechModelsInputs() {
           <NoModel
             suggested={suggested?.Name}
             onSuggested={() =>
-              suggested && updateConfig({ SpeechModelID: suggested.ID })
+              suggested && updateDeviceSettings({ SpeechModelID: suggested.ID })
             }
           />
         )}
-
-        {hasLegacyFiles && <LegacyFilesNotice />}
       </div>
     </TooltipProvider>
   );
@@ -85,40 +76,6 @@ function NoModel({
           Use {suggested}
         </Button>
       )}
-    </div>
-  );
-}
-
-function LegacyFilesNotice() {
-  const removeLegacyFiles = useSpeechModelsStore(
-    (store) => store.removeLegacyFiles,
-  );
-
-  const confirm = () => {
-    toast("Remove the old Whisper model files?", {
-      description:
-        "They were used by earlier versions and cannot be read any more.",
-      action: {
-        label: "Remove",
-        onClick: () => {
-          removeLegacyFiles()
-            .then((removed) =>
-              toast.success(`Removed ${removed} old model file(s)`),
-            )
-            .catch((err) => toast.error(String(err)));
-        },
-      },
-    });
-  };
-
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
-      <p className="text-xs dark:text-white/70 text-slate-900/70">
-        Model files from an earlier version are taking up space.
-      </p>
-      <Button size="sm" variant="secondary" onClick={confirm}>
-        Remove old files
-      </Button>
     </div>
   );
 }

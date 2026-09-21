@@ -5,7 +5,9 @@ import {
   GetLocalPage,
   GetLocalPages,
   SaveLocalPage,
+  SetPageExpanded,
   UpdateLocalPageOrder,
+  UpdateLocalPageTitle,
 } from "~wails/main/App";
 import { repository } from "~wails/models";
 
@@ -16,7 +18,7 @@ type LocalPagesStore = {
   newPage: () => Promise<repository.Page>;
   newFolder: (name: string) => Promise<repository.Page>;
   togglePageExpanded: (page: repository.Page) => Promise<void>;
-  savePage: (page: repository.Page) => Promise<repository.Page>;
+  expandPages: (IDs: string[]) => Promise<void>;
   saveNewPageOrder: (page: repository.Page) => Promise<void>;
   savePageTitle: (
     title: string,
@@ -30,7 +32,8 @@ type LocalPagesStore = {
   deletePage: (ID: string) => Promise<void>;
 };
 
-type TPage = WithoutRepositoryBaseFields<repository.Page>;
+// Whether a folder is open belongs to this machine and has its own binding.
+type TPage = Omit<WithoutRepositoryBaseFields<repository.Page>, "expanded">;
 
 export const DEFAULT_PAGE_TITLE = "New Page";
 
@@ -55,7 +58,6 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       blocks: [],
       html_content: "",
       is_folder: false,
-      expanded: false,
       order: get().pages.length + 1,
       Children: [],
     };
@@ -73,7 +75,6 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
       blocks: [],
       html_content: "",
       is_folder: true,
-      expanded: false,
       order: get().pages.length + 1,
       Children: [],
     };
@@ -85,32 +86,24 @@ export const useLocalPagesStore = create<LocalPagesStore>((set, get) => ({
     return newPage;
   },
 
-  savePage: async (page) => {
-    return SaveLocalPage(repository.Page.createFrom(page));
-  },
-
   saveNewPageOrder: async (page) => {
     return UpdateLocalPageOrder(page.ID, page.ParentID || null, page.order);
   },
 
   togglePageExpanded: async (page) => {
-    const body: TPage = {
-      ...page,
-      expanded: !page.expanded,
-    };
+    await SetPageExpanded(page.ID, !page.expanded);
 
-    await SaveLocalPage(repository.Page.createFrom(body));
+    get().getPages();
+  },
+
+  expandPages: async (IDs) => {
+    await Promise.all(IDs.map((ID) => SetPageExpanded(ID, true)));
 
     get().getPages();
   },
 
   savePageTitle: async (title, page) => {
-    const body: TPage = {
-      ...page,
-      title,
-    };
-
-    const newPage = await SaveLocalPage(repository.Page.createFrom(body));
+    const newPage = await UpdateLocalPageTitle(page.ID, title);
 
     get().getPages();
 

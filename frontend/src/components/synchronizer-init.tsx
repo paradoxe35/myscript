@@ -15,7 +15,6 @@ type AffectedTables = Record<string, string[]>;
 enum TABLES {
   PAGES = "pages",
   CONFIG = "configs",
-  CACHE = "caches",
 }
 
 export function SynchronizerInit() {

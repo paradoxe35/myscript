@@ -31,7 +31,11 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useConfigStore } from "@/store/config";
+import {
+  TranscriberSource,
+  transcriberSource,
+  useDeviceSettingsStore,
+} from "@/store/device-settings";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { languages, main, stt } from "~wails/models";
 import { useActivePageStore } from "@/store/active-page";
@@ -50,20 +54,18 @@ const SRInputsContext = createContext<ReturnType<typeof useSRInputs>>(
 );
 
 function useSRInputs(props: Props) {
-  const transcriberStore = useTranscriberStore();
-  const config = useConfigStore((state) => state.config);
-  const localSource = config?.TranscriberSource === "local";
+  const source = useDeviceSettingsStore((state) =>
+    transcriberSource(state.settings)
+  );
+  const localSource = source === "local";
 
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const models = useModels(dialogOpen, localSource);
   const { languages, selectedLanguageCode, setSelectedLanguageCode } =
-    useLanguages(localSource, models.selectedModel);
-
-  const [micInputDevice, setMicInputDevice] = useState<stt.Device | null>(
-    null
-  );
-  const micInputDevices = transcriberStore.micInputDevices;
+    useLanguages(source, models.selectedModel);
+  const { micInputDevice, micInputDevices, setMicInputDevice } =
+    useMicInput(dialogOpen);
 
   const onStartReading = () => {
     requestAnimationFrame(() => {
@@ -72,29 +74,6 @@ function useSRInputs(props: Props) {
       }
     });
   };
-
-  useEffect(() => {
-    if (micInputDevice) {
-      transcriberStore.setDefaultMicInput(micInputDevice);
-    }
-  }, [micInputDevice]);
-
-  useEffect(() => {
-    if (!dialogOpen) return;
-
-    transcriberStore.getMicInputDevices().then(async (micInputDevices) => {
-      let defaultDevice = await transcriberStore.getDefaultMicInput();
-
-      if (!defaultDevice) {
-        defaultDevice =
-          micInputDevices.find((device) => device.IsDefault) ||
-          micInputDevices[0];
-      }
-      if (defaultDevice) {
-        setMicInputDevice(defaultDevice);
-      }
-    });
-  }, [dialogOpen]);
 
   const canSubmit =
     !!selectedLanguageCode &&
@@ -120,14 +99,60 @@ function useSRInputs(props: Props) {
   };
 }
 
+// The remembered microphone is offered first; picking another one remembers it.
+function useMicInput(dialogOpen: boolean) {
+  const micInputDevices = useTranscriberStore((state) => state.micInputDevices);
+  const getMicInputDevices = useTranscriberStore(
+    (state) => state.getMicInputDevices
+  );
+  const writeDeviceSettings = useDeviceSettingsStore((state) => state.write);
+
+  const [micInputDevice, setMicInputDevice] = useState<stt.Device | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+
+    getMicInputDevices().then((devices) => {
+      const remembered = useDeviceSettingsStore.getState().settings
+        ?.MicInputDevice;
+
+      const device =
+        devices.find((device) => device.Name === remembered) ||
+        devices.find((device) => device.IsDefault) ||
+        devices[0];
+
+      if (device) setMicInputDevice(device);
+    });
+  }, [dialogOpen]);
+
+  useEffect(() => {
+    const remembered = useDeviceSettingsStore.getState().settings
+      ?.MicInputDevice;
+
+    if (micInputDevice && micInputDevice.Name !== remembered) {
+      writeDeviceSettings({ MicInputDevice: micInputDevice.Name });
+    }
+  }, [micInputDevice]);
+
+  return { micInputDevice, micInputDevices, setMicInputDevice };
+}
+
 // The model chosen here becomes the active one, so the settings panel and the
 // next take agree.
 function useModels(dialogOpen: boolean, localSource: boolean) {
-  const speechModelsStore = useSpeechModelsStore();
-  const configStore = useConfigStore();
+  const models = useSpeechModelsStore((state) => state.models);
+  const fetchModels = useSpeechModelsStore((state) => state.fetchModels);
+  const configuredID = useDeviceSettingsStore(
+    (state) => state.settings?.SpeechModelID
+  );
+  const writeDeviceSettings = useDeviceSettingsStore((state) => state.write);
 
-  const downloadedModels = speechModelsStore.downloaded();
-  const configuredID = configStore.config?.SpeechModelID;
+  const downloadedModels = useMemo(
+    () => models.filter((model) => model.Downloaded),
+    [models]
+  );
 
   const selectedModel = useMemo(() => {
     return (
@@ -138,30 +163,30 @@ function useModels(dialogOpen: boolean, localSource: boolean) {
 
   useEffect(() => {
     if (dialogOpen && localSource) {
-      speechModelsStore.fetchModels();
+      fetchModels();
     }
   }, [dialogOpen, localSource]);
 
   useEffect(() => {
     if (localSource && selectedModel && selectedModel.ID !== configuredID) {
-      configStore.writeConfig({ SpeechModelID: selectedModel.ID });
+      writeDeviceSettings({ SpeechModelID: selectedModel.ID });
     }
   }, [localSource, selectedModel?.ID, configuredID]);
 
   const setSelectedModel = (model: main.SpeechModel) => {
-    configStore.writeConfig({ SpeechModelID: model.ID });
+    writeDeviceSettings({ SpeechModelID: model.ID });
   };
 
   return { downloadedModels, selectedModel, setSelectedModel };
 }
 
 function useLanguages(
-  localSource: boolean,
+  source: TranscriberSource,
   selectedModel: main.SpeechModel | undefined
 ) {
   const transcriberStore = useTranscriberStore();
   const activePageStore = useActivePageStore();
-  const config = useConfigStore((state) => state.config);
+  const localSource = source === "local";
 
   const [selectedLanguageCode, setSelectedLanguageCode] = useState<
     string | null
@@ -175,7 +200,7 @@ function useLanguages(
     if (!localSource) {
       // A hosted service detects when no language is sent. A Wit app is built
       // for exactly one language, so it never does.
-      return config?.TranscriberSource === "remote"
+      return source === "remote"
         ? [AUTO_DETECT_LANGUAGE, ...transcriberStore.languages]
         : transcriberStore.languages;
     }
@@ -184,12 +209,7 @@ function useLanguages(
     return selectedModel.LanguageDetect || spoken.length === 0
       ? [AUTO_DETECT_LANGUAGE, ...spoken]
       : spoken;
-  }, [
-    localSource,
-    config?.TranscriberSource,
-    transcriberStore.languages,
-    selectedModel,
-  ]);
+  }, [source, transcriberStore.languages, selectedModel]);
 
   // The remembered language sorts first, and stays there while the user browses.
   const languages = useMemo(() => {
@@ -204,7 +224,7 @@ function useLanguages(
     if (!localSource) {
       transcriberStore.getLanguages();
     }
-  }, [localSource, config?.TranscriberSource]);
+  }, [source]);
 
   useEffect(() => {
     if (activePageID) {

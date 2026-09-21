@@ -134,3 +134,38 @@ func TestADeleteKeepsTheRowsAlreadyCollected(t *testing.T) {
 		t.Errorf("got %v, want page-1 and page-2", rows)
 	}
 }
+
+// Config is updated in place; a value cleared on the other machine must be
+// cleared here rather than skipped as a zero value.
+func TestSyncingConfigAppliesClearedFields(t *testing.T) {
+	mainDB := openDB(t, &repository.Page{}, &repository.Config{}, &repository.Cache{})
+	repository.SetUnSyncedDB(nil)
+
+	mainDB.Create(&repository.Config{RemoteProvider: "openai", RemoteModel: "whisper-1", RemoteBaseURL: "http://custom"})
+
+	incoming := repository.Config{RemoteProvider: "groq", RemoteModel: "whisper-large-v3"}
+	incoming.ID = 7
+	payload, _ := json.Marshal(incoming)
+
+	err := NewDatabaseSynchronizer(nil, mainDB).SynchronizeChangeLog(repository.ChangeLog{
+		TableName: "configs", RowID: "7",
+		Operation: repository.OPERATION_SAVE,
+		NewData:   datatypes.JSON(payload),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var configs []repository.Config
+	mainDB.Find(&configs)
+	if len(configs) != 1 {
+		t.Fatalf("got %d config rows, want the single row updated", len(configs))
+	}
+	got := configs[0]
+	if got.RemoteProvider != "groq" || got.RemoteModel != "whisper-large-v3" {
+		t.Errorf("got %+v", got)
+	}
+	if got.RemoteBaseURL != "" {
+		t.Errorf("RemoteBaseURL = %q, the cleared value should have been applied", got.RemoteBaseURL)
+	}
+}

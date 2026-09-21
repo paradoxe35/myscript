@@ -305,23 +305,6 @@ func validSHA256(sum string) bool {
 	return err == nil
 }
 
-// ggml ".bin" models, which the engine cannot read.
-func (s *Store) LegacyFiles() []string {
-	matches, _ := filepath.Glob(filepath.Join(s.dir, "ggml-*.bin"))
-	return matches
-}
-
-func (s *Store) RemoveLegacyFiles() (int, error) {
-	removed := 0
-	for _, path := range s.LegacyFiles() {
-		if err := os.Remove(path); err != nil {
-			return removed, err
-		}
-		removed++
-	}
-	return removed, nil
-}
-
 func emit(report func(Progress), progress Progress) {
 	if report != nil {
 		report(progress)

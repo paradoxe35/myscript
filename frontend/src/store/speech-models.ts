@@ -7,9 +7,7 @@ import {
   DownloadSpeechModel,
   GetMachine,
   GetSpeechModels,
-  HasLegacyWhisperFiles,
   RefreshSpeechModels,
-  RemoveLegacyWhisperFiles,
 } from "~wails/main/App";
 import { main } from "~wails/models";
 
@@ -35,12 +33,6 @@ type SpeechModelsStore = {
   deleteModel: (id: string) => Promise<void>;
   setProgress: (event: ModelDownloadEvent) => void;
   clearProgress: (id: string) => void;
-
-  downloaded: () => Array<main.SpeechModel>;
-
-  hasLegacyFiles: boolean;
-  checkLegacyFiles: () => Promise<void>;
-  removeLegacyFiles: () => Promise<number>;
 
   onDownloadProgress: (
     callback: (event: ModelDownloadEvent) => void
@@ -106,20 +98,6 @@ export const useSpeechModelsStore = create<SpeechModelsStore>((set, get) => ({
       const { [id]: _, ...progress } = state.progress;
       return { progress };
     });
-  },
-
-  downloaded: () => get().models.filter((model) => model.Downloaded),
-
-  hasLegacyFiles: false,
-
-  checkLegacyFiles: async () => {
-    set({ hasLegacyFiles: await HasLegacyWhisperFiles() });
-  },
-
-  removeLegacyFiles: async () => {
-    const removed = await RemoveLegacyWhisperFiles();
-    await get().checkLegacyFiles();
-    return removed;
   },
 
   onDownloadProgress: (callback) => {

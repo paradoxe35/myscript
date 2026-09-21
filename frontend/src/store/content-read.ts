@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { GetCache, SaveCache } from "~wails/main/App";
+import { GetPageReadProgress, SavePageReadProgress } from "~wails/main/App";
+import { repository } from "~wails/models";
 
-type ReadProgress = { word: number; total: number };
+type ReadProgress = Pick<repository.ReadProgress, "word" | "total">;
 
 const RESUME_BY_DEFAULT = true;
 
@@ -30,15 +31,11 @@ export const useContentReadStore = create<ContentReadState>((set) => ({
   setPosition: (position, total) => set({ position, total }),
 
   saveProgress: async (pageId, progress) => {
-    await SaveCache(`page-${pageId}-read-progress`, progress);
+    await SavePageReadProgress(String(pageId), progress.word, progress.total);
   },
 
-  // Entries without a word index are stale and ignored.
   loadProgress: async (pageId) => {
-    const cache = await GetCache(`page-${pageId}-read-progress`);
-    const value = cache?.value;
-    return typeof value?.word === "number"
-      ? { word: value.word, total: value.total ?? 0 }
-      : { word: 0, total: 0 };
+    const { word, total } = await GetPageReadProgress(String(pageId));
+    return { word, total };
   },
 }));

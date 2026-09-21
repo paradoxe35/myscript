@@ -226,62 +226,6 @@ export namespace notion {
 
 export namespace repository {
 	
-	export class Cache {
-	    ID: number;
-	    // Go type: time
-	    CreatedAt: any;
-	    // Go type: time
-	    UpdatedAt: any;
-	    // Go type: gorm
-	    DeletedAt: any;
-	    key: string;
-	    // Go type: datatypes
-	    value: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new Cache(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ID = source["ID"];
-	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
-	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
-	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
-	        this.key = source["key"];
-	        this.value = this.convertValues(source["value"], null);
-	    }
-	
-		convertValues(a: any, classs: any, asMap: boolean = false): any {
-		    if (!a) {
-		        return a;
-		    }
-		    if (a.slice && a.map) {
-		        return (a as any[]).map(elem => this.convertValues(elem, classs));
-		    } else if ("object" === typeof a) {
-		        if (asMap) {
-		            for (const key of Object.keys(a)) {
-		                a[key] = new classs(a[key]);
-		            }
-		            return a;
-		        }
-		        return new classs(a);
-		    }
-		    return a;
-		}
-	}
-	export class CacheValue {
-	    value: any;
-	
-	    static createFrom(source: any = {}) {
-	        return new CacheValue(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.value = source["value"];
-	    }
-	}
 	export class Config {
 	    ID: number;
 	    // Go type: time
@@ -290,18 +234,10 @@ export namespace repository {
 	    UpdatedAt: any;
 	    // Go type: gorm
 	    DeletedAt: any;
-	    TranscriberSource: string;
-	    SpeechModelID?: string;
 	    RemoteProvider: string;
 	    RemoteModel: string;
 	    RemoteBaseURL: string;
-	    AIProvider: string;
 	    AIProviders: number[];
-	    NotionApiKey?: string;
-	    OpenAIApiKey?: string;
-	    GroqApiKey?: string;
-	    LocalWhisperModel?: string;
-	    LocalWhisperGPU?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Config(source);
@@ -313,18 +249,10 @@ export namespace repository {
 	        this.CreatedAt = this.convertValues(source["CreatedAt"], null);
 	        this.UpdatedAt = this.convertValues(source["UpdatedAt"], null);
 	        this.DeletedAt = this.convertValues(source["DeletedAt"], null);
-	        this.TranscriberSource = source["TranscriberSource"];
-	        this.SpeechModelID = source["SpeechModelID"];
 	        this.RemoteProvider = source["RemoteProvider"];
 	        this.RemoteModel = source["RemoteModel"];
 	        this.RemoteBaseURL = source["RemoteBaseURL"];
-	        this.AIProvider = source["AIProvider"];
 	        this.AIProviders = source["AIProviders"];
-	        this.NotionApiKey = source["NotionApiKey"];
-	        this.OpenAIApiKey = source["OpenAIApiKey"];
-	        this.GroqApiKey = source["GroqApiKey"];
-	        this.LocalWhisperModel = source["LocalWhisperModel"];
-	        this.LocalWhisperGPU = source["LocalWhisperGPU"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -344,6 +272,24 @@ export namespace repository {
 		    }
 		    return a;
 		}
+	}
+	export class DeviceSettings {
+	    TranscriberSource: string;
+	    SpeechModelID?: string;
+	    AIProvider: string;
+	    MicInputDevice: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeviceSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.TranscriberSource = source["TranscriberSource"];
+	        this.SpeechModelID = source["SpeechModelID"];
+	        this.AIProvider = source["AIProvider"];
+	        this.MicInputDevice = source["MicInputDevice"];
+	    }
 	}
 	export class GoogleAuthToken {
 	    ID: number;
@@ -402,10 +348,10 @@ export namespace repository {
 	    html_content: string;
 	    blocks: number[];
 	    is_folder: boolean;
-	    expanded: boolean;
 	    order: number;
 	    ParentID?: string;
 	    Children: Page[];
+	    expanded: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Page(source);
@@ -421,10 +367,10 @@ export namespace repository {
 	        this.html_content = source["html_content"];
 	        this.blocks = source["blocks"];
 	        this.is_folder = source["is_folder"];
-	        this.expanded = source["expanded"];
 	        this.order = source["order"];
 	        this.ParentID = source["ParentID"];
 	        this.Children = this.convertValues(source["Children"], Page);
+	        this.expanded = source["expanded"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -444,6 +390,20 @@ export namespace repository {
 		    }
 		    return a;
 		}
+	}
+	export class ReadProgress {
+	    word: number;
+	    total: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ReadProgress(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.word = source["word"];
+	        this.total = source["total"];
+	    }
 	}
 
 }

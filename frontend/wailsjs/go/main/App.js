@@ -26,10 +26,6 @@ export function DeleteAIProvider(arg1) {
   return window['go']['main']['App']['DeleteAIProvider'](arg1);
 }
 
-export function DeleteCache(arg1) {
-  return window['go']['main']['App']['DeleteCache'](arg1);
-}
-
 export function DeleteGoogleAuthToken() {
   return window['go']['main']['App']['DeleteGoogleAuthToken']();
 }
@@ -62,12 +58,16 @@ export function GetAppVersion() {
   return window['go']['main']['App']['GetAppVersion']();
 }
 
-export function GetCache(arg1) {
-  return window['go']['main']['App']['GetCache'](arg1);
+export function GetCachedNotionPageBlocks(arg1) {
+  return window['go']['main']['App']['GetCachedNotionPageBlocks'](arg1);
 }
 
 export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
+}
+
+export function GetDeviceSettings() {
+  return window['go']['main']['App']['GetDeviceSettings']();
 }
 
 export function GetGoogleAuthToken() {
@@ -102,6 +102,14 @@ export function GetNotionPages() {
   return window['go']['main']['App']['GetNotionPages']();
 }
 
+export function GetPageLanguage(arg1) {
+  return window['go']['main']['App']['GetPageLanguage'](arg1);
+}
+
+export function GetPageReadProgress(arg1) {
+  return window['go']['main']['App']['GetPageReadProgress'](arg1);
+}
+
 export function GetSecret(arg1) {
   return window['go']['main']['App']['GetSecret'](arg1);
 }
@@ -120,10 +128,6 @@ export function GetSpeechServices() {
 
 export function HasConfiguredAIProvider() {
   return window['go']['main']['App']['HasConfiguredAIProvider']();
-}
-
-export function HasLegacyWhisperFiles() {
-  return window['go']['main']['App']['HasLegacyWhisperFiles']();
 }
 
 export function IsDevMode() {
@@ -162,10 +166,6 @@ export function RefreshSpeechModels() {
   return window['go']['main']['App']['RefreshSpeechModels']();
 }
 
-export function RemoveLegacyWhisperFiles() {
-  return window['go']['main']['App']['RemoveLegacyWhisperFiles']();
-}
-
 export function RequestMicrophoneAccess() {
   return window['go']['main']['App']['RequestMicrophoneAccess']();
 }
@@ -174,16 +174,20 @@ export function SaveAIProvider(arg1, arg2) {
   return window['go']['main']['App']['SaveAIProvider'](arg1, arg2);
 }
 
-export function SaveCache(arg1, arg2) {
-  return window['go']['main']['App']['SaveCache'](arg1, arg2);
-}
-
 export function SaveConfig(arg1) {
   return window['go']['main']['App']['SaveConfig'](arg1);
 }
 
+export function SaveDeviceSettings(arg1) {
+  return window['go']['main']['App']['SaveDeviceSettings'](arg1);
+}
+
 export function SaveLocalPage(arg1) {
   return window['go']['main']['App']['SaveLocalPage'](arg1);
+}
+
+export function SavePageReadProgress(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SavePageReadProgress'](arg1, arg2, arg3);
 }
 
 export function SaveSecret(arg1, arg2) {
@@ -196,6 +200,14 @@ export function SaveSpeechServiceAPIKey(arg1, arg2) {
 
 export function SetActiveAIProvider(arg1) {
   return window['go']['main']['App']['SetActiveAIProvider'](arg1);
+}
+
+export function SetPageExpanded(arg1, arg2) {
+  return window['go']['main']['App']['SetPageExpanded'](arg1, arg2);
+}
+
+export function SetPageLanguage(arg1, arg2) {
+  return window['go']['main']['App']['SetPageLanguage'](arg1, arg2);
 }
 
 export function StartAICompletion(arg1) {
@@ -228,4 +240,8 @@ export function TestAIProvider(arg1, arg2) {
 
 export function UpdateLocalPageOrder(arg1, arg2, arg3) {
   return window['go']['main']['App']['UpdateLocalPageOrder'](arg1, arg2, arg3);
+}
+
+export function UpdateLocalPageTitle(arg1, arg2) {
+  return window['go']['main']['App']['UpdateLocalPageTitle'](arg1, arg2);
 }

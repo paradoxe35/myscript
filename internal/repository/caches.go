@@ -4,18 +4,16 @@
 package repository
 
 import (
-	"gorm.io/datatypes"
+	"encoding/json"
+
 	"gorm.io/gorm"
 )
 
-type CacheValue struct {
-	Value interface{} `json:"value"`
-}
-
+// Small per-page values that follow the page to every machine; Value is JSON.
 type Cache struct {
 	gorm.Model
-	Key   string                          `json:"key" gorm:"uniqueIndex"`
-	Value datatypes.JSONType[*CacheValue] `json:"value"`
+	Key   string `json:"key" gorm:"uniqueIndex"`
+	Value string `json:"value"`
 }
 
 func (n *Cache) AfterCreate(tx *gorm.DB) error {
@@ -40,39 +38,39 @@ func NewCacheRepository(db *gorm.DB) *CacheRepository {
 	}
 }
 
-func (r *CacheRepository) GetCache(key string) *CacheValue {
-	var cache Cache
-
-	r.db.Where("key = ?", key).First(&cache)
-
-	return cache.Value.Data()
+func pageLanguageKey(pageID string) string {
+	return "page-" + pageID + "-language"
 }
 
-func (r *CacheRepository) SaveCache(key string, value interface{}) *Cache {
+func (r *CacheRepository) PageLanguage(pageID string) string {
+	var language string
+	r.get(pageLanguageKey(pageID), &language)
+	return language
+}
+
+func (r *CacheRepository) SetPageLanguage(pageID, code string) error {
+	return r.set(pageLanguageKey(pageID), code)
+}
+
+func (r *CacheRepository) get(key string, out any) {
 	var cache Cache
-	item := &Cache{
-		Key: key,
-		Value: datatypes.NewJSONType(&CacheValue{
-			Value: value,
-		}),
+	if err := r.db.First(&cache, "key = ?", key).Error; err != nil {
+		return
+	}
+	json.Unmarshal([]byte(cache.Value), out)
+}
+
+// The row is reused so the change log keeps one entry per key.
+func (r *CacheRepository) set(key string, value any) error {
+	raw, err := json.Marshal(value)
+	if err != nil {
+		return err
 	}
 
-	if item.Key != "" {
-		r.db.Where("key = ?", item.Key).First(&cache)
-	} else if item.ID != 0 {
-		r.db.First(&cache, item.ID)
-	}
+	var cache Cache
+	r.db.First(&cache, "key = ?", key)
 
 	cache.Key = key
-	cache.Value = item.Value
-	r.db.Save(&cache)
-
-	return &cache
-}
-
-func (r *CacheRepository) DeleteCache(key string) {
-	var cache Cache
-
-	r.db.Where("key = ?", key).First(&cache)
-	r.db.Unscoped().Delete(&cache)
+	cache.Value = string(raw)
+	return r.db.Save(&cache).Error
 }

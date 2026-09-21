@@ -19,13 +19,7 @@ type Secret struct {
 	UpdatedAt time.Time
 }
 
-const (
-	SecretNotionAPIKey = "notion.api_key"
-
-	// Kept only so older keys can be adopted.
-	SecretSpeechOpenAIAPIKey = "speech.openai.api_key"
-	SecretSpeechGroqAPIKey   = "speech.groq.api_key"
-)
+const SecretNotionAPIKey = "notion.api_key"
 
 // Keyed per service so switching does not throw away the other key.
 func SpeechServiceSecret(preset string) string {

@@ -291,7 +291,8 @@ func (s *DatabaseSynchronizer) getSourceRecords(entity interface{}) ([]interface
 	return records, nil
 }
 
-// Config is a single row, so it is updated in place rather than upserted.
+// Config is a single row, so it is updated in place rather than upserted. The
+// columns are named so a field cleared on the other machine is cleared here too.
 func (s *DatabaseSynchronizer) syncConfigStrategy(entity interface{}) error {
 	config, ok := entity.(*repository.Config)
 	if !ok {
@@ -306,7 +307,9 @@ func (s *DatabaseSynchronizer) syncConfigStrategy(entity interface{}) error {
 		return err
 	}
 
-	return s.targetDB.Model(&existing).Updates(config).Error
+	return s.targetDB.Model(&existing).
+		Select(s.getUpdateColumns(config)).
+		Updates(config).Error
 }
 
 func (s *DatabaseSynchronizer) getConflictColumns(entity interface{}, names []string) []clause.Column {

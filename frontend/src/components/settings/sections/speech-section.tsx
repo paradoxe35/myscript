@@ -1,26 +1,23 @@
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { TranscriberSource, transcriberSource } from "@/store/device-settings";
 import { useSpeechModelsStore } from "@/store/speech-models";
 import { useEffect, useState } from "react";
 import { IsWitAIAvailable } from "~wails/main/App";
-import {
-  TranscriberSource,
-  TRANSCRIBER_SOURCES,
-  useSettings,
-} from "../context";
+import { TRANSCRIBER_SOURCES, useSettings } from "../context";
 import { Hint, SettingsCard, SettingsGroup, SettingsPanel } from "../fields";
 import { SpeechModelsInputs } from "../settings-speech-models";
 import { HostedSpeech } from "./hosted-speech";
 
 export function SpeechSection() {
-  const { config, updateConfig } = useSettings();
+  const { deviceSettings, updateDeviceSettings } = useSettings();
   const fetchModels = useSpeechModelsStore((store) => store.fetchModels);
 
   // Wit.ai keys are embedded at build time; without them the option would only
   // fail once someone tried to record.
   const [witAIAvailable, setWitAIAvailable] = useState(false);
 
-  const source = (config?.TranscriberSource || "local") as TranscriberSource;
+  const source = transcriberSource(deviceSettings);
 
   useEffect(() => {
     IsWitAIAvailable().then(setWitAIAvailable);
@@ -47,11 +44,13 @@ export function SpeechSection() {
               role="radio"
               tabIndex={0}
               aria-checked={source === option.key}
-              onClick={() => updateConfig({ TranscriberSource: option.key })}
+              onClick={() =>
+                updateDeviceSettings({ TranscriberSource: option.key })
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  updateConfig({ TranscriberSource: option.key });
+                  updateDeviceSettings({ TranscriberSource: option.key });
                 }
               }}
               className={cn(

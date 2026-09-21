@@ -1,11 +1,11 @@
 import { create } from "zustand";
 import {
   CancelRecording,
-  GetCache,
   GetLanguages,
   GetMicInputDevices,
+  GetPageLanguage,
   IsRecording,
-  SaveCache,
+  SetPageLanguage,
   StartRecording,
   StopRecording,
 } from "~wails/main/App";
@@ -48,9 +48,6 @@ type TranscriberStore = {
   getPageLanguage: (pageId: string | number) => Promise<string | null>;
   setPageLanguage: (pageId: string | number, language: string) => Promise<void>;
 
-  setDefaultMicInput: (micInputDevice: stt.Device) => void;
-  getDefaultMicInput: () => Promise<stt.Device | undefined>;
-
   onTranscribedText: (callback: (text: string) => void) => EventClear;
   onTranscribeError: (callback: (error: string) => void) => EventClear;
   onRecordingStopped: (callback: (autoStopped: boolean) => void) => EventClear;
@@ -59,9 +56,6 @@ type TranscriberStore = {
   ) => EventClear;
   onMicLevel: (callback: (level: number) => void) => EventClear;
 };
-
-// Codes saved by older versions, mapped to their ISO replacements.
-const LEGACY_LANGUAGE_CODES: Record<string, string> = { iw: "he" };
 
 const ON_TRANSCRIBED_TEXT = "on-transcribed-text";
 const ON_TRANSCRIBE_ERROR = "on-transcribe-error";
@@ -161,26 +155,11 @@ export const useTranscriberStore = create<TranscriberStore>((set, get) => ({
   },
 
   getPageLanguage: async (pageId) => {
-    const language = await GetCache(`page-${pageId}-language`);
-    return LEGACY_LANGUAGE_CODES[language?.value] ?? language?.value ?? null;
+    return (await GetPageLanguage(String(pageId))) || null;
   },
 
   setPageLanguage: async (pageId, language) => {
-    SaveCache(`page-${pageId}-language`, language);
-  },
-
-  setDefaultMicInput: (micInputDevice) => {
-    SaveCache("mic-input-device", micInputDevice.Name);
-  },
-
-  getDefaultMicInput: async () => {
-    const micInputs = get().micInputDevices;
-    const micInput = await GetCache("mic-input-device");
-
-    if (micInput?.value) {
-      return micInputs.find((device) => device.Name === micInput.value);
-    }
-    return;
+    await SetPageLanguage(String(pageId), language);
   },
 
   onRecordingStopped(callback) {

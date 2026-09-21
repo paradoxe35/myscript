@@ -290,27 +290,6 @@ func TestVerifyRefusesShortChecksums(t *testing.T) {
 	}
 }
 
-func TestLegacyFilesAreListedAndRemoved(t *testing.T) {
-	store := testStore(t, nil)
-	os.WriteFile(filepath.Join(store.dir, "ggml-base.bin"), []byte("x"), 0o644)
-	os.WriteFile(filepath.Join(store.dir, "ggml-small.en.bin"), []byte("x"), 0o644)
-	os.WriteFile(filepath.Join(store.dir, "keep.gguf"), []byte("x"), 0o644)
-
-	if got := store.LegacyFiles(); len(got) != 2 {
-		t.Fatalf("LegacyFiles = %v, want the two ggml files", got)
-	}
-	removed, err := store.RemoveLegacyFiles()
-	if err != nil || removed != 2 {
-		t.Fatalf("RemoveLegacyFiles = %d, %v", removed, err)
-	}
-	if len(store.LegacyFiles()) != 0 {
-		t.Error("legacy files survived")
-	}
-	if _, err := os.Stat(filepath.Join(store.dir, "keep.gguf")); err != nil {
-		t.Error("a gguf model was removed")
-	}
-}
-
 func TestDeleteRemovesFileAndPartial(t *testing.T) {
 	store := testStore(t, nil)
 	model := Model{ID: "a/b", Filename: "m.gguf", SizeBytes: 4}

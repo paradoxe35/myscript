@@ -5,7 +5,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"log/slog"
 	"myscript/internal/permissions"
 	"myscript/internal/repository"
@@ -55,27 +54,24 @@ func (a *App) StartRecording(language string, micInputDevice string) error {
 		return errMicrophone(status)
 	}
 
-	config := a.GetConfig()
-	if config.TranscriberSource == "" {
-		return fmt.Errorf("No transcription source has been configured.")
-	}
+	settings := a.GetDeviceSettings()
 
 	opts := stt.Options{Language: language, Device: micInputDevice}
-	if config.TranscriberSource == "local" {
-		model, err := a.selectedSpeechModel(config)
+	if settings.TranscriberSource == repository.TranscriberLocal {
+		model, err := a.selectedSpeechModel(settings)
 		if err != nil {
 			return err
 		}
 		opts.ModelID = model.ID
 	} else {
-		remote, err := a.remoteTranscriber(config.TranscriberSource)
+		remote, err := a.remoteTranscriber(settings.TranscriberSource)
 		if err != nil {
 			return err
 		}
 		opts.Remote = remote
 	}
 
-	slog.Debug("Starting recording", "language", language, "source", config.TranscriberSource)
+	slog.Debug("Starting recording", "language", language, "source", settings.TranscriberSource)
 
 	go func() {
 		err := a.speech.Start(opts)
@@ -88,12 +84,12 @@ func (a *App) StartRecording(language string, micInputDevice string) error {
 	return nil
 }
 
-// Falls back to the best downloaded model and remembers it, so a first read
-// works without a trip to Settings.
-func (a *App) selectedSpeechModel(config *repository.Config) (stt.Model, error) {
+// Falls back to the best downloaded model and remembers it on this machine,
+// so a first read works without a trip to Settings.
+func (a *App) selectedSpeechModel(settings repository.DeviceSettings) (stt.Model, error) {
 	store := a.speech.Store()
-	if config.SpeechModelID != nil {
-		if model, ok := stt.FindModel(*config.SpeechModelID); ok && store.Downloaded(model) {
+	if settings.SpeechModelID != nil {
+		if model, ok := stt.FindModel(*settings.SpeechModelID); ok && store.Downloaded(model) {
 			return model, nil
 		}
 	}
@@ -102,8 +98,8 @@ func (a *App) selectedSpeechModel(config *repository.Config) (stt.Model, error) 
 	if !ok || !store.Downloaded(best) {
 		return stt.Model{}, stt.ErrNoModel
 	}
-	config.SpeechModelID = &best.ID
-	a.SaveConfig(config)
+	settings.SpeechModelID = &best.ID
+	a.SaveDeviceSettings(settings)
 	return best, nil
 }
 

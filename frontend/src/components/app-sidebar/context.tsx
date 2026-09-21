@@ -210,17 +210,21 @@ function useSidebarItems() {
         return parents;
       };
 
-      const activePageParents = getParents(activePageId);
-      activePageParents.forEach((parentId) => {
+      const collapsedFolders: string[] = [];
+
+      getParents(activePageId).forEach((parentId) => {
         const item = items[parentId as any];
         const page = item.data as repository.Page;
         item.isExpanded = true;
 
-        if (page && page.is_folder && !page.expanded) {
-          page.expanded = true;
-          localPagesStore.savePage(page);
+        if (page?.is_folder && !page.expanded) {
+          collapsedFolders.push(page.ID);
         }
       });
+
+      if (collapsedFolders.length) {
+        localPagesStore.expandPages(collapsedFolders);
+      }
     }
 
     setPagesTree({ rootId, items });

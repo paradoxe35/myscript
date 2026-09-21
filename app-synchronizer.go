@@ -85,8 +85,6 @@ func (a *App) StartSynchronizer() error {
 	a.synchronizer.sync.SetDriveService(googleDriveService)
 
 	a.synchronizer.sync.SetOnSyncSuccess(func(affectedTables database.AffectedTables) {
-		// A restored backup can carry legacy credentials.
-		repository.AdoptLegacyKeys(a.mainDB, a.unSyncedDB)
 		runtime.EventsEmit(a.ctx, "on-sync-success", affectedTables)
 	})
 
