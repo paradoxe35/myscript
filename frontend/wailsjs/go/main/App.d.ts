@@ -81,6 +81,8 @@ export function IsWitAIAvailable():Promise<boolean>;
 
 export function ListAIModels(arg1:main.AIProvider,arg2:string):Promise<Array<ai.ModelInfo>>;
 
+export function OpenMicrophoneSettings():Promise<void>;
+
 export function PerformUpdate():Promise<void>;
 
 export function RefreshGoogleAuthToken():Promise<repository.GoogleAuthToken>;
@@ -88,6 +90,8 @@ export function RefreshGoogleAuthToken():Promise<repository.GoogleAuthToken>;
 export function RefreshSpeechModels():Promise<void>;
 
 export function RemoveLegacyWhisperFiles():Promise<number>;
+
+export function RequestMicrophoneAccess():Promise<string>;
 
 export function SaveAIProvider(arg1:main.AIProvider,arg2:string):Promise<void>;
 

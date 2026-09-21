@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"myscript/internal/permissions"
 	"myscript/internal/repository"
 	"myscript/internal/stt"
 	"myscript/internal/stt/ffi"
@@ -50,6 +51,10 @@ func (a *App) speechListener() stt.Listener {
 
 // Returns once accepted; state changes and failures arrive as events.
 func (a *App) StartRecording(language string, micInputDevice string) error {
+	if status := permissions.RequestMicrophone(); status != permissions.MicrophoneGranted {
+		return errMicrophone(status)
+	}
+
 	config := a.GetConfig()
 	if config.TranscriberSource == "" {
 		return fmt.Errorf("No transcription source has been configured.")
@@ -119,4 +124,21 @@ func (a *App) IsRecording() bool {
 
 func (a *App) GetMicInputDevices() []stt.Device {
 	return ffi.InputDevices()
+}
+
+func errMicrophone(status permissions.MicrophoneStatus) error {
+	if status == permissions.MicrophoneRestricted {
+		return errors.New("Microphone access is restricted on this Mac.")
+	}
+	return errors.New("Microphone access was denied. Allow MyScript in System Settings, Privacy & Security, Microphone.")
+}
+
+// RequestMicrophoneAccess shows the system prompt when undecided and reports
+// the outcome, so the window can offer the settings pane on a refusal.
+func (a *App) RequestMicrophoneAccess() string {
+	return string(permissions.RequestMicrophone())
+}
+
+func (a *App) OpenMicrophoneSettings() {
+	permissions.OpenMicrophoneSettings()
 }

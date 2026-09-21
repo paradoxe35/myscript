@@ -146,6 +146,10 @@ export function ListAIModels(arg1, arg2) {
   return window['go']['main']['App']['ListAIModels'](arg1, arg2);
 }
 
+export function OpenMicrophoneSettings() {
+  return window['go']['main']['App']['OpenMicrophoneSettings']();
+}
+
 export function PerformUpdate() {
   return window['go']['main']['App']['PerformUpdate']();
 }
@@ -160,6 +164,10 @@ export function RefreshSpeechModels() {
 
 export function RemoveLegacyWhisperFiles() {
   return window['go']['main']['App']['RemoveLegacyWhisperFiles']();
+}
+
+export function RequestMicrophoneAccess() {
+  return window['go']['main']['App']['RequestMicrophoneAccess']();
 }
 
 export function SaveAIProvider(arg1, arg2) {

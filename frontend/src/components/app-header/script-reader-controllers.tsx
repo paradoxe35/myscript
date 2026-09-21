@@ -6,6 +6,10 @@ import { useTranscriberStore } from "@/store/transcriber";
 import SRInputsModal from "../script-reader-inputs-modal";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+import {
+  OpenMicrophoneSettings,
+  RequestMicrophoneAccess,
+} from "~wails/main/App";
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
   const { state, modelName, micLevel, startRecording, stopRecording } =
@@ -20,7 +24,20 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
     );
   const hasPage = useActivePageStore((store) => store.page !== null);
 
-  const handleStartReading = (languageCode: string, micInputDevice: string) => {
+  // macOS asks for the microphone on first use; a refusal is only fixable in
+  // System Settings, so the toast leads there.
+  const handleStartReading = async (
+    languageCode: string,
+    micInputDevice: string
+  ) => {
+    const access = await RequestMicrophoneAccess();
+    if (access !== "granted") {
+      toast.error("MyScript needs the microphone to follow your reading.", {
+        action: { label: "Open Settings", onClick: OpenMicrophoneSettings },
+      });
+      return;
+    }
+
     startRecording(languageCode, micInputDevice).catch((err) => {
       console.error("Error starting recording:", err);
       toast.error(String(err || "Error starting recording"));
