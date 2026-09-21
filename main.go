@@ -13,10 +13,10 @@ import (
 	"myscript/internal/stt"
 	"myscript/internal/stt/ffi"
 	"myscript/internal/synchronizer"
-	"myscript/internal/updater"
 	"myscript/internal/utils"
 	"strings"
 
+	"github.com/paradoxe35/go-updater"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -50,7 +50,15 @@ func main() {
 
 	slog.SetDefault(logger.Slog)
 
-	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
+	appUpdater, err := updater.New(updater.Config{
+		Owner:   REPO_OWNER,
+		Repo:    REPO_NAME,
+		Version: strings.TrimSpace(AppVersion),
+		Logger:  logger.Slog,
+	})
+	if err != nil {
+		panic(err)
+	}
 
 	stt.Init(filesystem.HOME_DIR)
 	stt.StartRefreshing()

@@ -8,9 +8,9 @@ import (
 	"myscript/internal/google"
 	"myscript/internal/stt"
 	"myscript/internal/synchronizer"
-	"myscript/internal/updater"
 	"myscript/internal/utils"
 
+	"github.com/paradoxe35/go-updater"
 	"gorm.io/gorm"
 )
 
