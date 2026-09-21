@@ -14,8 +14,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// UNSYNCED MODEL
-
 type ChangeLog struct {
 	gorm.Model
 	ChangeID  string `gorm:"uniqueIndex"`
@@ -63,8 +61,7 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 		Synced:    false,
 	}
 
-	// One statement: reading first and saving after races another writer into
-	// the unique index, and that error would surface on the user's own save.
+	// One statement: a read-then-save races another writer into the unique index.
 	return unSyncedDB.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "change_id"}},
 		DoUpdates: clause.Assignments(map[string]any{
@@ -76,9 +73,8 @@ func logChange(tx *gorm.DB, model interface{}, operation string) error {
 	}).Create(&change).Error
 }
 
-// InvalidateStaleChangeLogs drops local changes for rows a pull just rewrote.
-// Without it a local delete made before the pull would be pushed afterwards and
-// erase the record everywhere, having already been overruled here.
+// Drops local changes for rows a pull just rewrote, so an overruled local
+// delete is not pushed afterwards.
 func (r *ChangeLogRepository) InvalidateStaleChangeLogs(affected map[string][]string) int64 {
 	var invalidated int64
 

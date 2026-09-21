@@ -54,12 +54,10 @@ func (w *WitTranscriber) Transcribe(chunk []byte) string {
 		return ""
 	}
 
-	// Add headers
 	for key, value := range w.headers {
 		req.Header.Add(key, value)
 	}
 
-	// Add query parameters
 	q := req.URL.Query()
 	q.Add("verbose", "true")
 	req.URL.RawQuery = q.Encode()
@@ -83,7 +81,6 @@ func (w *WitTranscriber) Transcribe(chunk []byte) string {
 		return ""
 	}
 
-	// Check for text in both new and legacy fields
 	if witResp.Text != "" {
 		return witResp.Text
 	}
@@ -95,7 +92,6 @@ func (w *WitTranscriber) Close() {
 }
 
 func splitAudioBytes(audioData []byte, sampleRate int, channels int, bytesPerSample int, chunkDurationSeconds int) ([][]byte, error) {
-	// Validate input parameters
 	if len(audioData) == 0 {
 		return nil, fmt.Errorf("empty audio data")
 	}
@@ -103,24 +99,18 @@ func splitAudioBytes(audioData []byte, sampleRate int, channels int, bytesPerSam
 		return nil, fmt.Errorf("invalid audio parameters")
 	}
 
-	// Calculate bytes per chunk
 	bytesPerSecond := sampleRate * channels * bytesPerSample
 	bytesPerChunk := bytesPerSecond * chunkDurationSeconds
 
-	// Calculate total number of chunks
-	totalChunks := (len(audioData) + bytesPerChunk - 1) / bytesPerChunk // Round up division
-
-	// Create slice to hold all chunks
+	totalChunks := (len(audioData) + bytesPerChunk - 1) / bytesPerChunk
 	chunks := make([][]byte, 0, totalChunks)
 
-	// Split audio data into chunks
 	for start := 0; start < len(audioData); start += bytesPerChunk {
 		end := start + bytesPerChunk
 		if end > len(audioData) {
 			end = len(audioData)
 		}
 
-		// Create a new slice for this chunk
 		chunk := make([]byte, end-start)
 		copy(chunk, audioData[start:end])
 		chunks = append(chunks, chunk)
@@ -130,26 +120,20 @@ func splitAudioBytes(audioData []byte, sampleRate int, channels int, bytesPerSam
 }
 
 func preprocessAudio(r io.ReadSeeker) ([]byte, error) {
-	// Create a new decoder
 	decoder := wav.NewDecoder(r)
 
-	// Read the full buffer
 	buf, err := decoder.FullPCMBuffer()
 	if err != nil {
 		return nil, err
 	}
 
-	// Calculate the number of samples in the output
 	outputSamples := len(buf.Data) * SampleRate / (buf.Format.SampleRate * buf.Format.NumChannels)
 
-	// Create a slice to hold the output samples
 	outputData := make([]int16, outputSamples)
 
-	// Resample and convert the audio
 	for i := 0; i < len(buf.Data); i += buf.Format.NumChannels {
 		var sample int
 		if buf.Format.NumChannels > 1 {
-			// Convert to mono by averaging channels
 			sample = 0
 			for ch := 0; ch < buf.Format.NumChannels; ch++ {
 				sample += buf.Data[i+ch]
@@ -159,15 +143,12 @@ func preprocessAudio(r io.ReadSeeker) ([]byte, error) {
 			sample = buf.Data[i]
 		}
 
-		// Resample
 		targetIndex := i * SampleRate / (buf.Format.SampleRate * buf.Format.NumChannels)
 		if targetIndex < len(outputData) {
-			// Convert to int16 and apply any necessary scaling
 			outputData[targetIndex] = int16(sample)
 		}
 	}
 
-	// Convert int16 slice to bytes
 	outputBytes := make([]byte, len(outputData)*2)
 	for i, sample := range outputData {
 		binary.LittleEndian.PutUint16(outputBytes[i*2:], uint16(sample))

@@ -10,8 +10,7 @@ import (
 	"time"
 )
 
-// fakeEngine records every command in order, which is what the service's
-// contract with Rust is about, and replays what Rust would call back.
+// fakeEngine records every command in order and replays what Rust would call back.
 type fakeEngine struct {
 	mu        sync.Mutex
 	log       []string

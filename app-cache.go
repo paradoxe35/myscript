@@ -5,8 +5,6 @@ package main
 
 import "myscript/internal/repository"
 
-// --- Cache ---
-
 func (a *App) GetCache(key string) *repository.CacheValue {
 	return repository.NewCacheRepository(a.mainDB).
 		GetCache(key)

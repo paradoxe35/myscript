@@ -48,8 +48,7 @@ func (a *App) speechListener() stt.Listener {
 	}
 }
 
-// StartRecording returns once the request is accepted; loading and listening
-// are reported through on-transcriber-state, failures through on-transcribe-error.
+// Returns once accepted; state changes and failures arrive as events.
 func (a *App) StartRecording(language string, micInputDevice string) error {
 	config := a.GetConfig()
 	if config.TranscriberSource == "" {
@@ -84,8 +83,8 @@ func (a *App) StartRecording(language string, micInputDevice string) error {
 	return nil
 }
 
-// selectedSpeechModel falls back to the best downloaded model when none is
-// chosen yet, and remembers it, so a first read works without a trip to Settings.
+// Falls back to the best downloaded model and remembers it, so a first read
+// works without a trip to Settings.
 func (a *App) selectedSpeechModel(config *repository.Config) (stt.Model, error) {
 	store := a.speech.Store()
 	if config.SpeechModelID != nil {
@@ -108,8 +107,7 @@ func (a *App) StopRecording() error {
 	return a.speech.Stop()
 }
 
-// CancelRecording ends the take and drops what has not been delivered, for
-// when the text has nowhere to go any more.
+// Ends the take and drops undelivered text.
 func (a *App) CancelRecording() error {
 	slog.Debug("Cancelling recording")
 	return a.speech.Cancel()

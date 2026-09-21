@@ -17,7 +17,7 @@ var (
 	ErrRecording = errors.New("already recording")
 )
 
-// Callbacks is what the engine reports from its own threads, in the order it happened.
+// Reported from the engine's own threads, in the order it happened.
 type Callbacks struct {
 	Text    func(text string)
 	Audio   func(pcm []byte)
@@ -26,8 +26,8 @@ type Callbacks struct {
 	Error   func(message string)
 }
 
-// Engine is the capture and transcription backend. Load blocks until the model
-// is resident; Stop blocks until the last utterance has been delivered.
+// Load blocks until the model is resident; Stop blocks until the last
+// utterance has been delivered.
 type Engine interface {
 	SetCallbacks(Callbacks)
 	Load(path string) error
@@ -50,7 +50,7 @@ const (
 	StateListening State = "listening"
 )
 
-// Listener is what the host hears; every call comes from one goroutine, in order.
+// Every call comes from one goroutine, in order.
 type Listener struct {
 	State   func(state State, model Model)
 	Text    func(text string)
@@ -59,7 +59,7 @@ type Listener struct {
 	Stopped func(auto bool)
 }
 
-// Transcriber turns a WAV utterance into text somewhere else, such as a remote API.
+// Turns a WAV utterance into text elsewhere, such as a remote API.
 type Transcriber func(wav []byte, language string) (string, error)
 
 type Options struct {
@@ -73,8 +73,8 @@ type Options struct {
 	Remote Transcriber
 }
 
-// Service runs one take at a time. The model is loaded for the take and freed
-// when it ends, so memory is only held while the user is reading.
+// Runs one take at a time. The model is loaded for the take and freed when it
+// ends, so memory is only held while the user is reading.
 type Service struct {
 	store     *Store
 	newEngine func() (Engine, error)
@@ -92,8 +92,8 @@ type Service struct {
 	results chan *result
 }
 
-// result is one slot in the delivery order: a transcript, a remote request
-// still in flight, or the end of the take.
+// One slot in the delivery order: a transcript, a remote request still in
+// flight, or the end of the take.
 type result struct {
 	text    string
 	err     error
@@ -142,7 +142,7 @@ func (s *Service) ensureEngine() (Engine, error) {
 	return engine, nil
 }
 
-// Start blocks through the model load and returns once the microphone is open.
+// Blocks through the model load and returns once the microphone is open.
 func (s *Service) Start(opts Options) error {
 	s.mu.Lock()
 	if s.phase != StateIdle {
@@ -229,7 +229,7 @@ func (s *Service) load(engine Engine, model Model, path, language string) error 
 	return nil
 }
 
-// settle returns to idle after a start that did not reach listening.
+// Returns to idle after a start that did not reach listening.
 func (s *Service) settle(engine Engine) {
 	s.mu.Lock()
 	loaded := s.loaded
@@ -243,7 +243,6 @@ func (s *Service) settle(engine Engine) {
 	s.listener.State(StateIdle, Model{})
 }
 
-// modelPath refuses early on the cases a load could not recover from anyway.
 func (s *Service) modelPath(id string) (Model, string, error) {
 	if id == "" {
 		return Model{}, "", ErrNoModel
@@ -258,13 +257,13 @@ func (s *Service) modelPath(id string) (Model, string, error) {
 	return model, s.store.Path(model), nil
 }
 
-// Stop ends the take; the engine's stopped callback finishes it. A take still
-// loading its model is abandoned once the load returns.
+// The engine's stopped callback finishes the take. A take still loading its
+// model is abandoned once the load returns.
 func (s *Service) Stop() error {
 	return s.end(Engine.Stop)
 }
 
-// Cancel ends the take and drops whatever has not been delivered yet.
+// Ends the take and drops whatever has not been delivered yet.
 func (s *Service) Cancel() error {
 	return s.end(Engine.Cancel)
 }
@@ -302,8 +301,8 @@ func (s *Service) onText(text string) {
 	s.results <- &result{text: text, done: done}
 }
 
-// onAudio sends the utterance out at once and reserves its place in the
-// order, so a slow request never lets a later one overtake it.
+// Sends the utterance out at once and reserves its place in the order, so a
+// slow request never lets a later one overtake it.
 func (s *Service) onAudio(pcm []byte) {
 	s.mu.Lock()
 	remote, language := s.remote, s.language
@@ -361,8 +360,8 @@ func (s *Service) deliver() {
 	}
 }
 
-// finish runs once every utterance of the take is out, so the unload never
-// races a transcription and the host hears "stopped" last.
+// Runs once every utterance of the take is out, so the unload never races a
+// transcription and the host hears "stopped" last.
 func (s *Service) finish(auto bool) {
 	s.mu.Lock()
 	engine := s.engine

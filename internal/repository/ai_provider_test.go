@@ -197,7 +197,7 @@ func TestProviderSettingsSurviveAReload(t *testing.T) {
 func TestActiveFallsBackWhenTheProviderIsGone(t *testing.T) {
 	mainDB, unsynced := newStores(t)
 
-	// A provider retired between releases, such as a build where Claude was built in.
+	// A provider retired between releases.
 	NewConfigRepository(mainDB).SaveConfig(&Config{AIProvider: "anthropic"})
 
 	if active := NewAIProviderRepository(mainDB, unsynced).Active(); active != ai.KindOpenAI {
@@ -219,8 +219,7 @@ func TestOpenRouterIsBuiltIn(t *testing.T) {
 	}
 }
 
-// A Config row can hold the JSON literal null, which decodes to a nil map
-// rather than an error. Writing to it used to panic on the first save.
+// A JSON null decodes to a nil map; writing to it must not panic.
 func TestSaveWhenTheProvidersColumnHoldsNull(t *testing.T) {
 	for _, raw := range []string{"null", "", "{}", "not json"} {
 		t.Run(raw, func(t *testing.T) {

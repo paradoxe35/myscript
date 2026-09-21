@@ -5,5 +5,5 @@
 
 package utils
 
-// devBuild is set by the tag `wails dev` compiles with.
+// Set by the tag `wails dev` compiles with.
 const devBuild = true

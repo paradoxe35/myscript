@@ -11,15 +11,12 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 )
 
-// Machine is what can cheaply be learned about the computer, used to rank
-// models by whether they'll keep up.
 type Machine struct {
 	Cores    int
 	MemoryMB int
 }
 
-// referenceCores matches the slowest machine the catalogue's realtime factors
-// were measured on, so scaling from it errs toward caution.
+// The slowest machine the catalogue's realtime factors were measured on.
 const referenceCores = 8
 
 var (
@@ -42,8 +39,7 @@ func totalMemoryMB() int {
 	return int(v.Total / (1 << 20))
 }
 
-// EstimatedRealtime scales the catalogue's measured factor by core count. A
-// heuristic, not a benchmark: cores say nothing about clock speed or vector width.
+// A heuristic: cores say nothing about clock speed or vector width.
 func (m Model) EstimatedRealtime(host Machine) float64 {
 	if m.RealtimeFactor <= 0 || host.Cores <= 0 {
 		return 0
@@ -51,20 +47,17 @@ func (m Model) EstimatedRealtime(host Machine) float64 {
 	return m.RealtimeFactor * float64(host.Cores) / referenceCores
 }
 
-// Memory needed beyond the file itself. Loading maps the weights, then a
-// batch run allocates compute buffers (KV cache, activations, the audio
-// encoder's scratch) that scale with the model, roughly half its size again,
-// plus a few hundred MB that every run needs regardless of size.
+// Beyond the file itself, a run allocates compute buffers of roughly half the
+// model's size plus a few hundred MB regardless of size.
 const (
 	inferenceOverheadRatio = 1.5
 	inferenceFixedMB       = 512
-	// The rest of RAM belongs to the OS, the browser view and whatever else is
-	// open; past this share the machine swaps and the "fast" label is a lie.
+	// The rest belongs to the OS and the browser view; past this share the
+	// machine swaps.
 	memoryBudgetShare = 0.6
 )
 
-// FitsMemory checks the working set, not the download: the file is only the
-// floor of what a transcription allocates.
+// Checks the working set, not the download.
 func (m Model) FitsMemory(host Machine) bool {
 	if host.MemoryMB <= 0 {
 		return true
@@ -73,13 +66,12 @@ func (m Model) FitsMemory(host Machine) bool {
 	return needed < float64(host.MemoryMB)*memoryBudgetShare
 }
 
-// Fit is how a model is expected to behave on this machine.
 type Fit int
 
 const (
 	FitComfortable Fit = iota
-	// No measured realtime factor (a user-dropped file); ranks below known-good
-	// but "slow" would be a claim the catalogue can't support.
+	// No measured realtime factor (a user-dropped file); "slow" would be a
+	// claim the catalogue cannot support.
 	FitUnknown
 	FitSlow
 	FitTooLarge
@@ -111,7 +103,6 @@ func (f Fit) String() string {
 	}
 }
 
-// Label describes how a model is expected to keep up on this machine.
 func (m Model) FitLabel(host Machine) string {
 	switch m.Fit(host) {
 	case FitTooLarge:
@@ -128,8 +119,7 @@ func (m Model) FitLabel(host Machine) string {
 	}
 }
 
-// RankForMachine puts what is already downloaded first, then what this machine
-// can comfortably run, then the rest by accuracy.
+// Downloaded first, then what runs comfortably, then by accuracy.
 func RankForMachine(models []Model, host Machine, downloaded func(Model) bool) {
 	sort.SliceStable(models, func(i, j int) bool {
 		a, b := models[i], models[j]
@@ -149,8 +139,7 @@ func RankForMachine(models []Model, host Machine, downloaded func(Model) bool) {
 	})
 }
 
-// Suggested is the model to propose for this machine regardless of what is
-// downloaded: the most accurate one it runs comfortably, catalogue picks first.
+// The most accurate model that runs comfortably, regardless of downloads.
 func Suggested(models []Model, host Machine) (Model, bool) {
 	var best Model
 	found := false
@@ -175,7 +164,7 @@ func prefer(a, b Model) bool {
 	return a.SizeBytes < b.SizeBytes
 }
 
-// Recommended is the best downloaded model, else the best the machine can run.
+// The best downloaded model, else the best the machine can run.
 func Recommended(models []Model, host Machine, downloaded func(Model) bool) (Model, bool) {
 	ranked := append([]Model(nil), models...)
 	RankForMachine(ranked, host, downloaded)

@@ -1,8 +1,7 @@
 // Copyright (c) 2024
 // Licensed under the MIT License. See LICENSE file in the root directory.
 
-// Package languages is the one list of spoken languages shared by every
-// transcriber, local or remote.
+// Package languages is the one list of spoken languages shared by every transcriber.
 package languages
 
 import (
@@ -18,8 +17,8 @@ type Language struct {
 
 var ErrInvalid = errors.New("invalid language")
 
-// Whisper is what the OpenAI and Groq Whisper endpoints accept, as ISO 639-1.
-// Filipino stays "tl": Whisper's own vocabulary predates "fil".
+// What the Whisper endpoints accept, as ISO 639-1. Filipino stays "tl":
+// Whisper's vocabulary predates "fil".
 var Whisper = Named([]string{
 	"en", "ar", "hy", "az", "eu", "be", "bn", "bg", "ca", "zh", "hr", "cs", "da", "nl", "et",
 	"tl", "fi", "fr", "gl", "ka", "de", "el", "gu", "he", "hi", "hu", "is", "id", "ga", "it",
@@ -27,7 +26,7 @@ var Whisper = Named([]string{
 	"sr", "sk", "sl", "es", "sw", "sv", "ta", "te", "th", "tr", "uk", "ur", "vi", "cy", "yi",
 })
 
-// All is every language with a known name, for services that accept any.
+// Every language with a known name, for services that accept any.
 func All() []Language {
 	codes := make([]string, 0, len(names))
 	for code := range names {
@@ -36,7 +35,7 @@ func All() []Language {
 	return Named(codes)
 }
 
-// Validate accepts only what the Whisper endpoints take.
+// Only what the Whisper endpoints take.
 func Validate(code string) error {
 	for _, language := range Whisper {
 		if language.Code == code {
@@ -46,7 +45,7 @@ func Validate(code string) error {
 	return ErrInvalid
 }
 
-// Name resolves a code to its English name, or the code itself when unknown.
+// The English name, or the code itself when unknown.
 func Name(code string) string {
 	if name, ok := names[strings.ToLower(code)]; ok {
 		return name
@@ -54,7 +53,7 @@ func Name(code string) string {
 	return code
 }
 
-// Named turns model language codes into a list sorted by name, English first.
+// Sorted by name, English first.
 func Named(codes []string) []Language {
 	languages := make([]Language, 0, len(codes))
 	for _, code := range codes {
@@ -69,7 +68,7 @@ func Named(codes []string) []Language {
 	return languages
 }
 
-// names covers the codes the model catalogue uses; unknown codes display as-is.
+// Unknown codes display as-is.
 var names = map[string]string{
 	"en": "English", "fr": "French", "es": "Spanish", "de": "German",
 	"it": "Italian", "pt": "Portuguese", "nl": "Dutch", "pl": "Polish",

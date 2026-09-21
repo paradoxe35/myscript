@@ -99,7 +99,6 @@ export const useActivePageStore = create(
       fetchPageBlocks() {
         const activePage = get().page;
 
-        // Refresh local page blocks
         if (activePage?.__typename === "local_page") {
           GetLocalPage(activePage.page.ID).then((localPage) => {
             set({
@@ -113,9 +112,7 @@ export const useActivePageStore = create(
           });
         }
 
-        // Refresh notion page blocks
         if (activePage?.__typename === "notion_page") {
-          // use Cache for notion page blocks
           const cacheKey = `${activePage?.__typename}:${activePage?.page.id}`;
 
           GetCache(cacheKey).then((cache) => {

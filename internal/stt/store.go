@@ -21,8 +21,7 @@ import (
 
 const (
 	partialSuffix = ".partial"
-	// A download delivering nothing for this long is treated as dead; a stalled
-	// TCP connection can hang without erroring.
+	// A stalled TCP connection can hang without erroring.
 	stallTimeout  = 60 * time.Second
 	progressEvery = 200 * time.Millisecond
 )
@@ -46,7 +45,7 @@ type Store struct {
 	dir    string
 	client *http.Client
 	stall  time.Duration
-	// urlFor is a seam for tests; production always uses the pinned HF URL.
+	// A seam for tests.
 	urlFor func(Model) string
 
 	mu       sync.Mutex
@@ -56,8 +55,8 @@ type Store struct {
 func NewStore(dir string) *Store {
 	return &Store{
 		dir: dir,
-		// No overall timeout: a large model on a slow line isn't an error; the
-		// stall watchdog handles dead transfers.
+		// No overall timeout: a slow line is not an error; the stall watchdog
+		// handles dead transfers.
 		client:   &http.Client{},
 		stall:    stallTimeout,
 		urlFor:   Model.DownloadURL,
@@ -105,8 +104,7 @@ func (s *Store) Delete(model Model) error {
 	return nil
 }
 
-// Download resumes an interrupted attempt and verifies the checksum before
-// accepting the file. report may be nil.
+// Resumes an interrupted attempt and verifies the checksum. report may be nil.
 func (s *Store) Download(ctx context.Context, model Model, report func(Progress)) error {
 	if s.Downloaded(model) {
 		return nil
@@ -171,8 +169,7 @@ func (s *Store) fetch(ctx context.Context, model Model, partial string, report f
 		os.Remove(partial)
 	}
 
-	// The watchdog cancels the request when no data arrives for a while; a
-	// stalled TCP connection can otherwise block a read forever.
+	// The watchdog cancels the request when no data arrives for a while.
 	parent := ctx
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -308,8 +305,7 @@ func validSHA256(sum string) bool {
 	return err == nil
 }
 
-// LegacyFiles are the ggml ".bin" models of earlier releases, which the
-// engine cannot read.
+// ggml ".bin" models, which the engine cannot read.
 func (s *Store) LegacyFiles() []string {
 	matches, _ := filepath.Glob(filepath.Join(s.dir, "ggml-*.bin"))
 	return matches

@@ -1,8 +1,8 @@
 // Copyright (c) 2024
 // Licensed under the MIT License. See LICENSE file in the root directory.
 
-// Package secrets encrypts credentials at rest. The key is derived from the
-// machine, so a database file copied elsewhere carries nothing usable.
+// Package secrets encrypts credentials at rest with a machine-derived key, so
+// a copied database file carries nothing usable.
 package secrets
 
 import (

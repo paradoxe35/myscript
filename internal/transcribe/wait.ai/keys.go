@@ -10,8 +10,7 @@ import (
 	"sync"
 )
 
-// rawKeys is set by keys_embedded.go, generated from the WITAI_KEYS environment
-// variable by scripts/embed-witai-keys.js. Empty means no keys were embedded.
+// Set by the generated keys_embedded.go; empty means no keys were embedded.
 var rawKeys = ""
 
 // A Wit.ai app serves one language, so there is a key per supported language.
@@ -20,8 +19,7 @@ type ApiKey struct {
 	Language string `json:"lang"`
 }
 
-// newParseKeys builds the memoized parser; a function so tests can rebind
-// rawKeys and get a fresh cache.
+// A function so tests can rebind rawKeys and get a fresh cache.
 func newParseKeys() func() []ApiKey {
 	return sync.OnceValue(func() []ApiKey {
 		if rawKeys == "" {
@@ -46,7 +44,6 @@ func newParseKeys() func() []ApiKey {
 
 var parseKeys = newParseKeys()
 
-// Available reports whether this build can transcribe with Wit.ai.
 func Available() bool {
 	return len(parseKeys()) > 0
 }
@@ -60,8 +57,7 @@ func Token(language string) (string, bool) {
 	return "", false
 }
 
-// GetSupportedLanguages lists what this build can transcribe, derived from the
-// embedded keys so adding one is the only step a new language needs.
+// Derived from the embedded keys, so adding one is all a new language needs.
 func GetSupportedLanguages() []languages.Language {
 	keys := parseKeys()
 

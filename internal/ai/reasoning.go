@@ -15,8 +15,8 @@ const (
 	reasoningOpenRouter
 )
 
-// OpenRouter is the one OpenAI-compatible gateway with its own reasoning shape,
-// and a custom provider can point at it too, so the host decides.
+// OpenRouter has its own reasoning shape, and a custom provider can point at
+// it too, so the host decides.
 func reasoningStyleOf(baseURL string) reasoningStyle {
 	if containsFold(baseURL, "openrouter.ai") {
 		return reasoningOpenRouter
@@ -24,8 +24,8 @@ func reasoningStyleOf(baseURL string) reasoningStyle {
 	return reasoningOpenAIEffort
 }
 
-// refusedReasoning remembers endpoint/model pairs that rejected the parameter,
-// so the wasted round trip happens once per launch instead of every request.
+// Endpoint/model pairs that rejected the parameter, so the wasted round trip
+// happens once per launch.
 var refusedReasoning sync.Map
 
 func withReasoningFallback(settings Settings, send func(lowReasoning bool) error) error {

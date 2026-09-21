@@ -24,8 +24,8 @@ import (
 
 const MAX_CHANGE_LOGS_APPLY_FAILURES = 5
 
-// Drive rate limits a burst, and a grant that is refused this many times in a
-// row is not going to start working on the next tick.
+// Drive rate limits a burst; a grant refused this many times in a row will
+// not recover on the next tick.
 const PUSH_CONCURRENCY = 8
 const MAX_CONSECUTIVE_AUTH_FAILURES = 3
 const MAX_SNAPSHOT_APPLY_FAILURES = 10
@@ -34,7 +34,6 @@ const SCHEDULER_INTERVAL = time.Second * 10
 type Synchronizer struct {
 	mainDB *gorm.DB
 
-	// Repositories
 	syncStateRepository          *repository.SyncStateRepository
 	changeLogRepository          *repository.ChangeLogRepository
 	remoteApplyFailureRepository *repository.RemoteApplyFailureRepository
@@ -55,7 +54,6 @@ type Synchronizer struct {
 	lastSnapshotCreatedTime *time.Time
 }
 
-// Option
 type Option func(s *Synchronizer)
 
 func WithMainDatabase(mainDB *gorm.DB) Option {
@@ -88,7 +86,6 @@ func WithRemoteApplyFailureRepository(repository *repository.RemoteApplyFailureR
 	}
 }
 
-// Init
 func NewSynchronizer(options ...Option) *Synchronizer {
 	s := &Synchronizer{}
 
@@ -116,16 +113,15 @@ func (s *Synchronizer) SetOnSyncFailure(onSyncFailure func(err error)) {
 	s.onSyncFailure = onSyncFailure
 }
 
-// SetOnAuthLost is called once the grant has been refused often enough that
-// only signing in again will help.
+// Called once the grant has been refused often enough that only signing in
+// again will help.
 func (s *Synchronizer) SetOnAuthLost(onAuthLost func(err error)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.onAuthLost = onAuthLost
 }
 
-// drive is read through the mutex because the frontend can swap the service in
-// while the scheduler goroutine is mid-cycle.
+// The frontend can swap the service in while the scheduler is mid-cycle.
 func (s *Synchronizer) drive() DriveService {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -138,7 +134,6 @@ func (s *Synchronizer) callbacks() (func(database.AffectedTables), func(error)) 
 	return s.onSyncSuccess, s.onSyncFailure
 }
 
-// IsSyncing reports whether a sync cycle is running right now.
 func (s *Synchronizer) IsSyncing() bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -153,9 +148,8 @@ func (s *Synchronizer) StartScheduler() error {
 		return errors.New("drive service is not initialized")
 	}
 
-	// Replacing a running scheduler: the old goroutine sees a stop it can
-	// select on. Stopping a ticker never closes its channel, so a loop ranging
-	// over one would have parked here forever.
+	// A replaced scheduler sees a stop it can select on; a stopped ticker never
+	// closes its channel.
 	if s.stop != nil {
 		close(s.stop)
 	}
@@ -194,16 +188,15 @@ func (s *Synchronizer) scheduler(stop chan struct{}) {
 				continue
 			}
 			if utils.HasInternet() {
-				s.schedulerWorker() // run the sync
+				s.schedulerWorker()
 			}
 			s.endSync()
 		}
 	}
 }
 
-// beginSync claims the right to run one cycle. It fails when a cycle is still
-// running or when this goroutine has been replaced by a newer scheduler, so a
-// restart never leaves two workers writing the same database.
+// Fails when a cycle is running or this goroutine was replaced by a newer
+// scheduler, so two workers never write the same database.
 func (s *Synchronizer) beginSync(stop chan struct{}) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -229,19 +222,18 @@ func (s *Synchronizer) schedulerWorker() {
 		failure = err
 	}
 
-	// A local change to a row the pull just rewrote has already been overruled.
-	// Pushing it afterwards would undo the pull on every other machine.
+	// A local change to a row the pull rewrote is already overruled; pushing it
+	// would undo the pull elsewhere.
 	if len(s.affectedTables) > 0 {
 		s.changeLogRepository.InvalidateStaleChangeLogs(s.affectedTables)
 	}
-	// After the pull, so a snapshot captures what was just applied.
+	// After the pull, so the snapshot captures what was just applied.
 	if err := s.createDBSnapshot(); err != nil {
 		failure = err
 	}
 
-	// Pushing on top of a failed pull can send a stale local delete back and
-	// undo a record the pull would have restored, so the push waits for a
-	// clean cycle.
+	// Pushing on top of a failed pull could send a stale delete back, so the
+	// push waits for a clean cycle.
 	if failure == nil {
 		if err := s.syncChangesLogsToDrive(); err != nil {
 			failure = err
@@ -251,8 +243,7 @@ func (s *Synchronizer) schedulerWorker() {
 	s.report(failure)
 }
 
-// report tells the host how the cycle went, and gives up on a grant that keeps
-// being refused rather than retrying it every ten seconds forever.
+// Gives up on a grant that keeps being refused rather than retrying forever.
 func (s *Synchronizer) report(failure error) {
 	onSuccess, onFailure := s.callbacks()
 
@@ -331,7 +322,6 @@ func (s *Synchronizer) applyRemoteChanges() error {
 			continue
 		}
 
-		// Ignore if already applied
 		if isApplied := s.processedChangeRepository.ChangeProcessed(file.ID); isApplied {
 			s.syncStateRepository.SaveSyncState(file.CreatedTime)
 			continue
@@ -348,9 +338,9 @@ func (s *Synchronizer) applyRemoteChanges() error {
 			return err
 		}
 
-		s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, 0) // Reset failure count
-		s.syncStateRepository.SaveSyncState(file.CreatedTime)             // Update the sync state
-		s.processedChangeRepository.SaveProcessedChange(file.ID)          // Update the processed change
+		s.remoteApplyFailureRepository.SaveRemoteApplyFailure(file.ID, 0)
+		s.syncStateRepository.SaveSyncState(file.CreatedTime)
+		s.processedChangeRepository.SaveProcessedChange(file.ID)
 	}
 
 	return nil
@@ -391,7 +381,6 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
-	// Create a temporary directory for decompression
 	tmpDir, err := os.MkdirTemp("", "snapshot")
 	if err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to create temporary directory",
@@ -401,7 +390,6 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// Decompress the file and get the path to the SQLite database
 	dbPath, err := DecompressSnapshotFile(fileContent, tmpDir)
 	if err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to decompress snapshot file",
@@ -410,7 +398,6 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
-	// Mount the database
 	sourceDB, err := database.MountDatabase(dbPath)
 	if err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to mount database",
@@ -419,7 +406,6 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
-	// Synchronize the databases
 	dbSynchronizer := database.NewDatabaseSynchronizer(sourceDB, s.mainDB)
 	if err := dbSynchronizer.SynchronizeAll(); err != nil {
 		slog.Error("Synchronizer[applyRemoteSnapshot] Failed to synchronize databases",
@@ -428,7 +414,6 @@ func (s *Synchronizer) applyRemoteSnapshot(file *File) error {
 		return err
 	}
 
-	// Save affected tables
 	s.mergeAffectedTables(dbSynchronizer.GetAffectedTables())
 
 	slog.Debug("Synchronizer[applyRemoteSnapshot] Snapshot applied successfully", "file", file.Name)
@@ -457,7 +442,6 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 			return err
 		}
 
-		// Save affected tables
 		s.mergeAffectedTables(dbSynchronizer.GetAffectedTables())
 
 		slog.Debug("Synchronizer[applyRemoteChangeLog] Change logs applied successfully", "file", file.Name)
@@ -466,8 +450,7 @@ func (s *Synchronizer) applyRemoteChangeLog(file *File) error {
 	})
 }
 
-// syncChangesLogsToDrive uploads what has not reached Drive yet. Changes to one
-// row go up in order; different rows go up together.
+// Changes to one row go up in order; different rows go up together.
 func (s *Synchronizer) syncChangesLogsToDrive() error {
 	drive := s.drive()
 	if drive == nil {
@@ -520,8 +503,8 @@ func (s *Synchronizer) syncChangesLogsToDrive() error {
 }
 
 func (s *Synchronizer) pushChangeLog(drive DriveService, change repository.ChangeLog) error {
-	// Replacing the previous copy is best effort: a stale one left behind is
-	// applied and then superseded, while failing here would block the upload.
+	// Best effort: a stale copy left behind is applied and then superseded,
+	// while failing here would block the upload.
 	if deleted, err := drive.DeleteChangeLog(change); err == nil {
 		for _, file := range deleted {
 			s.processedChangeRepository.DeleteProcessedChange(file.ID)
@@ -541,8 +524,8 @@ func (s *Synchronizer) pushChangeLog(drive DriveService, change repository.Chang
 	return nil
 }
 
-// groupChangesByRow keeps one row's history together and in order, so an update
-// never overtakes the insert it depends on.
+// One row's history stays together and in order, so an update never overtakes
+// the insert it depends on.
 func groupChangesByRow(changes []repository.ChangeLog) [][]repository.ChangeLog {
 	ordered := append([]repository.ChangeLog(nil), changes...)
 	sort.SliceStable(ordered, func(i, j int) bool {
@@ -577,8 +560,7 @@ func changeOrder(change repository.ChangeLog) time.Time {
 }
 
 func (s *Synchronizer) createDBSnapshot() error {
-	// We cache the last snapshot created time
-	// To avoid calling GetLatestDBSnapshot too often
+	// Cached to avoid calling GetLatestDBSnapshot every cycle.
 	if s.lastSnapshotCreatedTime != nil {
 		if !utils.IsAOlderThanBByOneWeek(*s.lastSnapshotCreatedTime, time.Now()) {
 			return nil
@@ -592,25 +574,22 @@ func (s *Synchronizer) createDBSnapshot() error {
 
 	if dbSnapshot != nil {
 		s.lastSnapshotCreatedTime = &dbSnapshot.CreatedTime
-		// The latest snapshot should older than 1 week
 		if !utils.IsAOlderThanBByOneWeek(dbSnapshot.CreatedTime, time.Now()) {
 			return nil
 		}
 	}
 
-	// Check if there is any pending changes to be applied
 	timeOffset := s.syncStateRepository.GetSyncState().SyncTimeOffset
 	changesFiles, err := s.drive().GetChangeFilesAfterTimeOffset(timeOffset)
 	if err != nil {
 		return err
 	}
 
-	// If there are pending changes, we should not create a snapshot
+	// Never snapshot over pending changes.
 	if len(changesFiles) > 0 {
 		return nil
 	}
 
-	// Get main database path
 	dbPath, err := database.GetSQLitePath(s.mainDB)
 	if err != nil {
 		slog.Error("Synchronizer[createSnapshot]: failed to get SQLite path", "error", err)
@@ -634,8 +613,7 @@ func (s *Synchronizer) createDBSnapshot() error {
 
 	slog.Debug("Synchronizer[createSnapshot]: snapshot created successfully", "file", newSnapshot.Name)
 
-	// Prune old changes
-	pruneTimeOffset := newSnapshot.CreatedTime.Add(-time.Second) // Prune one second before the snapshot
+	pruneTimeOffset := newSnapshot.CreatedTime.Add(-time.Second)
 	s.clearupAfterSnapshot(pruneTimeOffset)
 
 	return nil
@@ -645,18 +623,14 @@ func (s *Synchronizer) clearupAfterSnapshot(pruneTimeOffset time.Time) error {
 	if err := s.drive().PruneOldChanges(pruneTimeOffset); err != nil {
 		slog.Error("Synchronizer[clearupAfterSnapshot]: failed to prune old changes (retry again)", "error", err)
 
-		// Retry again after 5 seconds
 		time.Sleep(time.Second * 5)
 		s.drive().PruneOldChanges(pruneTimeOffset)
 	}
 
-	// Prune old apply failures
 	s.remoteApplyFailureRepository.DeleteOldRemoteApplyFailures(pruneTimeOffset)
 
-	// Prune old processed changes
 	s.processedChangeRepository.DeleteOldProcessedChanges(pruneTimeOffset)
 
-	// prune old change logs
 	s.changeLogRepository.DeleteOldChangeLogs(pruneTimeOffset)
 
 	return nil

@@ -13,7 +13,6 @@ import (
 	witai "myscript/internal/transcribe/wait.ai"
 )
 
-// SpeechService is a hosted transcription service as the settings screen lists it.
 type SpeechService struct {
 	ID      string
 	Name    string
@@ -39,8 +38,7 @@ func (a *App) GetSpeechServices() []SpeechService {
 	return services
 }
 
-// IsWitAIAvailable reports whether this build embeds Wit.ai keys; without them
-// the option is hidden rather than offered and failing at runtime.
+// Without embedded Wit.ai keys the option is hidden rather than failing at runtime.
 func (a *App) IsWitAIAvailable() bool {
 	return witai.Available()
 }
@@ -53,8 +51,7 @@ func (a *App) SaveSpeechServiceAPIKey(preset, apiKey string) error {
 	return a.secrets().Set(repository.SpeechServiceSecret(preset), apiKey)
 }
 
-// GetLanguages is what the configured source can transcribe. An empty list
-// means the codes are not known, so the language should be typed.
+// An empty list means the codes are not known and the language must be typed.
 func (a *App) GetLanguages() []languages.Language {
 	config := a.GetConfig()
 

@@ -43,8 +43,8 @@ func writeBundleZip(t *testing.T, path string) {
 	}
 }
 
-// The previous updater installed the first entry in the zip over the running
-// executable, which turned a macOS update into a destroyed install.
+// Installing the first zip entry over the running executable would destroy a
+// macOS install.
 func TestUnzipBundleRebuildsWholeBundle(t *testing.T) {
 	dir := t.TempDir()
 	archive := filepath.Join(dir, "update.zip")
@@ -180,9 +180,8 @@ func TestUnzipBundleSkipsDittoMetadata(t *testing.T) {
 	}
 }
 
-// The Go linker ad-hoc signs arm64 binaries and Apple silicon refuses to exec
-// one whose bytes no longer match that signature. Extraction has to reproduce
-// the executable exactly, or an update turns into a silent SIGKILL.
+// Apple silicon refuses to exec an arm64 binary whose bytes no longer match
+// its ad-hoc signature, so extraction must reproduce the executable exactly.
 func TestUnzipBundlePreservesBytesExactly(t *testing.T) {
 	payload := make([]byte, 4096)
 	for i := range payload {

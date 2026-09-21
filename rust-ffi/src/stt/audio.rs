@@ -35,10 +35,9 @@ struct Settings {
     capture_only: bool,
 }
 
-/// Utterances waiting for the engine. A model slower than real time would
-/// otherwise queue the whole take (each utterance is up to 20 s of audio) and
-/// keep the CPU pinned long after the speaker stopped; past this, utterances
-/// are dropped and the host told once.
+/// A model slower than real time would otherwise queue the whole take and keep
+/// the CPU pinned after the speaker stopped; past this, utterances are dropped
+/// and the host told once.
 const ENGINE_QUEUE: usize = 8;
 
 /// Handled on the engine thread in order, so an unload queued after a take's
@@ -55,9 +54,8 @@ pub enum EngineCommand {
     Shutdown,
 }
 
-/// Owns the capture stream on its own thread. cpal delivers audio on a realtime
-/// callback that must not block, so it only forwards buffers; every conversion
-/// happens here.
+/// Owns the capture stream on its own thread. The realtime cpal callback must
+/// not block, so it only forwards buffers; every conversion happens here.
 pub struct Recorder {
     commands: Sender<Command>,
     engine_commands: SyncSender<EngineCommand>,
@@ -73,8 +71,7 @@ impl Recorder {
         let epoch = Arc::new(AtomicU64::new(0));
 
         let (level_tx, level_rx) = channel::<f32>();
-        // Levels arrive far faster than a UI can use them; the host is called
-        // on this thread, never on the audio callback.
+        // The host is called on this thread, never on the audio callback.
         thread::spawn(move || {
             for rms in level_rx {
                 host.level(rms);
@@ -293,9 +290,8 @@ impl EngineSink {
 }
 
 impl Sink for EngineSink {
-    /// Never blocks: the take thread has to keep draining the microphone, or
-    /// the driver starts dropping audio too. A full queue loses this utterance
-    /// instead, and the host hears about it once per take.
+    /// Never blocks: the take thread must keep draining the microphone. A full
+    /// queue loses this utterance, and the host hears about it once per take.
     fn utterance(&mut self, samples: Vec<f32>) {
         let command = EngineCommand::Transcribe {
             samples,
@@ -375,7 +371,7 @@ impl StreamGuard {
         let (tx, rx) = channel();
 
         let stream = build_stream(&device, &config, tx, levels)?;
-        // cpal 0.18 doesn't auto-start streams; without this the callback never fires.
+        // Streams start paused.
         stream.play()?;
         log::info!(
             "capture opened on '{device}': {rate} Hz, {channels} channel(s), {:?}",
@@ -406,8 +402,8 @@ struct SelectedConfig {
     format: SampleFormat,
 }
 
-/// Falls back to the default device when the chosen one is gone, so an
-/// unplugged microphone doesn't stop the reader from working.
+/// Falls back to the default device so an unplugged microphone does not stop
+/// the reader.
 fn open_device(preferred: Option<&str>) -> Result<Device> {
     let host = host();
 
@@ -445,8 +441,8 @@ pub fn devices() -> (Vec<String>, Option<String>) {
 }
 
 fn host() -> cpal::Host {
-    // ALSA over cpal's default on Linux: PulseAudio/PipeWire both expose an
-    // ALSA interface, and going direct avoids a resampling hop.
+    // ALSA directly on Linux: PulseAudio and PipeWire expose it too, and going
+    // direct avoids a resampling hop.
     #[cfg(target_os = "linux")]
     {
         cpal::host_from_id(cpal::HostId::Alsa).unwrap_or_else(|_| cpal::default_host())
@@ -457,9 +453,8 @@ fn host() -> cpal::Host {
     }
 }
 
-/// Uses the device's own rate instead of forcing 16 kHz: forcing a rate the
-/// hardware doesn't want can drop Bluetooth headsets into headset profile or
-/// make ALSA refuse the stream outright.
+/// The device's own rate: forcing 16 kHz can drop Bluetooth headsets into
+/// headset profile or make ALSA refuse the stream.
 fn preferred_config(device: &Device) -> Result<SelectedConfig> {
     let default = device.default_input_config()?;
     let rate = default.sample_rate();
@@ -476,11 +471,9 @@ fn preferred_config(device: &Device) -> Result<SelectedConfig> {
     }
 }
 
-/// Fewest channels first, then the format that costs least to convert. The
-/// pipeline mixes down to mono anyway, and ALSA plugin devices (PipeWire,
-/// PulseAudio) advertise every channel count up to 64: opening the widest one
-/// makes the sound server upmix ~12 MB/s in its realtime thread, which on a
-/// modest machine froze the desktop.
+/// Fewest channels first, then the cheapest format. ALSA plugin devices
+/// advertise up to 64 channels; opening the widest makes the sound server
+/// upmix ~12 MB/s, which can freeze a modest desktop.
 fn choose_config(
     ranges: impl IntoIterator<Item = SupportedStreamConfigRange>,
     rate: u32,
@@ -511,8 +504,7 @@ fn build_stream(
 ) -> Result<cpal::Stream> {
     let mut throttle = ErrorThrottle::default();
     let error = move |e: cpal::Error| {
-        // The stream recovers on its own, so this is a warning: a glitch to
-        // know about when transcription looks off, not a failure.
+        // The stream recovers on its own, so a glitch is a warning, not a failure.
         if let Some(line) = throttle.record(&e.to_string(), Instant::now()) {
             log::warn!("audio glitch: {line}");
         }
@@ -549,9 +541,8 @@ fn build_stream(
     Ok(stream)
 }
 
-/// Runs on the realtime audio callback: send and return, never block.
-/// A driver can report a glitch once per audio period, so one bad take can log
-/// hundreds of identical lines. Report the first, then how many followed.
+/// A driver can report a glitch once per audio period; report the first, then
+/// how many followed.
 const ERROR_SUMMARY_INTERVAL: Duration = Duration::from_secs(5);
 
 #[derive(Default)]
@@ -588,6 +579,7 @@ impl ErrorThrottle {
     }
 }
 
+/// Runs on the realtime audio callback: send and return, never block.
 fn forward(data: Vec<f32>, samples: &Sender<Vec<f32>>, levels: &Sender<f32>) {
     if !data.is_empty() {
         let sum: f32 = data.iter().map(|s| s * s).sum();

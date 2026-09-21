@@ -28,7 +28,6 @@ func (a *FileArchiver) Archive() (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	// Step 2: Compress the files into a gzip archive
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
 	tw := tar.NewWriter(gz)
@@ -41,7 +40,6 @@ func (a *FileArchiver) Archive() (*bytes.Buffer, error) {
 		}
 	}
 
-	// Close the tar writer and gzip writer
 	if err := tw.Close(); err != nil {
 		slog.Error("[FileArchiver] Failed to close tar writer", "error", err)
 		return nil, err

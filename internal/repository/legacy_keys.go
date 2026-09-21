@@ -11,9 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// AdoptLegacyKeys moves credentials written by older builds out of the synced
-// Config and into the local secret store, then clears them so they stop being
-// uploaded. Safe to call repeatedly: a restored backup can bring them back.
+// Moves credentials out of the synced Config into the local secret store and
+// clears them. Safe to repeat: a restored backup can bring them back.
 func AdoptLegacyKeys(mainDB, unSyncedDB *gorm.DB) {
 	configs := NewConfigRepository(mainDB)
 	secrets := NewSecretRepository(unSyncedDB)
@@ -46,8 +45,7 @@ func AdoptLegacyKeys(mainDB, unSyncedDB *gorm.DB) {
 	slog.Info("Moved API keys out of the synced configuration into the local secret store")
 }
 
-// AdoptHostedSpeech moves a build that named its transcription service directly
-// onto the hosted-service settings that replaced them.
+// Moves a directly named transcription service onto the hosted-service settings.
 func AdoptHostedSpeech(mainDB, unSyncedDB *gorm.DB) {
 	configs := NewConfigRepository(mainDB)
 	secrets := NewSecretRepository(unSyncedDB)

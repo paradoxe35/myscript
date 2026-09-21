@@ -1,12 +1,10 @@
 // Copyright (c) 2024
 // Licensed under the MIT License. See LICENSE file in the root directory.
 
-// Command gen-catalog rebuilds the shipped model list from Hugging Face:
+// Command gen-catalog rebuilds internal/stt/models.json, the offline and
+// first-run fallback, from Hugging Face:
 //
 //	go run ./cmd/gen-catalog
-//
-// It writes internal/stt/models.json, the offline and first-run fallback, so
-// a release ships with whatever the hub published at the time.
 package main
 
 import (

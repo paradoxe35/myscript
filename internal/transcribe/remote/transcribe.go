@@ -23,7 +23,6 @@ const (
 
 var client = &http.Client{Timeout: requestTimeout}
 
-// Transcribe sends a WAV recording to the configured service.
 func Transcribe(ctx context.Context, settings Settings, wav []byte, language string) (string, error) {
 	settings = settings.Resolved()
 
@@ -119,8 +118,7 @@ func languageField(model string) string {
 	return "language"
 }
 
-// StatusError carries the status so a caller can react to a 400 without
-// matching on wording every service spells differently.
+// Status lets a caller react without matching service wording.
 type StatusError struct {
 	Status  int
 	Message string
@@ -128,7 +126,7 @@ type StatusError struct {
 
 func (e *StatusError) Error() string { return e.Message }
 
-// errorMessage reads both shapes in use: {"error":{"message":...}} and {"error":"..."}.
+// Reads both shapes in use: {"error":{"message":...}} and {"error":"..."}.
 func errorMessage(body []byte, status string) string {
 	var wrapped struct {
 		Error struct {

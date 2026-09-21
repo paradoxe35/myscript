@@ -8,8 +8,7 @@ import (
 	"strings"
 )
 
-// LanguagesFor is what a service and model accept. Nil means the list is not
-// known, so the caller should let a code be typed rather than show a wrong list.
+// Nil means the list is not known and the caller should let a code be typed.
 func LanguagesFor(preset, model string) []languages.Language {
 	if protocolFor(preset) == ProtocolGemini {
 		// Asked for in prose, so anything the model reads is fair game.

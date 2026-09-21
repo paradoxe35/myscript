@@ -14,7 +14,7 @@ const (
 	bitDepth   = 16
 )
 
-// WAV frames 16-bit mono PCM at SampleRate for the remote transcribers.
+// 16-bit mono PCM at SampleRate.
 func WAV(pcm []byte) []byte {
 	var out bytes.Buffer
 	out.Grow(44 + len(pcm))

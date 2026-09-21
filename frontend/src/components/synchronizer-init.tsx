@@ -35,7 +35,6 @@ export function SynchronizerInit() {
         if (syncFailures.current === 4) {
           console.log("Too many sync attempts, refreshing Google auth token");
 
-          // Stop the Scheduler
           await StopSynchronizer().catch(console.error);
 
           googleAuthTokenStore.refreshToken().catch(() => {
@@ -55,7 +54,6 @@ export function SynchronizerInit() {
   }, []);
 
   useEffect(() => {
-    // Update UI on sync success
     return EventsOn(
       "on-sync-success",
       (affectedTables: AffectedTables | null) => {
@@ -63,17 +61,14 @@ export function SynchronizerInit() {
           return;
         }
 
-        // Refresh local pages
         if (TABLES.PAGES in affectedTables) {
           localPagesStore.getPages();
         }
 
-        // Refresh config
         if (TABLES.CONFIG in affectedTables) {
           configStore.fetchConfig();
         }
 
-        // Refresh active page blocks
         if (
           activePageStore.page?.__typename === "local_page" &&
           TABLES.PAGES in affectedTables

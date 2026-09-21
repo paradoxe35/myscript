@@ -15,8 +15,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// AIProvider is a configured provider without its credentials, which live in
-// the secret store so they stay on this machine.
+// Credentials live in the secret store so they stay on this machine.
 type AIProvider struct {
 	Name         string  `json:"name"`
 	Kind         string  `json:"kind"`
@@ -126,8 +125,7 @@ func (r *AIProviderRepository) Delete(name string) error {
 	return nil
 }
 
-// Active falls back when the stored choice no longer exists, which is what a
-// provider being retired between releases looks like.
+// Falls back when the stored choice no longer exists.
 func (r *AIProviderRepository) Active() string {
 	name := r.config.GetConfig().AIProvider
 	if name == "" {
@@ -161,7 +159,6 @@ func (r *AIProviderRepository) SetAPIKey(name, key string) error {
 	return r.secrets.Set(AIProviderSecret(name), strings.TrimSpace(key))
 }
 
-// Settings assembles what the ai package needs to talk to a provider.
 func (r *AIProviderRepository) Settings(name string) (ai.Settings, error) {
 	provider, ok := r.Find(name)
 	if !ok {
@@ -181,7 +178,6 @@ func (r *AIProviderRepository) Settings(name string) (ai.Settings, error) {
 	}.Resolved(), nil
 }
 
-// Configured reports whether a provider has everything it needs to answer.
 func (r *AIProviderRepository) Configured(name string) bool {
 	settings, err := r.Settings(name)
 	if err != nil {
@@ -200,8 +196,7 @@ func (r *AIProviderRepository) stored() map[string]AIProvider {
 	providers := map[string]AIProvider{}
 
 	if raw := r.config.GetConfig().AIProviders; len(raw) > 0 {
-		// Decoding the JSON literal null leaves the map nil rather than failing,
-		// and writing to it would panic.
+		// A JSON null decodes to a nil map, and writing to it would panic.
 		if err := json.Unmarshal(raw, &providers); err != nil || providers == nil {
 			providers = map[string]AIProvider{}
 		}

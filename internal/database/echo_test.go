@@ -31,9 +31,8 @@ func openDB(t *testing.T, models ...any) *gorm.DB {
 	return db
 }
 
-// Applying a change pulled from Drive must not look like a local edit: it would
-// be uploaded straight back, and its fresh timestamp would make the copy we just
-// received look newer than the original.
+// A change pulled from Drive must not look like a local edit, or it would be
+// uploaded straight back with a fresh timestamp.
 func TestApplyingARemoteChangeDoesNotLogALocalOne(t *testing.T) {
 	mainDB := openDB(t, &repository.Page{}, &repository.Config{}, &repository.Cache{})
 	unsynced := openDB(t, &repository.ChangeLog{})
@@ -74,8 +73,7 @@ func TestApplyingARemoteChangeDoesNotLogALocalOne(t *testing.T) {
 	}
 }
 
-// Control for the test above: an ordinary local edit must log a change, or the
-// check would pass simply because nothing is wired up.
+// Control for the test above: an ordinary local edit must log a change.
 func TestALocalEditDoesLogAChange(t *testing.T) {
 	mainDB := openDB(t, &repository.Page{}, &repository.Config{}, &repository.Cache{})
 	unsynced := openDB(t, &repository.ChangeLog{})
@@ -96,8 +94,8 @@ func TestALocalEditDoesLogAChange(t *testing.T) {
 	}
 }
 
-// The pull reports which rows it touched so the cycle can drop local changes it
-// overruled; a delete used to wipe the list collected for that table.
+// The pull reports touched rows so the cycle can drop overruled local changes;
+// a delete must not wipe the list collected for the table.
 func TestADeleteKeepsTheRowsAlreadyCollected(t *testing.T) {
 	mainDB := openDB(t, &repository.Page{}, &repository.Config{}, &repository.Cache{})
 

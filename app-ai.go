@@ -53,9 +53,8 @@ type AICompletionEvent struct {
 	Error string
 }
 
-// recoverAsError turns a panic into a returned error. A binding is an RPC
-// boundary: Wails logs the panic but never settles the promise, so without
-// this the window waits on an answer that can no longer come.
+// Wails logs a panic in a binding but never settles the promise, so the
+// window would wait forever; return it as an error instead.
 func recoverAsError(err *error) {
 	if panicked := recover(); panicked != nil {
 		slog.Error("Recovered from a panic in a bound method",
@@ -135,8 +134,7 @@ func (a *App) GetAIProviderAPIKey(name string) string {
 	return a.aiProviders().APIKey(name)
 }
 
-// ListAIModels asks a provider what it can run, using the values on screen so
-// an unsaved edit can be tried before committing to it.
+// Uses the values on screen so an unsaved edit can be tried before saving.
 func (a *App) ListAIModels(provider AIProvider, apiKey string) (models []ai.ModelInfo, err error) {
 	defer recoverAsError(&err)
 
@@ -189,8 +187,7 @@ func (a *App) TestAIProvider(provider AIProvider, apiKey string) (err error) {
 	return err
 }
 
-// StartAICompletion returns as soon as the request is accepted; the answer
-// arrives chunk by chunk as events keyed by the returned id.
+// Returns once accepted; chunks arrive as events keyed by the returned id.
 func (a *App) StartAICompletion(request AICompletionRequest) (id string, err error) {
 	defer recoverAsError(&err)
 

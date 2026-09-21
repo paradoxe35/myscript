@@ -57,7 +57,6 @@ function ContentTitle() {
   const activePage = activePageStore.page;
   const pageId = activePageStore.getPageId();
 
-  // When active page changed, reset the title
   useEffect(() => {
     if (pageId) {
       if (
@@ -74,7 +73,6 @@ function ContentTitle() {
     }
   }, [pageId]);
 
-  // Auto focus when page title is empty
   useEffect(() => {
     if (!textareaRef.current) return;
 
@@ -86,7 +84,6 @@ function ContentTitle() {
     }, 100);
   }, [pageId]);
 
-  // Save page title when input change
   const setTitleCallback = useDebouncedCallback((title: string) => {
     const activePage = activePageStore.page;
 
@@ -94,7 +91,6 @@ function ContentTitle() {
     title = title.trim() === "" ? DEFAULT_PAGE_TITLE : title;
 
     savePageTitle(title, activePage.page).then((newPage) => {
-      // Update active page
       activePageStore.setActivePage({
         ...activePage,
         page: newPage,

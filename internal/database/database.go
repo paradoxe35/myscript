@@ -28,18 +28,16 @@ func MountDatabase(dbPath string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	// Enable WAL mode
 	if _, err := sqlDB.Exec("PRAGMA journal_mode=WAL;"); err != nil {
 		return nil, err
 	}
 
-	// Optional: Configure other PRAGMA settings for better performance
 	pragmas := []string{
-		"PRAGMA busy_timeout=5000;",  // Wait up to 5 seconds when database is locked
-		"PRAGMA synchronous=NORMAL;", // Balance between safety and speed
-		"PRAGMA cache_size=-2000;",   // Use 2MB of memory for page cache
-		"PRAGMA foreign_keys=ON;",    // Enable foreign key constraints
-		"PRAGMA temp_store=MEMORY;",  // Store temp tables in memory
+		"PRAGMA busy_timeout=5000;",
+		"PRAGMA synchronous=NORMAL;",
+		"PRAGMA cache_size=-2000;",
+		"PRAGMA foreign_keys=ON;",
+		"PRAGMA temp_store=MEMORY;",
 	}
 
 	for _, pragma := range pragmas {
@@ -57,7 +55,6 @@ func NewMainDatabase(homeDir string) *gorm.DB {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// Migrate schemas
 	db.AutoMigrate(&repository.Config{})
 	db.AutoMigrate(&repository.Page{})
 	db.AutoMigrate(&repository.Cache{})
@@ -71,8 +68,7 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 		panic("failed to connect database: " + err.Error())
 	}
 
-	// Older builds recorded one row per file per sync cycle. The unique index
-	// below cannot be created over those, and AutoMigrate would fail silently.
+	// Duplicate rows would make the unique index below fail silently in AutoMigrate.
 	dropDuplicateFileIDs(db, "processed_changes")
 	dropDuplicateFileIDs(db, "apply_failures")
 	dropDuplicateFileIDs(db, "remote_apply_failures")
@@ -97,8 +93,7 @@ func migrate(db *gorm.DB, models ...any) {
 	}
 }
 
-// dropDuplicateFileIDs keeps the most recent row per file, which is the one a
-// unique index would have kept anyway.
+// Keeps the most recent row per file, as the unique index would.
 func dropDuplicateFileIDs(db *gorm.DB, table string) {
 	if !db.Migrator().HasTable(table) {
 		return
@@ -122,13 +117,11 @@ type DatabaseInfo struct {
 func GetSQLitePath(db *gorm.DB) (string, error) {
 	var databases []DatabaseInfo
 
-	// Execute PRAGMA query to get database list
 	result := db.Raw("PRAGMA database_list;").Scan(&databases)
 	if result.Error != nil {
 		return "", result.Error
 	}
 
-	// Find the main database (where name is 'main')
 	for _, dbInfo := range databases {
 		if dbInfo.Name == "main" {
 			return dbInfo.File, nil

@@ -1,12 +1,11 @@
 import { RefObject, useLayoutEffect } from "react";
 
 /**
- * Keeps a textarea exactly as tall as its content.
+ * Keeps a textarea as tall as its content.
  *
- * Pass everything that changes how the text wraps: the value, and the zoom,
- * which changes the font size without changing any element's box. The observer
- * covers what those cannot — the window resizing, a font finishing loading —
- * and watches the parent, so resizing the textarea cannot retrigger it.
+ * Pass everything that changes how the text wraps, including the zoom, which
+ * changes the font size without changing any box. The observer watches the
+ * parent, not the textarea, so its own resizes cannot retrigger it.
  */
 export function useAutoGrow(
   ref: RefObject<HTMLTextAreaElement | null>,

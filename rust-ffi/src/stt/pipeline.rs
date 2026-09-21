@@ -6,8 +6,7 @@ use super::SAMPLE_RATE;
 const VAD_FRAME: usize = 256;
 const VAD_THRESHOLD: f32 = 0.5;
 
-/// Silence this long after speech ends the utterance, so the teleprompter
-/// gets text at every pause rather than at the end of the take.
+/// Silence this long ends the utterance, so text arrives at every pause.
 const PAUSE_FRAMES: usize = 31; // ~500 ms
 /// Frames kept before onset, recovering the attack the detector needed to fire.
 const PREFILL_FRAMES: usize = 28; // ~450 ms

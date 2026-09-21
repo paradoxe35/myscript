@@ -99,7 +99,7 @@ func (l *FileLogger) Print(message string) {
 }
 
 func (l *FileLogger) Trace(message string) {
-	l.log(slog.LevelDebug-1, message) // Trace is typically lower than Debug
+	l.log(slog.LevelDebug-1, message)
 }
 
 func (l *FileLogger) Debug(message string) {
@@ -119,7 +119,7 @@ func (l *FileLogger) Error(message string) {
 }
 
 func (l *FileLogger) Fatal(message string) {
-	l.log(slog.LevelError, message) // Using Error level before exiting
+	l.log(slog.LevelError, message)
 	os.Exit(1)
 }
 

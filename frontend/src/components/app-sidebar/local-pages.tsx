@@ -134,10 +134,8 @@ function PageLocalItem({
       <SidebarMenuButton
         isActive={active}
         onClick={() => {
-          // Clickable for pages
           !page.is_folder && onLocalPageClick(page);
 
-          // Toggle expanded state for folder
           page.is_folder && togglePageExpanded(page);
         }}
         className={cn(

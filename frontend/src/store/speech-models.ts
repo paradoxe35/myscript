@@ -68,7 +68,6 @@ export const useSpeechModelsStore = create<SpeechModelsStore>((set, get) => ({
     return models;
   },
 
-  // Pulls the catalogue again on the Go side, then shows what it now holds.
   refreshModels: async () => {
     await RefreshSpeechModels();
     await get().fetchModels();

@@ -45,15 +45,11 @@ func changeLogsFileName(changeLog repository.ChangeLog) string {
 }
 
 type DriveService interface {
-	// DB Snapshot
 	GetLatestDBSnapshot() (*File, error)
 	SaveDBSnapshot(content io.ReadSeeker) (*File, error)
-	// Get Changes from Drive
 	DeleteChangeLog(changeLog repository.ChangeLog) ([]*File, error)
 	UploadChangeLog(changeLog repository.ChangeLog) (*File, error)
 	GetChangeFilesAfterTimeOffset(timeOffset time.Time) ([]*File, error)
-	// Drive
 	GetFileContent(fileId string) ([]byte, error)
-	// Prune
 	PruneOldChanges(timestamp time.Time) error
 }

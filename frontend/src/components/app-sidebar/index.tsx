@@ -29,10 +29,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarHeader>
 
         <SidebarContent className="select-none overflow-x-hidden">
-          {/* Local pages */}
           <LocalPages />
 
-          {/* Notion pages */}
           <NotionPages />
         </SidebarContent>
         <SidebarRail />

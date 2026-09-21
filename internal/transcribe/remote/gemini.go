@@ -17,15 +17,14 @@ import (
 	"sync"
 )
 
-// Gemini takes the audio inline, so the request carries the whole recording
-// base64-encoded and the service caps the request rather than the file.
+// The audio goes inline base64-encoded, so the cap is on the request, not the file.
 const geminiMaxRequestBytes = 18 * 1024 * 1024
 
 const geminiPrompt = "Transcribe this recording exactly. Reply with the transcript only, " +
 	"with no commentary, labels or timestamps."
 
-// thinkingRefused remembers endpoint/model pairs that rejected the field, so
-// the wasted round trip happens once per launch.
+// Endpoint/model pairs that rejected the field, so the wasted round trip
+// happens once per launch.
 var thinkingRefused sync.Map
 
 type geminiPart struct {

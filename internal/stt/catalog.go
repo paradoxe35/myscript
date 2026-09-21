@@ -28,10 +28,8 @@ const (
 	catalogMaxLen = 8 << 20
 	modelsDirName = "models"
 
-	// RefreshTimeout bounds one whole rebuild: ~150 hub requests at six in
-	// flight normally finish in well under a minute.
-	RefreshTimeout = 3 * time.Minute
-	// How often the scheduler re-checks the cache's age while the app runs.
+	// Bounds one whole rebuild; ~150 hub requests normally finish well under a minute.
+	RefreshTimeout       = 3 * time.Minute
 	refreshCheckInterval = 3 * time.Hour
 )
 
@@ -50,8 +48,7 @@ var (
 	homeDir   string
 )
 
-// Init points the package at the app home: models live in its "models"
-// directory and a refreshed catalogue is cached next to them.
+// Models and the cached catalogue live under dir.
 func Init(dir string) {
 	catalogMu.Lock()
 	homeDir = dir
@@ -68,7 +65,7 @@ func cachePath() string {
 	return filepath.Join(homeDir, "catalog.json")
 }
 
-// Models prefers a cached download over the shipped copy.
+// Prefers a cached download over the shipped copy.
 func Models() *Catalog {
 	catalogMu.RLock()
 	current := active
@@ -85,8 +82,7 @@ func Models() *Catalog {
 	return active
 }
 
-// discoverCustom finds GGUF files not claimed by the catalogue, for fine-tuned
-// or community models. Old ggml ".bin" files are a format the engine cannot read.
+// GGUF files not claimed by the catalogue, for fine-tuned or community models.
 func discoverCustom() []Model {
 	return discoverCustomIn(ModelsDir(), Models().Models)
 }
@@ -185,9 +181,8 @@ func stale() bool {
 	return catalog.origin == "embedded" || time.Since(catalog.fetched) > catalogMaxAge
 }
 
-// Refresh rebuilds the list from Hugging Face. The result goes through the
-// same parser as the shipped file before it is written, so a broken build
-// never displaces a working list. Calls are serialised: the scheduler and the
+// The result goes through the same parser as the shipped file, so a broken
+// build never displaces a working list. Serialised: the scheduler and the
 // settings button may overlap.
 func Refresh(ctx context.Context) error {
 	refreshMu.Lock()
@@ -206,7 +201,7 @@ func Refresh(ctx context.Context) error {
 
 var refreshMu sync.Mutex
 
-// adopt makes a fetched list current and caches it for the next launch.
+// Makes a fetched list current and caches it for the next launch.
 func adopt(data []byte) error {
 	fetched, err := parseCatalog(data)
 	if err != nil {
@@ -236,10 +231,8 @@ var (
 	schedulerDone chan struct{}
 )
 
-// StartRefreshing refreshes at launch when the cache is stale and keeps
-// checking while the app runs, so a machine left open for days still learns
-// about new models. Never blocks startup; failures aren't surfaced since the
-// current list still works.
+// Refreshes at launch when stale and keeps checking while the app runs. Never
+// blocks startup; failures are not surfaced since the current list still works.
 func StartRefreshing() {
 	startRefreshing(refreshCheckInterval)
 }
@@ -268,8 +261,7 @@ func startRefreshing(every time.Duration) {
 	}()
 }
 
-// StopRefreshing halts the scheduler and waits for any refresh it started to
-// abort, so shutdown does not race a cache write.
+// Waits for a running refresh to abort, so shutdown does not race a cache write.
 func StopRefreshing() {
 	schedulerMu.Lock()
 	stop, done := schedulerStop, schedulerDone
@@ -300,9 +292,8 @@ func refreshIfStale(stop <-chan struct{}) {
 	}
 }
 
-// Catalogue is the published list plus whatever the user dropped into the
-// models directory. Copied rather than appended in place: the parsed slice has
-// spare capacity that other callers still read.
+// Published list plus custom files. Copied, not appended in place: the parsed
+// slice has spare capacity other callers still read.
 func Catalogue() []Model {
 	published := Models().Models
 	custom := discoverCustom()

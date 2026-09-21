@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// !SYNCED MODEL
-
 type CacheValue struct {
 	Value interface{} `json:"value"`
 }
@@ -20,7 +18,6 @@ type Cache struct {
 	Value datatypes.JSONType[*CacheValue] `json:"value"`
 }
 
-// Hooks
 func (n *Cache) AfterCreate(tx *gorm.DB) error {
 	return logChange(tx, n, OPERATION_SAVE)
 }

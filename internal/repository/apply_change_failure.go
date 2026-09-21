@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// UNSYNCED MODEL
-
 type RemoteApplyFailure struct {
 	gorm.Model
 	FileID string `gorm:"uniqueIndex"`

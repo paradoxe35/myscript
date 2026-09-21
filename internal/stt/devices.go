@@ -5,14 +5,12 @@ package stt
 
 import "strings"
 
-// Device is a microphone the host can record from.
 type Device struct {
 	Name      string
 	IsDefault bool
 }
 
-// ParseDevices reads the newline-separated list the FFI returns, where the
-// default carries a leading '*'.
+// The FFI returns a newline-separated list; the default carries a leading '*'.
 func ParseDevices(listed string) []Device {
 	if strings.TrimSpace(listed) == "" {
 		return nil

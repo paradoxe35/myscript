@@ -37,8 +37,7 @@ func NewUpdater(owner, repo, currentVer string) *Updater {
 	}
 }
 
-// CheckForUpdate returns the newer tag when one is published for this platform,
-// or an empty string when the app is current.
+// Empty when the app is current or the release has no build for this platform.
 func (u *Updater) CheckForUpdate() (string, error) {
 	release, err := u.latestRelease()
 	if err != nil {
@@ -59,8 +58,7 @@ func (u *Updater) CheckForUpdate() (string, error) {
 		return "", nil
 	}
 
-	// Offering an update the release cannot deliver would strand the user on a
-	// failing dialog, so the asset has to be there before we announce anything.
+	// Never announce an update the release cannot deliver.
 	if findAsset(release, u.assetName()) == nil {
 		return "", nil
 	}
@@ -84,8 +82,7 @@ func (u *Updater) PerformUpdate() error {
 		return err
 	}
 
-	// Fetched before the download so a release that cannot be verified costs
-	// the user a request rather than the whole transfer.
+	// Fetched first so an unverifiable release costs one request, not the transfer.
 	checksum, err := u.checksumFor(release, name)
 	if err != nil {
 		return err
@@ -129,15 +126,13 @@ func (u *Updater) install(download string) error {
 	return restart()
 }
 
-// The AppImage runtime exports the path of the .AppImage file it mounted. The
-// executable itself sits on a read-only squashfs, so that outer file is what
-// an update has to replace.
+// The AppImage runtime exports the mounted .AppImage path; the executable
+// itself sits on a read-only squashfs, so the outer file is what to replace.
 func appImagePath() string { return os.Getenv("APPIMAGE") }
 
 func runningAsAppImage() bool { return appImagePath() != "" }
 
-// installAppImage swaps the single-file application. The download is already
-// the executable, so there is nothing to unpack.
+// The download is already the executable; nothing to unpack.
 func installAppImage(download string) error {
 	file, err := os.Open(download)
 	if err != nil {
@@ -151,7 +146,6 @@ func installAppImage(download string) error {
 	})
 }
 
-// installBinary streams the new executable straight over the running one.
 // selfupdate does the atomic rename and rolls back if the swap half-fails.
 func installBinary(archivePath string) error {
 	binary, closer, err := openBinaryInTarGz(archivePath)
@@ -163,9 +157,8 @@ func installBinary(archivePath string) error {
 	return selfupdate.Apply(binary, selfupdate.Options{})
 }
 
-// installBundle replaces the whole .app. A macOS application is a directory,
-// so writing one file over the executable would leave a bundle whose parts
-// disagree and whose signature no longer matches.
+// A macOS application is a directory; writing one file over the executable
+// would break the bundle and its signature.
 func installBundle(archivePath string) error {
 	bundle, err := currentBundle()
 	if err != nil {
@@ -195,7 +188,6 @@ func installBundle(archivePath string) error {
 	return nil
 }
 
-// currentBundle walks up from the executable to the enclosing .app.
 func currentBundle() (string, error) {
 	exe, err := os.Executable()
 	if err != nil {
@@ -217,8 +209,8 @@ func currentBundle() (string, error) {
 	}
 }
 
-// ensureWritable fails before anything is downloaded when the install is owned
-// by root, which is what a package manager install looks like.
+// Fails before anything is downloaded when the install is root-owned, as with
+// a package manager.
 func (u *Updater) ensureWritable() error {
 	if runtime.GOOS == "windows" {
 		return nil
@@ -328,8 +320,8 @@ func runInstaller(path string) error {
 	return nil
 }
 
-// relaunchBundle goes through `open` so the new process is started by Launch
-// Services with the bundle's identity, rather than as a bare child process.
+// Through open, so Launch Services starts it with the bundle's identity
+// rather than as a bare child process.
 func relaunchBundle() error {
 	bundle, err := currentBundle()
 	if err != nil {

@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-// Wails logs a panic in a bound method but never settles the promise, leaving
-// the window waiting forever. Bindings must return the failure instead.
+// Wails never settles the promise after a panic in a binding, so bindings
+// must return the failure instead.
 func TestRecoverAsErrorReturnsThePanic(t *testing.T) {
 	err := func() (err error) {
 		defer recoverAsError(&err)

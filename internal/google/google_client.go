@@ -66,8 +66,7 @@ func (c *GoogleClient) GetSavedToken() *repository.GoogleAuthToken {
 	return c.repository.GetGoogleAuthToken()
 }
 
-// GetClientFromSavedToken refreshes the saved token when it is due and returns
-// a client that keeps refreshing, saving each new token as it goes.
+// The returned client keeps refreshing and saves each new token.
 func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 	config, err := c.getConfig()
 	if err != nil {
@@ -100,8 +99,7 @@ func (c *GoogleClient) GetClientFromSavedToken() (*http.Client, error) {
 	return oauth2.NewClient(context.Background(), source), nil
 }
 
-// Revoke tells Google to forget the grant, so disconnecting here also
-// disconnects on the account's side rather than leaving a live token behind.
+// Disconnects on the account's side too, so no live token is left behind.
 func (c *GoogleClient) Revoke() error {
 	saved := c.repository.GetGoogleAuthToken()
 	if saved == nil {
@@ -127,7 +125,7 @@ func (c *GoogleClient) Revoke() error {
 	}
 	defer response.Body.Close()
 
-	// 400 means Google already considers it gone, which is the outcome we wanted.
+	// 400 means Google already considers it gone.
 	if response.StatusCode >= 300 && response.StatusCode != http.StatusBadRequest {
 		return fmt.Errorf("revoking the Google token returned %s", response.Status)
 	}
@@ -192,7 +190,6 @@ func (c *GoogleClient) verifyScopes(token *oauth2.Token) error {
 		slog.Error("Unable to extract scopes from token")
 	}
 
-	// Check if the token has all required scopes
 	grantedScopes := strings.Fields(rawToken)
 	grantedSet := make(map[string]struct{})
 	for _, s := range grantedScopes {

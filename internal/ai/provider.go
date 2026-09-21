@@ -19,11 +19,9 @@ const (
 
 const defaultTemperature = 0.7
 
-// geminiMaxOutputTokens is asked for explicitly because Gemini caps an
-// unspecified request at 8192 rather than at what the model can do, which cut
-// long answers short. OpenAI-compatible endpoints are left alone: their own
-// default is the context window, and max_tokens is deprecated in favour of
-// max_completion_tokens, which the newer reasoning models reject outright.
+// Gemini caps an unspecified request at 8192, well below what the model can do.
+// OpenAI-compatible endpoints are left alone: max_tokens is deprecated and the
+// newer reasoning models reject it.
 const geminiMaxOutputTokens = 32768
 
 var ErrNoProvider = errors.New("no AI provider is configured")
@@ -70,7 +68,7 @@ type Settings struct {
 	Model       string
 	Temperature float64
 
-	// NoAPIKey suits a model served from this machine, which takes no credentials.
+	// NoAPIKey suits a model served from this machine.
 	NoAPIKey bool
 	// LowReasoning asks a reasoning model to think less; the thinking tokens are billed and discarded.
 	LowReasoning bool
@@ -107,7 +105,6 @@ type Request struct {
 	Prompt string
 }
 
-// Provider streams a completion, calling emit with each chunk in order.
 // A non-nil error from emit ends the stream.
 type Provider interface {
 	Name() string

@@ -63,9 +63,8 @@ func checksumsFor(assets map[string]string, skip string) string {
 	return strings.Join(lines, "\n") + "\n"
 }
 
-// Apply() overwrites the running binary with whatever bytes it is handed and
-// does not roll back bad content, so a tampered download must be rejected
-// before the install step is ever reached.
+// Apply() overwrites the running binary without rollback, so a tampered
+// download must be rejected before the install step.
 func TestPerformUpdateRejectsTamperedAsset(t *testing.T) {
 	updater := fakeRelease(t, "v2.0.0", nil)
 	name := updater.assetName()

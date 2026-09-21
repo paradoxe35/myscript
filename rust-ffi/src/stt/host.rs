@@ -51,7 +51,6 @@ fn guarded(call: impl FnOnce()) {
     }
 }
 
-/// Converts samples in [-1.0, 1.0] to 16-bit signed PCM.
 pub fn pcm16(samples: &[f32]) -> Vec<i16> {
     samples
         .iter()

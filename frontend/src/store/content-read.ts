@@ -3,7 +3,6 @@ import { GetCache, SaveCache } from "~wails/main/App";
 
 type ReadProgress = { word: number; total: number };
 
-/** Picking up where you left off is what you want almost every time. */
 const RESUME_BY_DEFAULT = true;
 
 type ContentReadState = {
@@ -34,7 +33,7 @@ export const useContentReadStore = create<ContentReadState>((set) => ({
     await SaveCache(`page-${pageId}-read-progress`, progress);
   },
 
-  // Entries written before word indexing hold character offsets and are ignored.
+  // Entries without a word index are stale and ignored.
   loadProgress: async (pageId) => {
     const cache = await GetCache(`page-${pageId}-read-progress`);
     const value = cache?.value;

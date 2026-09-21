@@ -11,10 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// UNSYNCED MODEL
-//
-// Credentials live here rather than in Config so they are never uploaded to
-// Drive, and they are encrypted so the file alone gives nothing away.
+// Kept out of Config so credentials are never uploaded to Drive; values are encrypted.
 type Secret struct {
 	Name      string `gorm:"primaryKey"`
 	Value     string
@@ -25,13 +22,12 @@ type Secret struct {
 const (
 	SecretNotionAPIKey = "notion.api_key"
 
-	// Kept only so a key written before hosted services were unified can be adopted.
+	// Kept only so older keys can be adopted.
 	SecretSpeechOpenAIAPIKey = "speech.openai.api_key"
 	SecretSpeechGroqAPIKey   = "speech.groq.api_key"
 )
 
-// SpeechServiceSecret keys the credential per service, so switching between
-// them does not throw away the key you are not using.
+// Keyed per service so switching does not throw away the other key.
 func SpeechServiceSecret(preset string) string {
 	return "speech.remote." + preset + ".api_key"
 }

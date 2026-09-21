@@ -135,8 +135,7 @@ func TestOpenRouterUsesItsOwnReasoningShape(t *testing.T) {
 	var requests []capturedRequest
 	server := fakeProvider(t, "data: [DONE]\n\n", &requests)
 
-	// The style is chosen by host, so a custom provider pointing at OpenRouter
-	// gets the same treatment.
+	// The style is chosen by host, so a custom provider gets the same treatment.
 	provider, _ := New(Settings{
 		Name: "openrouter", Kind: KindOpenRouter, APIKey: "sk", Model: "openai/gpt-4o-mini",
 		BaseURL: server.URL + "/openrouter.ai", LowReasoning: true,
@@ -211,9 +210,8 @@ func TestValidateReportsWhatIsMissing(t *testing.T) {
 	}
 }
 
-// Gemini caps an unspecified request at 8192 rather than at what the model can
-// do, so the ceiling is stated. OpenAI-compatible endpoints must not receive it:
-// max_tokens is deprecated and the newer reasoning models reject it.
+// Gemini caps an unspecified request at 8192. OpenAI-compatible endpoints
+// must not receive max_tokens: newer reasoning models reject it.
 func TestOnlyGeminiIsToldTheCeiling(t *testing.T) {
 	var openAI []capturedRequest
 	openAIServer := fakeProvider(t, "data: [DONE]\n\n", &openAI)

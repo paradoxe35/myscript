@@ -48,37 +48,29 @@ func main() {
 		panic(err)
 	}
 
-	// Set Slog as the default logger
 	slog.SetDefault(logger.Slog)
 
-	// Updater
 	appUpdater := updater.NewUpdater(REPO_OWNER, REPO_NAME, strings.TrimSpace(AppVersion))
 
-	// Speech models
 	stt.Init(filesystem.HOME_DIR)
 	stt.StartRefreshing()
 
-	// Database
 	mainDB := database.NewMainDatabase(filesystem.HOME_DIR)
 	unSyncedDB := database.NewUnSyncedDatabase(filesystem.HOME_DIR)
 
-	// Set global variable (used in change log repository)
 	repository.SetUnSyncedDB(unSyncedDB)
 
 	repository.AdoptLegacyKeys(mainDB, unSyncedDB)
 	repository.AdoptHostedSpeech(mainDB, unSyncedDB)
 
-	// Repositories
 	googleAuthTokenRepository := repository.NewGoogleAuthTokenRepository(unSyncedDB)
 	syncStateRepository := repository.NewSyncStateRepository(unSyncedDB)
 	changeLogRepository := repository.NewChangeLogRepository(unSyncedDB)
 	remoteApplyFailureRepository := repository.NewRemoteApplyFailureRepository(unSyncedDB)
 	processedChangeRepository := repository.NewProcessedChangeRepository(unSyncedDB)
 
-	// Google
 	googleClient := google.NewGoogleClient(readGoogleCredentials(), googleAuthTokenRepository)
 
-	// Synchronizer
 	sync := synchronizer.NewSynchronizer(
 		synchronizer.WithMainDatabase(mainDB),
 		synchronizer.WithRemoteApplyFailureRepository(remoteApplyFailureRepository),
@@ -92,15 +84,12 @@ func main() {
 		WithUnSyncedDB(unSyncedDB),
 		WithSpeech(func() (stt.Engine, error) { return ffi.NewSpeech() }),
 		WithUpdater(appUpdater),
-
-		// Synchronizer
 		WithSynchronizer(
 			WithSync(sync),
 			WithGoogleClient(googleClient),
 		),
 	)
 
-	// Create application with options
 	err = wails.Run(&options.App{
 		Title:     title,
 		MinWidth:  width,

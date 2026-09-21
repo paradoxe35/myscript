@@ -7,8 +7,8 @@ package stt
 
 import "fmt"
 
-// Model mirrors one entry of models.json; field order is the file's key
-// order so the generator writes the same shape it reads.
+// Field order is the file's key order so the generator writes the same shape
+// it reads.
 type Model struct {
 	ID          string `json:"id"`
 	Slug        string `json:"slug"`
@@ -29,8 +29,7 @@ type Model struct {
 	Streaming      bool     `json:"streaming"`
 	LanguageDetect bool     `json:"language_detect"`
 
-	// WordErrorRate is a percentage, as published: 7.53 means 7.53%. Nil when
-	// the card publishes none, which is not the same as a perfect zero.
+	// WordErrorRate is a percentage; nil when unpublished, which is not a perfect zero.
 	WordErrorRate  *float64 `json:"word_error_rate"`
 	RealtimeFactor float64  `json:"realtime_factor"`
 	SpeedScore     float64  `json:"speed_score"`
@@ -56,8 +55,7 @@ func (m Model) Speaks(code string) bool {
 	return false
 }
 
-// TranscribeLanguage is the code to hand the engine. A model that cannot
-// detect is never left blank: the library would assume English.
+// A model that cannot detect is never left blank: the library would assume English.
 func (m Model) TranscribeLanguage(preferred string) string {
 	if preferred != "" && m.Speaks(preferred) {
 		return preferred

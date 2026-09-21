@@ -14,7 +14,6 @@ import { ReadingHeader } from "@/components/app-header/reading-header";
 import { useActivePageStore } from "@/store/active-page";
 import { APP_SCROLL_ATTRIBUTE } from "@/lib/dom";
 
-// Init components
 import { TranscriberInit } from "@/components/transcriber-init";
 import { SpeechModelsInit } from "@/components/speech-models-init";
 import { AppUpdater } from "@/components/app-updater";

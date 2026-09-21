@@ -16,8 +16,7 @@ var (
 	ErrNoToken       = errors.New("not connected to Google Drive")
 )
 
-// authErrorMarkers are what Google says when the grant itself is no longer
-// usable. Matched on text because the transport reports them as plain errors.
+// Matched on text because the transport reports these as plain errors.
 var authErrorMarkers = []string{
 	"invalid_grant",
 	"invalid_token",
@@ -28,8 +27,7 @@ var authErrorMarkers = []string{
 	"unauthenticated",
 }
 
-// IsAuthError reports a failure that only signing in again can fix, as opposed
-// to a network blip worth retrying.
+// A failure only signing in again can fix, unlike a network blip.
 func IsAuthError(err error) bool {
 	if err == nil {
 		return false
@@ -55,9 +53,7 @@ func IsAuthError(err error) bool {
 	return false
 }
 
-// keepRefreshToken carries the refresh token forward. Google returns it only on
-// the first consent, so a refreshed token that omits it would otherwise leave
-// the account unable to refresh again.
+// Google returns the refresh token only on first consent, so carry it forward.
 func keepRefreshToken(previous, refreshed *oauth2.Token) *oauth2.Token {
 	if refreshed == nil {
 		return previous
@@ -70,8 +66,7 @@ func keepRefreshToken(previous, refreshed *oauth2.Token) *oauth2.Token {
 	return refreshed
 }
 
-// persistingTokenSource saves a token the transport refreshed mid-session, so a
-// long sync does not end with the new token only in memory.
+// Saves tokens the transport refreshes mid-session.
 type persistingTokenSource struct {
 	source     oauth2.TokenSource
 	repository *repository.GoogleAuthTokenRepository

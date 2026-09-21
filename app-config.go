@@ -5,8 +5,6 @@ package main
 
 import "myscript/internal/repository"
 
-// --- Config ---
-
 func (a *App) GetConfig() *repository.Config {
 	return repository.NewConfigRepository(a.mainDB).
 		GetConfig()

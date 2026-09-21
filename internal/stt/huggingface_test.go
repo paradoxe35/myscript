@@ -316,7 +316,7 @@ func TestScoreMath(t *testing.T) {
 		{wer(0), 1},
 		{wer(3.99), 0.867},
 		{wer(15), 0.5},
-		{wer(62.2), 0.5}, // past the limit the script's `or 0.5` turns 0 into the unmeasured default
+		{wer(62.2), 0.5}, // past the limit, 0 reads as unmeasured
 		{nil, 0.5},
 	}
 	for _, c := range cases {
@@ -459,8 +459,8 @@ func TestEncodeCatalogRoundTripsTheShippedFile(t *testing.T) {
 	}
 }
 
-// useTempHome points the package at a scratch home so Refresh can cache, and
-// restores the embedded list for the tests that follow.
+// Points the package at a scratch home so Refresh can cache; restores the
+// embedded list afterwards.
 func useTempHome(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

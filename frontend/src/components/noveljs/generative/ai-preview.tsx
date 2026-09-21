@@ -3,9 +3,8 @@ import { cn } from "@/lib/utils";
 import Markdown from "react-markdown";
 
 /**
- * The answer is Markdown, so the preview renders it rather than showing its
- * syntax. The height cap lives on the viewport: on the root it would only clip,
- * leaving a long answer unreadable.
+ * Renders the Markdown answer. The height cap goes on the viewport; on the
+ * root it would only clip a long answer.
  */
 export function AIPreview({ markdown }: { markdown: string }) {
   return (

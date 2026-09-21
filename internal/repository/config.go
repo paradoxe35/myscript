@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// !SYNCED MODEL
-
 type Config struct {
 	gorm.Model
 
@@ -24,19 +22,17 @@ type Config struct {
 	AIProvider  string         `gorm:"column:ai_provider"`
 	AIProviders datatypes.JSON `gorm:"column:ai_providers"`
 
-	// Credentials now live in the secret store, which is never synced. These
-	// columns are only read once, to adopt a key written by an older build.
+	// Read once to adopt keys written by older builds; credentials now live in
+	// the secret store.
 	NotionApiKey *string `gorm:"column:notion_api_key"`
 	OpenAIApiKey *string `gorm:"column:openai_api_key"`
 	GroqApiKey   *string `gorm:"column:groq_api_key"`
 
-	// Unused since the GGUF catalogue replaced the ggml models; kept so a synced
-	// row from an older build still applies.
+	// Unused; kept so a synced row from an older build still applies.
 	LocalWhisperModel *string `gorm:"column:local_whisper_model"`
 	LocalWhisperGPU   *bool   `gorm:"column:local_whisper_gpu"`
 }
 
-// Hooks
 func (n *Config) AfterCreate(tx *gorm.DB) error {
 	return logChange(tx, n, OPERATION_SAVE)
 }
@@ -58,8 +54,6 @@ func NewConfigRepository(db *gorm.DB) *ConfigRepository {
 		BaseRepository: BaseRepository{db: db},
 	}
 }
-
-// Functions
 
 func (r *ConfigRepository) GetConfig() *Config {
 	var config Config

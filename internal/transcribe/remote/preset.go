@@ -16,7 +16,6 @@ const (
 
 const CustomPreset = "custom"
 
-// Preset is a hosted transcription service the settings screen offers.
 type Preset struct {
 	ID       string
 	Name     string
@@ -72,11 +71,9 @@ func FindPreset(id string) (Preset, bool) {
 	return Preset{}, false
 }
 
-// DefaultPreset is what a configuration naming nothing falls back to.
 func DefaultPreset() Preset { return Presets[0] }
 
-// An unknown id is a configuration naming a preset this build does not have,
-// which has been OpenAI-shaped in every case so far.
+// A preset this build does not have has been OpenAI-shaped in every case so far.
 func protocolFor(id string) Protocol {
 	if preset, ok := FindPreset(id); ok && preset.Protocol != "" {
 		return preset.Protocol
@@ -84,7 +81,6 @@ func protocolFor(id string) Protocol {
 	return ProtocolOpenAI
 }
 
-// Settings is one configured hosted service.
 type Settings struct {
 	Preset  string
 	BaseURL string
@@ -92,7 +88,6 @@ type Settings struct {
 	APIKey  string
 }
 
-// Resolved fills in whatever the settings screen left blank.
 func (s Settings) Resolved() Settings {
 	preset, ok := FindPreset(s.Preset)
 	if !ok {
@@ -101,8 +96,7 @@ func (s Settings) Resolved() Settings {
 	}
 
 	if !preset.Custom() {
-		// Filled in, not forced: the settings screen locks the field, so a
-		// stored endpoint is a deliberate one and is left alone.
+		// Filled in, not forced: a stored endpoint is deliberate.
 		if s.BaseURL == "" {
 			s.BaseURL = preset.BaseURL
 		}

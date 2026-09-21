@@ -50,7 +50,6 @@ func DecompressSnapshotFile(data []byte, tmpDir string) (string, error) {
 				return "", fmt.Errorf("failed to write file: %v", err)
 			}
 
-			// Check if the file is the SQLite database
 			if filepath.Base(header.Name) == database.DB_BASE_NAME {
 				dbPath = target
 			}

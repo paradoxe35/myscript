@@ -36,10 +36,8 @@ export function convertNotionToHtml(blocks: NotionBlock[]): string {
 }
 
 export function wrapLists(html: string): string {
-  // Wrap consecutive bulleted list items
   html = html.replace(/(<li>(?:(?!<\/li>).)*<\/li>)\s*(?=<li>)/g, "$1");
 
-  // Wrap in ul tags
   html = html.replace(
     /(?:(?<=^)|(?<=<\/ul>)|(?<=<\/ol>)|(?<=<\/div>)|(?<=<\/p>))(\s*<li>(?:(?!<\/li>).)*<\/li>)+/g,
     "<ul>$1</ul>"
@@ -117,7 +115,6 @@ function convertRichTextToHtml(richText: RichText[]): string {
     .map((textObj) => {
       let text = escapeHtml(textObj.plain_text);
 
-      // Apply text annotations
       if (textObj.annotations) {
         if (textObj.annotations.code) text = `<code>${text}</code>`;
         if (textObj.annotations.bold) text = `<strong>${text}</strong>`;

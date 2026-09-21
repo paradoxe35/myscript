@@ -8,8 +8,7 @@ import (
 	"myscript/internal/repository"
 )
 
-// Credentials the settings screen owns, mapped to the names they are stored
-// under. Anything outside this list is refused.
+// Settings-screen credentials mapped to their stored names; anything else is refused.
 var appSecrets = map[string]string{
 	"notion": repository.SecretNotionAPIKey,
 }

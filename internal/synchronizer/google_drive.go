@@ -101,14 +101,6 @@ func (s *GoogleDriveService) geFileContent(fileId string) ([]byte, error) {
 	}
 }
 
-// func (s *GoogleDriveService) geFileContentStream(fileId string) (io.ReadCloser, error) {
-// 	resp, err := s.service.Files.Get(fileId).Download()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return resp.Body, nil
-// }
-
 func (s *GoogleDriveService) files() *drive.FilesListCall {
 	return s.service.Files.List().
 		Spaces(PARENT_FOLDER).
@@ -260,17 +252,16 @@ func (s *GoogleDriveService) PruneOldChanges(timestamp time.Time) error {
 	sem := make(chan struct{}, 20)
 
 	for _, file := range resp.Files {
-		// Acquire a semaphore slot (blocks if all 20 are in use)
 		sem <- struct{}{}
 		wg.Add(1)
 
 		go func(file *drive.File) {
 			defer wg.Done()
-			defer func() { <-sem }() // Release the semaphore slot when done
+			defer func() { <-sem }()
 
 			fileTime := s.parseTime(file.CreatedTime)
 			if fileTime.After(timestamp) || fileTime.Equal(timestamp) {
-				return // Skip deletion if the file is newer or equal to the threshold
+				return
 			}
 
 			err := s.service.Files.Delete(file.Id).Do()

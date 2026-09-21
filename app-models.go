@@ -23,7 +23,6 @@ const (
 	eventModelDownloadCancel   = "on-model-download-cancelled"
 )
 
-// SpeechModel is a catalogue entry as the settings list shows it.
 type SpeechModel struct {
 	ID             string
 	Name           string
@@ -33,8 +32,7 @@ type SpeechModel struct {
 	LanguageDetect bool
 	Streaming      bool
 	Custom         bool
-	// Accuracy is the catalogue score as a percentage; Speed is the estimated
-	// multiple of realtime on this machine, 0 when unmeasured.
+	// Accuracy is a percentage; Speed is multiples of realtime, 0 when unmeasured.
 	Accuracy    int
 	Speed       float64
 	Fit         string
@@ -64,8 +62,7 @@ type ModelDownloadEvent struct {
 	Error      string
 }
 
-// GetSpeechModels lists the catalogue ranked for this machine: downloaded
-// first, then what runs comfortably here.
+// Ranked for this machine: downloaded first, then what runs comfortably.
 func (a *App) GetSpeechModels() []SpeechModel {
 	store := a.speech.Store()
 	host := stt.Host()
@@ -98,7 +95,7 @@ func (a *App) GetSpeechModels() []SpeechModel {
 	return summaries
 }
 
-// DownloadSpeechModel returns at once; progress and the outcome arrive as events.
+// Returns at once; progress and the outcome arrive as events.
 func (a *App) DownloadSpeechModel(id string) error {
 	model, ok := stt.FindModel(id)
 	if !ok {
@@ -147,8 +144,7 @@ func (a *App) DeleteSpeechModel(id string) error {
 	return a.speech.Store().Delete(model)
 }
 
-// RefreshSpeechModels rebuilds the catalogue now, regardless of the cache's
-// age, so a user who heard about a new model need not wait for the scheduler.
+// Rebuilds the catalogue now, regardless of the cache's age.
 func (a *App) RefreshSpeechModels() error {
 	parent := a.ctx
 	if parent == nil {
@@ -159,7 +155,6 @@ func (a *App) RefreshSpeechModels() error {
 	return stt.Refresh(ctx)
 }
 
-// HasLegacyWhisperFiles reports ggml ".bin" models left by earlier releases.
 func (a *App) HasLegacyWhisperFiles() bool {
 	return len(a.speech.Store().LegacyFiles()) > 0
 }

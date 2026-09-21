@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the root directory.
 
 // Package ffi binds the Rust capture and transcription library. Callbacks
-// arrive on library threads and are handed to one goroutine, so Wails is
+// arrive on library threads and are relayed by one goroutine, so Wails is
 // never touched from a foreign thread.
 package ffi
 
@@ -43,8 +43,7 @@ var (
 	deliverOnce sync.Once
 )
 
-// Speech is the one recogniser; the Rust side orders start, stop and cancel
-// against each other, so calls only need the handle kept alive.
+// The Rust side orders start, stop and cancel; calls only need the handle kept alive.
 type Speech struct {
 	mu     sync.RWMutex
 	handle C.myscript_stt_SttHandle
@@ -103,8 +102,8 @@ func sttAudioGateway(samples *C.int16_t, length C.uintptr_t) {
 //export sttLevelGateway
 func sttLevelGateway(rms C.float) {
 	if handler := current().Level; handler != nil {
-		// Dropped rather than queued when the host is behind: a stale meter
-		// reading is worthless, and the audio thread must never wait.
+		// Dropped when the host is behind: a stale meter reading is worthless,
+		// and the audio thread must never wait.
 		select {
 		case deliveries <- func() { handler(float32(rms)) }:
 		default:
@@ -128,7 +127,7 @@ func sttErrorGateway(message *C.char) {
 	}
 }
 
-// Load blocks until the model is resident or the load failed.
+// Blocks until the model is resident or the load failed.
 func (s *Speech) Load(path string) error {
 	cPath := C.CString(path)
 	defer C.free(unsafe.Pointer(cPath))
@@ -152,7 +151,7 @@ func (s *Speech) Start() error {
 	return check(result)
 }
 
-// Stop blocks until the last utterance has been transcribed and delivered.
+// Blocks until the last utterance has been transcribed and delivered.
 func (s *Speech) Stop() error {
 	s.mu.RLock()
 	result := C.myscript_stt_stop(s.handle)
@@ -167,14 +166,14 @@ func (s *Speech) Cancel() error {
 	return check(result)
 }
 
-// SetDevice chooses the microphone by name, empty for the system default; applies to the next take.
+// Empty means the system default; applies to the next take.
 func (s *Speech) SetDevice(name string) error {
 	return s.setString(name, func(value *C.char) C.int {
 		return C.myscript_stt_set_device(s.handle, value)
 	})
 }
 
-// SetLanguage sets the spoken language as an ISO code, empty to detect; applies to the next take.
+// ISO code, empty to detect; applies to the next take.
 func (s *Speech) SetLanguage(code string) error {
 	return s.setString(code, func(value *C.char) C.int {
 		return C.myscript_stt_set_language(s.handle, value)
@@ -194,7 +193,7 @@ func (s *Speech) setString(value string, set func(*C.char) C.int) error {
 	return check(result)
 }
 
-// SetCaptureOnly routes utterances to the audio callback instead of the model; applies to the next take.
+// Routes utterances to the audio callback instead of the model; applies to the next take.
 func (s *Speech) SetCaptureOnly(enabled bool) error {
 	s.mu.RLock()
 	result := C.myscript_stt_set_capture_only(s.handle, C.bool(enabled))
@@ -212,7 +211,6 @@ func (s *Speech) Close() {
 	}
 }
 
-// InputDevices lists microphones; an empty result means none were found.
 func InputDevices() []stt.Device {
 	listed := C.myscript_stt_devices()
 	if listed == nil {

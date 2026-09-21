@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow};
 use transcribe_cpp::RunOptions;
 
-/// Holds the loaded model between utterances. Loading costs seconds and each
-/// utterance costs milliseconds, so the session stays resident for a take.
+/// Loading costs seconds and each utterance milliseconds, so the model stays
+/// resident for a take.
 #[derive(Default)]
 pub struct Engine {
     loaded: Option<Loaded>,
@@ -15,9 +15,8 @@ struct Loaded {
     session: transcribe_cpp::Session,
 }
 
-/// ggml's default takes every core, which starves the capture thread and makes
-/// the driver drop audio mid-take. Leave one core for it, and stop at 8: these
-/// models gain little beyond that and each extra thread is more contention.
+/// ggml's default takes every core and starves the capture thread. Leave one
+/// core for it, and stop at 8: more threads only add contention.
 fn inference_threads() -> i32 {
     let cores = std::thread::available_parallelism().map_or(2, |count| count.get());
     threads_for_cores(cores)

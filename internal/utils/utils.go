@@ -23,8 +23,8 @@ func MeasureExec(name string) func() {
 	}
 }
 
-// IsDevMode reports a `wails dev` session. The build tag is authoritative; the
-// binary name is kept as a fallback for anything that builds without it.
+// The build tag is authoritative; the binary name is a fallback for builds
+// without it.
 func IsDevMode() bool {
 	return devBuild || strings.Contains(os.Args[0], "-dev")
 }
@@ -32,8 +32,7 @@ func IsDevMode() bool {
 const (
 	connectivityProbe   = "http://clients3.google.com/generate_204"
 	connectivityTimeout = 5 * time.Second
-	// Being online rarely changes from one second to the next, so the answer is
-	// reused; going offline is rechecked sooner so the app recovers quickly.
+	// Going offline is rechecked sooner so the app recovers quickly.
 	onlineTTL  = 30 * time.Second
 	offlineTTL = 5 * time.Second
 )
@@ -44,8 +43,7 @@ var connectivity struct {
 	checked time.Time
 }
 
-// HasInternet answers from a short-lived cache, so callers on a timer (the sync
-// scheduler ticks every 10s) do not turn a liveness check into a stream of
+// Cached so callers on a timer do not turn a liveness check into a stream of
 // requests.
 func HasInternet() bool {
 	connectivity.mu.Lock()
@@ -88,7 +86,6 @@ func probeInternet() bool {
 
 func IsAOlderThanBByOneWeek(a, b time.Time) bool {
 	duration := b.Sub(a)
-	// Check if duration is >= 7 days
 	return duration >= 7*24*time.Hour
 }
 

@@ -14,10 +14,8 @@ import (
 	"strings"
 )
 
-// unzipBundle extracts a zipped macOS .app into dest, dropping the bundle's own
-// directory so dest becomes the bundle. Symlinks are kept: a framework inside a
-// bundle is a link, and copying its target instead doubles the size and breaks
-// the signature.
+// Drops the bundle's own directory so dest becomes the bundle. Symlinks are
+// kept: copying a framework link's target doubles the size and breaks the signature.
 func unzipBundle(archivePath, dest string) error {
 	reader, err := zip.OpenReader(archivePath)
 	if err != nil {
@@ -92,9 +90,8 @@ func extractZipEntry(file *zip.File, path string) error {
 	return writeFile(path, source, info.Mode())
 }
 
-// openBinaryInTarGz positions a reader on the single executable inside a
-// tar.gz. The caller streams it straight into the installer, so the binary is
-// never staged on disk where a half-written copy could be run.
+// The caller streams the executable straight into the installer, so a
+// half-written copy is never on disk.
 func openBinaryInTarGz(archivePath string) (io.Reader, io.Closer, error) {
 	file, err := os.Open(archivePath)
 	if err != nil {
@@ -146,7 +143,7 @@ func writeFile(path string, content io.Reader, mode os.FileMode) error {
 	return err
 }
 
-// safeJoin refuses an entry whose name would escape the destination.
+// Refuses an entry whose name would escape the destination.
 func safeJoin(dest, name string) (string, error) {
 	path := filepath.Join(dest, filepath.FromSlash(name))
 	if !strings.HasPrefix(path, filepath.Clean(dest)+string(os.PathSeparator)) {

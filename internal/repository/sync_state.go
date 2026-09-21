@@ -9,8 +9,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// UNSYNCED MODEL
-
 type SyncState struct {
 	gorm.Model
 	SyncTimeOffset time.Time

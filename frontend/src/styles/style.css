@@ -163,9 +163,8 @@
   }
 
   /*
-   * The document never scrolls: the app shell fills the viewport and scrolling
-   * happens inside it. overscroll-behavior stops WebKit bouncing the root on
-   * top of that, which is what made the header and content drift on macOS.
+   * Only the app shell scrolls. overscroll-none stops WebKit bouncing the
+   * root, which made the header and content drift on macOS.
    */
   html,
   body {
@@ -186,10 +185,7 @@
     font-size: calc(1.875rem * var(--content-zoom, 1));
   }
 
-  /*
-   * The column grows with the text, so zooming enlarges the words without
-   * halving how many fit on a line. It still never exceeds the space available.
-   */
+  /* The column grows with the zoom, so larger text keeps its words per line. */
   .content-column {
     width: 100%;
     max-width: min(100%, calc(846px * var(--content-zoom, 1)));

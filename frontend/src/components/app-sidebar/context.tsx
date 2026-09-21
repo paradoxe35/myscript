@@ -113,7 +113,6 @@ function useSidebarItems() {
     notionPagesStore.getPages();
   }, []);
 
-  // Refresh notion pages when the user is online
   useEffect(() => {
     addEventListener("online", refreshNotionPages);
 
@@ -163,7 +162,6 @@ function useSidebarItems() {
   useEffect(() => {
     initialLoad();
 
-    // Create items for all pages
     const items = sortedPages.reduce((acc, page) => {
       const children = sortedPages
         .filter((child) => child.ParentID === page.ID)
@@ -181,7 +179,6 @@ function useSidebarItems() {
       };
     }, {} as TreeData["items"]);
 
-    // Add root item pointing to top-level pages
     const rootChildren = sortedPages
       .filter((page) => !page.ParentID)
       .map((page) => page.ID);
@@ -191,10 +188,9 @@ function useSidebarItems() {
       children: rootChildren,
       hasChildren: rootChildren.length > 0,
       isExpanded: true,
-      data: null, // Or add root data if needed
+      data: null,
     };
 
-    // For active page, all parents are expanded
     if (activePageId && canExpandActivePageTree.current) {
       const getParents = (id: ItemId) => {
         const parents: ItemId[] = [];
@@ -220,7 +216,6 @@ function useSidebarItems() {
         const page = item.data as repository.Page;
         item.isExpanded = true;
 
-        // Save page expanded state
         if (page && page.is_folder && !page.expanded) {
           page.expanded = true;
           localPagesStore.savePage(page);
@@ -273,7 +268,6 @@ function useSidebarItems() {
 
       items = newTree.items;
 
-      // Save new pages orders
       let order = 0;
       const applyingOrders: Promise<void>[] = [];
       const applyOrder = (pages: repository.Page[]) => {
@@ -301,7 +295,6 @@ function useSidebarItems() {
 
       applyOrder(rootChildren);
 
-      // After all orders are applied, refresh active page
       Promise.all(applyingOrders).then(() => {
         if (activePage?.__typename === "local_page") {
           activePageStore.fetchPageBlocks();

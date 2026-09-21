@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// App struct
 type App struct {
 	ctx context.Context
 
@@ -47,8 +46,7 @@ func WithUnSyncedDB(db *gorm.DB) AppOption {
 	}
 }
 
-// WithSpeech wires the speech service; its listener needs the app, so the
-// service is built here rather than passed in.
+// The speech listener needs the app, so the service is built here.
 func WithSpeech(newEngine func() (stt.Engine, error)) AppOption {
 	return func(app *App) {
 		app.speech = stt.NewService(stt.NewStore(stt.ModelsDir()), newEngine, app.speechListener())
@@ -60,8 +58,6 @@ func WithUpdater(updater *updater.Updater) AppOption {
 		app.updater = updater
 	}
 }
-
-// Synchronizer Options
 
 func WithSynchronizer(options ...SynchronizerOption) AppOption {
 	sync := &Synchronizer{}
@@ -87,7 +83,6 @@ func WithSync(sync *synchronizer.Synchronizer) SynchronizerOption {
 	}
 }
 
-// NewApp creates a new App application struct
 func NewApp(options ...AppOption) *App {
 	app := &App{aiCompletions: newAICompletions()}
 
@@ -98,8 +93,6 @@ func NewApp(options ...AppOption) *App {
 	return app
 }
 
-// startup is called when the app starts. The context is saved
-// so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 }

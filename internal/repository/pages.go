@@ -8,8 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// !SYNCED MODEL
-
 type Page struct {
 	BaseUUIDModel
 
@@ -19,12 +17,10 @@ type Page struct {
 	IsFolder    bool           `json:"is_folder"`
 	Expanded    bool           `json:"expanded"`
 	Order       int            `json:"order"`
-	// Self-referential relationship
-	ParentID *string `gorm:"index"` // Nullable parent reference
-	Children []Page  `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
+	ParentID    *string        `gorm:"index"`
+	Children    []Page         `gorm:"foreignKey:ParentID;constraint:OnDelete:SET NULL;"`
 }
 
-// Hooks
 func (n *Page) AfterCreate(tx *gorm.DB) error {
 	return logChange(tx, n, OPERATION_SAVE)
 }

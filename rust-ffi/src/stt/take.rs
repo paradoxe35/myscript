@@ -4,12 +4,11 @@ use std::time::{Duration, Instant};
 use super::audio::Command;
 use super::pipeline::Pipeline;
 
-/// How often the take drains the microphone.
 const DRAIN_INTERVAL: Duration = Duration::from_millis(20);
 /// A take with nobody speaking for this long ends by itself.
 pub const AUTO_STOP: Duration = Duration::from_secs(30);
 
-/// Audio arriving from the microphone, so a take can run without a device in tests.
+/// Lets a take run without a device in tests.
 pub trait Source {
     fn rate(&self) -> u32;
     fn take(&self) -> Vec<f32>;

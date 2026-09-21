@@ -11,8 +11,6 @@ import (
 	"github.com/jomei/notionapi"
 )
 
-// --- Notion Pages ---
-
 func (a *App) getNotionClient() *notion.NotionClient {
 	apiKey := a.notionAPIKey()
 	if apiKey == "" {
@@ -39,8 +37,6 @@ func (a *App) GetNotionPageBlocks(pageID string) ([]*notion.NotionBlock, error) 
 
 	return client.GetPageBlocks(pageID)
 }
-
-// --- Local Pages ---
 
 func (a *App) GetLocalPages() []repository.Page {
 	return repository.NewPageRepository(a.mainDB).

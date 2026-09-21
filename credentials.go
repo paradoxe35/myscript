@@ -20,10 +20,8 @@ func readFile(file string) []byte {
 		return nil
 	}
 
-	// Remove UTF-8 BOM if present
+	// Strip a UTF-8 or UTF-16 BOM
 	data := bytes.TrimPrefix(fileData, []byte{0xEF, 0xBB, 0xBF})
-
-	// Remove UTF-16 BOM if present
 	data = bytes.TrimPrefix(data, []byte{0xFF, 0xFE})
 
 	return data

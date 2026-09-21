@@ -31,7 +31,6 @@ export function AppUpdater() {
       setUpdateMessage("Downloading update...");
       setUpdateProgress(30);
 
-      // Perform the actual update
       await PerformUpdate();
 
       setUpdateMessage("Finalizing update...");
@@ -64,7 +63,7 @@ export function AppUpdater() {
         return;
       }
 
-      lastCheckTime.current = Date.now() + 1000 * 60 * 2; // 2 minutes
+      lastCheckTime.current = Date.now() + 1000 * 60 * 2;
 
       try {
         const response = await CheckForUpdates();
@@ -82,7 +81,7 @@ export function AppUpdater() {
                     size="sm"
                     variant="secondary"
                     onClick={() => {
-                      lastCheckTime.current = Date.now() + 1000 * 60 * 60 * 1; // 1 hour
+                      lastCheckTime.current = Date.now() + 1000 * 60 * 60 * 1;
                       toast.dismiss(t);
                     }}
                   >

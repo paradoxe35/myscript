@@ -16,9 +16,8 @@ import (
 
 const checksumsAsset = "checksums.txt"
 
-// parseChecksums reads the `sha256sum` output the release publishes. Names may
-// carry the binary marker sha256sum writes ("*name"), and the release flattens
-// directories, so only the base name is matched.
+// Reads sha256sum output. Names may carry the "*" binary marker, and the
+// release flattens directories, so only the base name is matched.
 func parseChecksums(r io.Reader) (map[string][]byte, error) {
 	sums := make(map[string][]byte)
 

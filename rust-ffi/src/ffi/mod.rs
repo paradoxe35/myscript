@@ -1,4 +1,4 @@
-// Every entry point takes a raw handle or C string; the contract is the same for all of them.
+// Every entry point shares the same raw handle and C string contract.
 #![allow(clippy::missing_safety_doc)]
 
 pub mod speech;

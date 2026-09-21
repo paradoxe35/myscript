@@ -60,7 +60,7 @@ type TranscriberStore = {
   onMicLevel: (callback: (level: number) => void) => EventClear;
 };
 
-// Pages remembered before the Whisper list moved to ISO codes.
+// Codes saved by older versions, mapped to their ISO replacements.
 const LEGACY_LANGUAGE_CODES: Record<string, string> = { iw: "he" };
 
 const ON_TRANSCRIBED_TEXT = "on-transcribed-text";
