@@ -32,3 +32,36 @@ func TestPruneColumnsDropsWhatTheModelNoLongerDeclares(t *testing.T) {
 		}
 	}
 }
+
+func TestSnapshotsWithColumnsTheModelDroppedStillApply(t *testing.T) {
+	dir := t.TempDir()
+	snapshot, err := MountDatabase(filepath.Join(dir, "snapshot.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	local, err := MountDatabase(filepath.Join(dir, "local.sqlite"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	synced := []any{&repository.Config{}, &repository.Page{}, &repository.Cache{}}
+	migrate(snapshot, synced...)
+	migrate(local, synced...)
+	snapshot.Exec("ALTER TABLE pages ADD COLUMN expanded numeric")
+	snapshot.Create(&repository.Page{Title: "kept", HtmlContent: "<p>body</p>"})
+
+	if err := NewDatabaseSynchronizer(snapshot, local).SynchronizeAll(); err != nil {
+		t.Fatalf("snapshot with an extra column should apply: %v", err)
+	}
+
+	var page repository.Page
+	local.First(&page, "title = ?", "kept")
+	if page.HtmlContent != "<p>body</p>" {
+		t.Errorf("page was not restored, got %+v", page)
+	}
+
+	snapshot.Exec("ALTER TABLE pages ADD COLUMN clash text")
+	local.Exec("ALTER TABLE pages ADD COLUMN clash integer")
+	if err := NewDatabaseSynchronizer(snapshot, local).SynchronizeAll(); err == nil {
+		t.Error("a shared column with a different type should still be rejected")
+	}
+}

@@ -249,16 +249,14 @@ func (s *DatabaseSynchronizer) areSchemasCompatible(entity interface{}) (bool, e
 		return false, fmt.Errorf("failed to get target columns: %v", err)
 	}
 
-	for _, sCol := range sourceCols {
-		var targetCol gorm.ColumnType = nil
-		for _, tCol := range targetCols {
-			if sCol.Name() == tCol.Name() {
-				targetCol = tCol
-				break
-			}
-		}
-
-		if targetCol == nil || sCol.DatabaseTypeName() != targetCol.DatabaseTypeName() {
+	// Columns the snapshot has and the model dropped are never read, so only
+	// the shared ones must agree.
+	sourceTypes := make(map[string]string, len(sourceCols))
+	for _, col := range sourceCols {
+		sourceTypes[col.Name()] = col.DatabaseTypeName()
+	}
+	for _, col := range targetCols {
+		if sourceType, ok := sourceTypes[col.Name()]; ok && sourceType != col.DatabaseTypeName() {
 			return false, nil
 		}
 	}
