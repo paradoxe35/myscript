@@ -224,9 +224,9 @@ jobs:
             myscript-darwin-${{ matrix.arch }}.dmg
           rm -rf "$staging"
 
-      # The tarball and the AppImage are what the in-app updater downloads, each
-      # replacing itself in place. The distro packages are for people, and those
-      # installs update through the package manager instead.
+      # The in-app updater downloads whichever of these matches the install:
+      # the tarball and the AppImage replace themselves, the distro packages
+      # are handed to the package manager through polkit.
       - name: Package for Linux
         if: matrix.platform == 'linux'
         env:

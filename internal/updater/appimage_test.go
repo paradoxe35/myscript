@@ -26,6 +26,31 @@ func TestAssetNameFollowsInstallKind(t *testing.T) {
 	}
 }
 
+func TestPackagedInstallsFetchTheirPackage(t *testing.T) {
+	if runtime.GOOS != "linux" {
+		t.Skip("packages only exist on Linux")
+	}
+	t.Setenv("APPIMAGE", "")
+
+	for _, pm := range packageManagers {
+		owningPackageManager = func() *packageManager { return &pm }
+		t.Cleanup(func() { owningPackageManager = detectPackageManager })
+
+		got := (&Updater{}).assetName()
+		if want := "myscript-linux-" + runtime.GOARCH + pm.suffix; got != want {
+			t.Errorf("%s install should fetch %q, got %q", pm.name, want, got)
+		}
+	}
+}
+
+func TestPackagesAreInstalledThroughPolkit(t *testing.T) {
+	got := packageManagers[0].installCommand("/tmp/myscript-linux-amd64.deb")
+	want := "pkexec dpkg -i /tmp/myscript-linux-amd64.deb"
+	if strings.Join(got, " ") != want {
+		t.Fatalf("got %q, want %q", strings.Join(got, " "), want)
+	}
+}
+
 // An AppImage runs from a read-only squashfs, so replacing the executable
 // reported by os.Executable() would fail. The outer file is the real target.
 func TestInstallAppImageReplacesTheOuterFile(t *testing.T) {
@@ -82,7 +107,7 @@ func TestEnsureWritableTargetsTheAppImage(t *testing.T) {
 	if err == nil {
 		t.Fatal("an unwritable AppImage location was accepted")
 	}
-	if !strings.Contains(err.Error(), "package manager") {
+	if !strings.Contains(err.Error(), "not writable") {
 		t.Fatalf("expected actionable advice, got: %v", err)
 	}
 }

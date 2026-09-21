@@ -154,6 +154,9 @@ func TestAssetNameMatchesReleaseArtifacts(t *testing.T) {
 		"myscript-linux-arm64.tar.gz":          true,
 		"myscript-linux-amd64.AppImage":        true,
 		"myscript-linux-arm64.AppImage":        true,
+		"myscript-linux-amd64.deb":             true,
+		"myscript-linux-amd64.rpm":             true,
+		"myscript-linux-amd64.pkg.tar.zst":     true,
 	}
 
 	updater := &Updater{}

@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/google/go-github/v50/github"
 	"github.com/hashicorp/go-version"
@@ -26,6 +27,9 @@ type Updater struct {
 	CurrentVer string
 
 	client *github.Client
+
+	packageOnce    sync.Once
+	packageManager *packageManager
 }
 
 func NewUpdater(owner, repo, currentVer string) *Updater {
@@ -78,8 +82,10 @@ func (u *Updater) PerformUpdate() error {
 		return fmt.Errorf("this release has no download for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
-	if err := u.ensureWritable(); err != nil {
-		return err
+	if u.packaged() == nil {
+		if err := u.ensureWritable(); err != nil {
+			return err
+		}
 	}
 
 	// Fetched first so an unverifiable release costs one request, not the transfer.
@@ -114,6 +120,11 @@ func (u *Updater) install(download string) error {
 
 	case runningAsAppImage():
 		if err := installAppImage(download); err != nil {
+			return err
+		}
+
+	case u.packaged() != nil:
+		if err := installPackage(u.packaged(), download); err != nil {
 			return err
 		}
 
@@ -209,8 +220,7 @@ func currentBundle() (string, error) {
 	}
 }
 
-// Fails before anything is downloaded when the install is root-owned, as with
-// a package manager.
+// Fails before anything is downloaded when the install is root-owned.
 func (u *Updater) ensureWritable() error {
 	if runtime.GOOS == "windows" {
 		return nil
@@ -228,7 +238,7 @@ func (u *Updater) ensureWritable() error {
 
 	if err := (&selfupdate.Options{TargetPath: target}).CheckPermissions(); err != nil {
 		return fmt.Errorf(
-			"%s cannot update itself because %s is not writable — install the new version with your package manager instead",
+			"%s cannot update itself because %s is not writable; reinstall the new version by hand",
 			ASSET_NAME, target,
 		)
 	}
@@ -245,6 +255,9 @@ func (u *Updater) assetName() string {
 	}
 	if runningAsAppImage() {
 		return fmt.Sprintf("%s-linux-%s.AppImage", ASSET_NAME, runtime.GOARCH)
+	}
+	if pm := u.packaged(); pm != nil {
+		return pm.assetName()
 	}
 
 	return fmt.Sprintf("%s-%s-%s.tar.gz", ASSET_NAME, runtime.GOOS, runtime.GOARCH)
