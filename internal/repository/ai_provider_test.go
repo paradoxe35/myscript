@@ -4,6 +4,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"myscript/internal/ai"
 	"testing"
 
@@ -298,5 +299,110 @@ func TestSaveWhenTheProvidersColumnHoldsNull(t *testing.T) {
 				t.Errorf("got %+v, ok=%v", provider, ok)
 			}
 		})
+	}
+}
+
+func TestSyncedConfigCarriesOnlyTheProviderIdentity(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+	repo := NewAIProviderRepository(mainDB, unsynced)
+
+	repo.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "llama", Temperature: 0.3, LowReasoning: true, NoAPIKey: true})
+	repo.Save(AIProvider{Name: ai.KindOpenAI, Model: "gpt-4o", Temperature: 0.2})
+
+	var stored map[string]map[string]any
+	if err := json.Unmarshal(NewConfigRepository(mainDB).GetConfig().AIProviders, &stored); err != nil {
+		t.Fatal(err)
+	}
+
+	for name, fields := range stored {
+		for _, perDevice := range []string{"model", "temperature", "low_reasoning"} {
+			if _, ok := fields[perDevice]; ok {
+				t.Errorf("%s carries %q into the synced config", name, perDevice)
+			}
+		}
+	}
+	if stored["local"]["base_url"] != "http://localhost:1234/v1" || stored["local"]["no_api_key"] != true {
+		t.Errorf("local = %v, the identity should sync", stored["local"])
+	}
+}
+
+// Two machines share the synced config but each keeps its own unsynced store.
+func TestTheModelChoiceStaysOnThisMachine(t *testing.T) {
+	mainDB, here := newStores(t)
+	_, there := newStores(t)
+	thisMachine := NewAIProviderRepository(mainDB, here)
+	otherMachine := NewAIProviderRepository(mainDB, there)
+
+	thisMachine.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "llama", Temperature: 0.3, LowReasoning: true})
+	thisMachine.Save(AIProvider{Name: ai.KindOpenAI, Model: "gpt-4o", Temperature: 0.2})
+
+	synced, ok := otherMachine.Find("local")
+	if !ok {
+		t.Fatal("the provider should reach the other machine")
+	}
+	if synced.BaseURL != "http://localhost:1234/v1" || !synced.Custom {
+		t.Errorf("got %+v, the identity should sync", synced)
+	}
+	if synced.Model != "" || synced.Temperature != 0 || synced.LowReasoning {
+		t.Errorf("got %+v, the model choice must not sync", synced)
+	}
+
+	builtIn, _ := otherMachine.Find(ai.KindOpenAI)
+	if builtIn.Model != ai.DefaultModel(ai.KindOpenAI) || builtIn.Temperature != 0 {
+		t.Errorf("got %+v, want the defaults on a machine that chose nothing", builtIn)
+	}
+
+	otherMachine.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "mistral"})
+	if mine, _ := thisMachine.Find("local"); mine.Model != "llama" {
+		t.Errorf("model = %q, the other machine's choice must not replace ours", mine.Model)
+	}
+}
+
+func TestACustomProviderNeedsAModelOnThisMachine(t *testing.T) {
+	mainDB, here := newStores(t)
+	_, there := newStores(t)
+
+	NewAIProviderRepository(mainDB, here).
+		Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "llama", NoAPIKey: true})
+
+	otherMachine := NewAIProviderRepository(mainDB, there)
+	if otherMachine.Configured("local") {
+		t.Error("a synced provider is not configured until this machine picks a model")
+	}
+
+	otherMachine.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "mistral", NoAPIKey: true})
+	if !otherMachine.Configured("local") {
+		t.Error("choosing a model here should be enough")
+	}
+}
+
+func TestDeleteDropsTheDeviceRow(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+	repo := NewAIProviderRepository(mainDB, unsynced)
+
+	repo.Save(AIProvider{Name: "local", BaseURL: "http://localhost:1234/v1", Model: "llama"})
+	if err := repo.Delete("local"); err != nil {
+		t.Fatal(err)
+	}
+
+	var rows int64
+	unsynced.Model(&AIProviderSettings{}).Where("name = ?", "local").Count(&rows)
+	if rows != 0 {
+		t.Errorf("got %d device rows for a deleted provider", rows)
+	}
+}
+
+func TestAFailedIdentityWriteLeavesTheDeviceRowAlone(t *testing.T) {
+	mainDB, unsynced := newStores(t)
+	repo := NewAIProviderRepository(mainDB, unsynced)
+
+	if err := repo.Save(AIProvider{Name: "local", Model: "llama"}); err == nil {
+		t.Fatal("expected the missing base URL to be refused")
+	}
+
+	var rows int64
+	unsynced.Model(&AIProviderSettings{}).Count(&rows)
+	if rows != 0 {
+		t.Errorf("got %d device rows after a refused save", rows)
 	}
 }

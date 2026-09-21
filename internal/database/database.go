@@ -83,6 +83,7 @@ func NewUnSyncedDatabase(homeDir string) *gorm.DB {
 		&repository.SyncState{},
 		&repository.Secret{},
 		&repository.DeviceSettings{},
+		&repository.AIProviderSettings{},
 		&repository.PageState{},
 		&repository.LocalCache{},
 	)

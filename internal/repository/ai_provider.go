@@ -15,31 +15,63 @@ import (
 	"gorm.io/gorm"
 )
 
-// Credentials live in the secret store so they stay on this machine.
+// A provider as the app sees it: the identity shared through Config merged
+// with this machine's model choice. The key lives in the secret store.
 type AIProvider struct {
-	Name         string  `json:"name"`
-	Kind         string  `json:"kind"`
-	BaseURL      string  `json:"base_url,omitempty"`
-	Model        string  `json:"model,omitempty"`
-	Temperature  float64 `json:"temperature,omitempty"`
-	NoAPIKey     bool    `json:"no_api_key,omitempty"`
-	LowReasoning bool    `json:"low_reasoning,omitempty"`
-	Custom       bool    `json:"custom,omitempty"`
+	Name         string
+	Kind         string
+	BaseURL      string
+	Model        string
+	Temperature  float64
+	NoAPIKey     bool
+	LowReasoning bool
+	Custom       bool
 }
 
-// The provider list is shared through Config; the active choice and the keys
-// are per machine.
+// What Config carries for a provider, so that the synced payload can never
+// hold a per-device field.
+type storedAIProvider struct {
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	BaseURL  string `json:"base_url,omitempty"`
+	NoAPIKey bool   `json:"no_api_key,omitempty"`
+	Custom   bool   `json:"custom,omitempty"`
+}
+
+func (p storedAIProvider) identity() AIProvider {
+	return AIProvider{Name: p.Name, Kind: p.Kind, BaseURL: p.BaseURL, NoAPIKey: p.NoAPIKey, Custom: p.Custom}
+}
+
+func (p AIProvider) stored() storedAIProvider {
+	return storedAIProvider{Name: p.Name, Kind: p.Kind, BaseURL: p.BaseURL, NoAPIKey: p.NoAPIKey, Custom: p.Custom}
+}
+
+func (p AIProvider) deviceSettings() AIProviderSettings {
+	return AIProviderSettings{Name: p.Name, Model: p.Model, Temperature: p.Temperature, LowReasoning: p.LowReasoning}
+}
+
+func (p AIProvider) with(settings AIProviderSettings) AIProvider {
+	p.Model = settings.Model
+	p.Temperature = settings.Temperature
+	p.LowReasoning = settings.LowReasoning
+	return p
+}
+
+// The provider list is shared through Config; the active choice, the model
+// and the keys are per machine.
 type AIProviderRepository struct {
-	config  *ConfigRepository
-	device  *DeviceSettingsRepository
-	secrets *SecretRepository
+	config         *ConfigRepository
+	device         *DeviceSettingsRepository
+	deviceSettings *AIProviderSettingsRepository
+	secrets        *SecretRepository
 }
 
 func NewAIProviderRepository(mainDB, unSyncedDB *gorm.DB) *AIProviderRepository {
 	return &AIProviderRepository{
-		config:  NewConfigRepository(mainDB),
-		device:  NewDeviceSettingsRepository(unSyncedDB),
-		secrets: NewSecretRepository(unSyncedDB),
+		config:         NewConfigRepository(mainDB),
+		device:         NewDeviceSettingsRepository(unSyncedDB),
+		deviceSettings: NewAIProviderSettingsRepository(unSyncedDB),
+		secrets:        NewSecretRepository(unSyncedDB),
 	}
 }
 
@@ -48,13 +80,14 @@ func (r *AIProviderRepository) List() []AIProvider {
 
 	providers := make([]AIProvider, 0, len(stored)+len(ai.BuiltIn()))
 	for _, kind := range ai.BuiltIn() {
-		providers = append(providers, withDefaults(stored[kind], kind))
+		provider := stored[kind].identity().with(r.deviceSettings.Get(kind))
+		providers = append(providers, withDefaults(provider, kind))
 	}
 
 	custom := make([]AIProvider, 0, len(stored))
 	for name, provider := range stored {
 		if provider.Custom && !ai.IsBuiltIn(name) {
-			custom = append(custom, provider)
+			custom = append(custom, provider.identity().with(r.deviceSettings.Get(name)))
 		}
 	}
 	sort.Slice(custom, func(i, j int) bool {
@@ -105,8 +138,11 @@ func (r *AIProviderRepository) Save(provider AIProvider) error {
 		}
 	}
 
-	stored[provider.Name] = provider
-	return r.write(stored)
+	stored[provider.Name] = provider.stored()
+	if err := r.write(stored); err != nil {
+		return err
+	}
+	return r.deviceSettings.Save(provider.deviceSettings())
 }
 
 func (r *AIProviderRepository) Delete(name string) error {
@@ -121,6 +157,9 @@ func (r *AIProviderRepository) Delete(name string) error {
 	delete(stored, name)
 
 	if err := r.write(stored); err != nil {
+		return err
+	}
+	if err := r.deviceSettings.Delete(name); err != nil {
 		return err
 	}
 	if err := r.secrets.Delete(AIProviderSecret(name)); err != nil {
@@ -180,10 +219,10 @@ func (r *AIProviderRepository) Settings(name string) (ai.Settings, error) {
 	if !ok {
 		return ai.Settings{}, fmt.Errorf("no provider named %q", name)
 	}
-	return r.settings(provider), nil
+	return r.resolve(provider), nil
 }
 
-func (r *AIProviderRepository) settings(provider AIProvider) ai.Settings {
+func (r *AIProviderRepository) resolve(provider AIProvider) ai.Settings {
 	return ai.Settings{
 		Name:         provider.Name,
 		Kind:         provider.Kind,
@@ -203,20 +242,20 @@ func (r *AIProviderRepository) Configured(name string) bool {
 }
 
 func (r *AIProviderRepository) configured(provider AIProvider) bool {
-	client, err := ai.New(r.settings(provider))
+	client, err := ai.New(r.resolve(provider))
 	if err != nil {
 		return false
 	}
 	return client.Validate() == nil
 }
 
-func (r *AIProviderRepository) stored() map[string]AIProvider {
-	providers := map[string]AIProvider{}
+func (r *AIProviderRepository) stored() map[string]storedAIProvider {
+	providers := map[string]storedAIProvider{}
 
 	if raw := r.config.GetConfig().AIProviders; len(raw) > 0 {
 		// A JSON null decodes to a nil map, and writing to it would panic.
 		if err := json.Unmarshal(raw, &providers); err != nil || providers == nil {
-			providers = map[string]AIProvider{}
+			providers = map[string]storedAIProvider{}
 		}
 	}
 
@@ -227,7 +266,7 @@ func (r *AIProviderRepository) stored() map[string]AIProvider {
 	return providers
 }
 
-func (r *AIProviderRepository) write(providers map[string]AIProvider) error {
+func (r *AIProviderRepository) write(providers map[string]storedAIProvider) error {
 	raw, err := json.Marshal(providers)
 	if err != nil {
 		return err

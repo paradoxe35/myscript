@@ -1,28 +1,15 @@
-import { useActivePageStore } from "@/store/active-page";
-import { useConfigStore } from "@/store/config";
 import {
   isGoogleAPIInvalidGrantError,
   useGoogleAuthTokenStore,
 } from "@/store/google-auth-token";
-import { useLocalPagesStore } from "@/store/local-pages";
+import { refreshAfterSync } from "@/store/sync-refresh";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { EventsOn, LogDebug } from "~wails-runtime";
+import { EventsOn } from "~wails-runtime";
 import { StopSynchronizer } from "~wails/main/App";
-
-type AffectedTables = Record<string, string[]>;
-
-enum TABLES {
-  PAGES = "pages",
-  CONFIG = "configs",
-}
 
 export function SynchronizerInit() {
   const googleAuthTokenStore = useGoogleAuthTokenStore();
-
-  const activePageStore = useActivePageStore();
-  const localPagesStore = useLocalPagesStore();
-  const configStore = useConfigStore();
 
   const syncFailures = useRef(0);
 
@@ -52,38 +39,7 @@ export function SynchronizerInit() {
     });
   }, []);
 
-  useEffect(() => {
-    return EventsOn(
-      "on-sync-success",
-      (affectedTables: AffectedTables | null) => {
-        if (!affectedTables) {
-          return;
-        }
-
-        if (TABLES.PAGES in affectedTables) {
-          localPagesStore.getPages();
-        }
-
-        if (TABLES.CONFIG in affectedTables) {
-          configStore.fetchConfig();
-        }
-
-        if (
-          activePageStore.page?.__typename === "local_page" &&
-          TABLES.PAGES in affectedTables
-        ) {
-          const activePage = activePageStore.page;
-          const canRefreshBlocks = affectedTables[TABLES.PAGES].includes(
-            activePage.page.ID
-          );
-
-          if (canRefreshBlocks) {
-            activePageStore.fetchPageBlocks();
-          }
-        }
-      }
-    );
-  }, [activePageStore.getPageId()]);
+  useEffect(() => EventsOn("on-sync-success", refreshAfterSync), []);
 
   return <></>;
 }

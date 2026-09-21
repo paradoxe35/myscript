@@ -31,5 +31,5 @@ func newDB(t *testing.T, models ...any) *gorm.DB {
 func newStores(t *testing.T) (main *gorm.DB, unsynced *gorm.DB) {
 	t.Helper()
 	return newDB(t, &Config{}, &Page{}, &Cache{}),
-		newDB(t, &Secret{}, &DeviceSettings{}, &PageState{}, &LocalCache{})
+		newDB(t, &Secret{}, &DeviceSettings{}, &AIProviderSettings{}, &PageState{}, &LocalCache{})
 }
