@@ -51,13 +51,26 @@ func (m Model) EstimatedRealtime(host Machine) float64 {
 	return m.RealtimeFactor * float64(host.Cores) / referenceCores
 }
 
-// FitsMemory keeps a model well under total RAM; one that barely fits pushes
-// the machine into swap.
+// Memory needed beyond the file itself. Loading maps the weights, then a
+// batch run allocates compute buffers (KV cache, activations, the audio
+// encoder's scratch) that scale with the model, roughly half its size again,
+// plus a few hundred MB that every run needs regardless of size.
+const (
+	inferenceOverheadRatio = 1.5
+	inferenceFixedMB       = 512
+	// The rest of RAM belongs to the OS, the browser view and whatever else is
+	// open; past this share the machine swaps and the "fast" label is a lie.
+	memoryBudgetShare = 0.6
+)
+
+// FitsMemory checks the working set, not the download: the file is only the
+// floor of what a transcription allocates.
 func (m Model) FitsMemory(host Machine) bool {
 	if host.MemoryMB <= 0 {
 		return true
 	}
-	return m.SizeMB() < float64(host.MemoryMB)*0.4
+	needed := m.SizeMB()*inferenceOverheadRatio + inferenceFixedMB
+	return needed < float64(host.MemoryMB)*memoryBudgetShare
 }
 
 // Fit is how a model is expected to behave on this machine.

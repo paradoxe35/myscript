@@ -9,22 +9,23 @@ import { ScriptReaderControllers } from "./script-reader-controllers";
 import { ZoomController } from "./zoom-controller";
 
 export function ReadingHeader() {
-  const activePageStore = useActivePageStore();
-  const transcriberStore = useTranscriberStore();
+  const title = useActivePageStore((store) => store.page?.page.title);
+  const setReadMode = useActivePageStore((store) => store.setReadMode);
+  const stopRecording = useTranscriberStore((store) => store.stopRecording);
   const position = useContentReadStore((state) => state.position);
   const total = useContentReadStore((state) => state.total);
 
   const percent = total ? Math.round((position / total) * 100) : 0;
 
   const exit = () => {
-    transcriberStore.stopRecording();
-    activePageStore.setReadMode(false);
+    stopRecording();
+    setReadMode(false);
   };
 
   return (
     <>
       <span className="truncate text-sm text-muted-foreground">
-        {activePageStore.page?.page.title}
+        {title}
       </span>
 
       <div className="ml-auto flex items-center gap-3">

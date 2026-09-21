@@ -5,10 +5,8 @@ import { useMemo } from "react";
 import { useContentReader } from "./use-content-reader";
 
 export function ContentRead() {
-  const activePageStore = useActivePageStore();
-
-  const activePage = activePageStore.page;
-  const readMode = activePageStore.readMode;
+  const activePage = useActivePageStore((store) => store.page);
+  const readMode = useActivePageStore((store) => store.readMode);
 
   const html = useMemo(() => {
     const blocks = activePage?.blocks || [];

@@ -9,9 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -25,13 +23,16 @@ import (
 //go:embed models.json
 var embeddedCatalog []byte
 
-// Where a newer list is fetched from, so models can be added between releases.
-const CatalogURL = "https://raw.githubusercontent.com/paradoxe35/myscript/main/internal/stt/models.json"
-
 const (
 	catalogMaxAge = 24 * time.Hour
 	catalogMaxLen = 8 << 20
 	modelsDirName = "models"
+
+	// RefreshTimeout bounds one whole rebuild: ~150 hub requests at six in
+	// flight normally finish in well under a minute.
+	RefreshTimeout = 3 * time.Minute
+	// How often the scheduler re-checks the cache's age while the app runs.
+	refreshCheckInterval = 3 * time.Hour
 )
 
 type Catalog struct {
@@ -184,32 +185,32 @@ func stale() bool {
 	return catalog.origin == "embedded" || time.Since(catalog.fetched) > catalogMaxAge
 }
 
-// Refresh replaces the cached list; parsed before writing so a truncated
-// download never displaces a working one.
+// Refresh rebuilds the list from Hugging Face. The result goes through the
+// same parser as the shipped file before it is written, so a broken build
+// never displaces a working list. Calls are serialised: the scheduler and the
+// settings button may overlap.
 func Refresh(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, CatalogURL, nil)
+	refreshMu.Lock()
+	defer refreshMu.Unlock()
+
+	catalog, err := FetchCatalog(ctx)
 	if err != nil {
 		return err
 	}
-
-	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
+	data, err := EncodeCatalog(catalog)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	return adopt(data)
+}
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("catalog fetch returned %s", resp.Status)
-	}
+var refreshMu sync.Mutex
 
-	data, err := io.ReadAll(io.LimitReader(resp.Body, catalogMaxLen))
-	if err != nil {
-		return err
-	}
-
+// adopt makes a fetched list current and caches it for the next launch.
+func adopt(data []byte) error {
 	fetched, err := parseCatalog(data)
 	if err != nil {
-		return fmt.Errorf("published catalog is unusable: %w", err)
+		return fmt.Errorf("fetched catalog is unusable: %w", err)
 	}
 
 	if path := cachePath(); path != "" {
@@ -229,19 +230,74 @@ func Refresh(ctx context.Context) error {
 	return nil
 }
 
-// RefreshInBackground never blocks startup; failures aren't surfaced since the
-// shipped list still works.
-func RefreshInBackground() {
+var (
+	schedulerMu   sync.Mutex
+	schedulerStop chan struct{}
+	schedulerDone chan struct{}
+)
+
+// StartRefreshing refreshes at launch when the cache is stale and keeps
+// checking while the app runs, so a machine left open for days still learns
+// about new models. Never blocks startup; failures aren't surfaced since the
+// current list still works.
+func StartRefreshing() {
+	startRefreshing(refreshCheckInterval)
+}
+
+func startRefreshing(every time.Duration) {
+	schedulerMu.Lock()
+	defer schedulerMu.Unlock()
+	if schedulerStop != nil {
+		return
+	}
+	stop, done := make(chan struct{}), make(chan struct{})
+	schedulerStop, schedulerDone = stop, done
+
+	go func() {
+		defer close(done)
+		ticker := time.NewTicker(every)
+		defer ticker.Stop()
+		for {
+			refreshIfStale(stop)
+			select {
+			case <-stop:
+				return
+			case <-ticker.C:
+			}
+		}
+	}()
+}
+
+// StopRefreshing halts the scheduler and waits for any refresh it started to
+// abort, so shutdown does not race a cache write.
+func StopRefreshing() {
+	schedulerMu.Lock()
+	stop, done := schedulerStop, schedulerDone
+	schedulerStop, schedulerDone = nil, nil
+	schedulerMu.Unlock()
+	if stop == nil {
+		return
+	}
+	close(stop)
+	<-done
+}
+
+func refreshIfStale(stop <-chan struct{}) {
 	if !stale() {
 		return
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), RefreshTimeout)
+	defer cancel()
 	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		if err := Refresh(ctx); err != nil {
-			slog.Info("Keeping the shipped model catalog", "reason", err)
+		select {
+		case <-stop:
+			cancel()
+		case <-ctx.Done():
 		}
 	}()
+	if err := Refresh(ctx); err != nil {
+		slog.Info("Keeping the current model catalog", "reason", err)
+	}
 }
 
 // Catalogue is the published list plus whatever the user dropped into the

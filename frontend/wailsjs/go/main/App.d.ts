@@ -85,6 +85,8 @@ export function PerformUpdate():Promise<void>;
 
 export function RefreshGoogleAuthToken():Promise<repository.GoogleAuthToken>;
 
+export function RefreshSpeechModels():Promise<void>;
+
 export function RemoveLegacyWhisperFiles():Promise<number>;
 
 export function SaveAIProvider(arg1:main.AIProvider,arg2:string):Promise<void>;

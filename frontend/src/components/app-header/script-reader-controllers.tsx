@@ -5,27 +5,34 @@ import { BookOpenText, Loader2, Play } from "lucide-react";
 import { useTranscriberStore } from "@/store/transcriber";
 import SRInputsModal from "../script-reader-inputs-modal";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
-  const transcriberStore = useTranscriberStore();
-  const activePageStore = useActivePageStore();
-
-  const activePage = activePageStore.page;
-  const state = transcriberStore.state;
+  const { state, modelName, micLevel, startRecording, stopRecording } =
+    useTranscriberStore(
+      useShallow((store) => ({
+        state: store.state,
+        modelName: store.modelName,
+        micLevel: store.micLevel,
+        startRecording: store.startRecording,
+        stopRecording: store.stopRecording,
+      }))
+    );
+  const hasPage = useActivePageStore((store) => store.page !== null);
 
   const handleStartReading = (languageCode: string, micInputDevice: string) => {
-    transcriberStore.startRecording(languageCode, micInputDevice).catch((err) => {
+    startRecording(languageCode, micInputDevice).catch((err) => {
       console.error("Error starting recording:", err);
       toast.error(String(err || "Error starting recording"));
     });
   };
 
-  if (!activePage) return null;
+  if (!hasPage) return null;
 
   const preparing = state === "loading" || state === "ready";
   const listening = state === "listening";
   // The ring grows with the microphone level so the reader can see it hears them.
-  const ring = listening ? Math.min(8, Math.round(transcriberStore.micLevel * 40)) : 0;
+  const ring = listening ? Math.min(8, Math.round(micLevel * 40)) : 0;
 
   const button = (
     <Button
@@ -33,12 +40,12 @@ export function ScriptReaderControllers(props: React.ComponentProps<"div">) {
       size="icon"
       title={
         preparing
-          ? `Loading ${transcriberStore.modelName || "model"}… click to cancel`
+          ? `Loading ${modelName || "model"}… click to cancel`
           : listening
           ? "Stop reading"
           : "Start reading"
       }
-      onClick={state !== "idle" ? transcriberStore.stopRecording : undefined}
+      onClick={state !== "idle" ? stopRecording : undefined}
       className={cn(
         "bg-sidebar-accent hover:bg-sidebar-accent/40 transition-shadow",
         preparing && "bg-amber-300/40 hover:bg-amber-300/60",

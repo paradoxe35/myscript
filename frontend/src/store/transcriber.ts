@@ -31,6 +31,8 @@ type TranscriberStore = {
   modelName: string;
   micLevel: number;
   isRecording: boolean;
+  /** A stop has been asked for and Go has not confirmed it yet. */
+  stopping: boolean;
   languages: Array<languages.Language>;
   micInputDevices: Array<stt.Device>;
 
@@ -72,6 +74,7 @@ export const useTranscriberStore = create<TranscriberStore>((set, get) => ({
   modelName: "",
   micLevel: 0,
   isRecording: false,
+  stopping: false,
   languages: [],
   micInputDevices: [],
 
@@ -79,7 +82,7 @@ export const useTranscriberStore = create<TranscriberStore>((set, get) => ({
     if (get().isRecording) return;
 
     const code = languageCode === AUTO_DETECT_LANGUAGE.Code ? "" : languageCode;
-    set({ state: "loading", isRecording: true });
+    set({ state: "loading", isRecording: true, stopping: false });
 
     return StartRecording(code, micInputDevice).catch((err) => {
       set({ state: "idle", isRecording: false });
@@ -87,27 +90,43 @@ export const useTranscriberStore = create<TranscriberStore>((set, get) => ({
     });
   },
 
+  // The reader finishing and the user clicking stop can race; only the first
+  // stop goes through to Go, the flag clears once the recording is confirmed off.
   async stopRecording() {
-    if (!get().isRecording) return;
+    if (!get().isRecording || get().stopping) return;
+    set({ stopping: true });
 
-    return StopRecording().finally(() => {
-      get().getRecordingStatus();
-    });
+    return StopRecording()
+      .catch((err) => {
+        set({ stopping: false });
+        throw err;
+      })
+      .finally(() => {
+        get().getRecordingStatus();
+      });
   },
 
   async cancelRecording() {
-    if (!get().isRecording) return;
+    if (!get().isRecording || get().stopping) return;
+    set({ stopping: true });
 
-    return CancelRecording().finally(() => {
-      get().getRecordingStatus();
-    });
+    return CancelRecording()
+      .catch((err) => {
+        set({ stopping: false });
+        throw err;
+      })
+      .finally(() => {
+        get().getRecordingStatus();
+      });
   },
 
   setState(event) {
+    const idle = event.State === "idle";
     set({
       state: event.State,
       modelName: event.ModelName,
-      isRecording: event.State !== "idle",
+      isRecording: !idle,
+      stopping: idle ? false : get().stopping,
       micLevel: event.State === "listening" ? get().micLevel : 0,
     });
   },
@@ -121,6 +140,7 @@ export const useTranscriberStore = create<TranscriberStore>((set, get) => ({
       set({
         isRecording,
         state: isRecording ? get().state : "idle",
+        stopping: isRecording ? get().stopping : false,
         micLevel: isRecording ? get().micLevel : 0,
       });
       return isRecording;

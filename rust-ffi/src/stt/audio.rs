@@ -2,13 +2,15 @@ use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::mpsc::{Receiver, Sender, TryRecvError, channel};
+use std::sync::mpsc::{
+    Receiver, Sender, SyncSender, TryRecvError, TrySendError, channel, sync_channel,
+};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{Device, SampleFormat, StreamConfig};
+use cpal::{Device, SampleFormat, StreamConfig, SupportedStreamConfigRange};
 use parking_lot::Mutex;
 
 use super::engine::Engine;
@@ -33,6 +35,12 @@ struct Settings {
     capture_only: bool,
 }
 
+/// Utterances waiting for the engine. A model slower than real time would
+/// otherwise queue the whole take (each utterance is up to 20 s of audio) and
+/// keep the CPU pinned long after the speaker stopped; past this, utterances
+/// are dropped and the host told once.
+const ENGINE_QUEUE: usize = 8;
+
 /// Handled on the engine thread in order, so an unload queued after a take's
 /// last utterance runs once that utterance is out.
 pub enum EngineCommand {
@@ -52,7 +60,7 @@ pub enum EngineCommand {
 /// happens here.
 pub struct Recorder {
     commands: Sender<Command>,
-    engine_commands: Sender<EngineCommand>,
+    engine_commands: SyncSender<EngineCommand>,
     settings: Arc<Mutex<Settings>>,
     recording: Arc<AtomicBool>,
 }
@@ -73,7 +81,7 @@ impl Recorder {
             }
         });
 
-        let (engine_tx, engine_rx) = channel();
+        let (engine_tx, engine_rx) = sync_channel(ENGINE_QUEUE);
         let engine_epoch = epoch.clone();
         thread::spawn(move || run_engine(engine_rx, host, engine_epoch));
 
@@ -163,7 +171,7 @@ impl Recorder {
 struct Worker {
     commands: Receiver<Command>,
     levels: Sender<f32>,
-    engine_commands: Sender<EngineCommand>,
+    engine_commands: SyncSender<EngineCommand>,
     settings: Arc<Mutex<Settings>>,
     recording: Arc<AtomicBool>,
     epoch: Arc<AtomicU64>,
@@ -208,11 +216,12 @@ impl Worker {
         let mut sink: Box<dyn Sink> = if capture_only {
             Box::new(HostSink { host: self.host })
         } else {
-            Box::new(EngineSink {
-                commands: self.engine_commands.clone(),
+            Box::new(EngineSink::new(
+                self.engine_commands.clone(),
+                self.host,
                 language,
-                epoch: self.epoch.clone(),
-            })
+                self.epoch.clone(),
+            ))
         };
 
         let ended = |auto: bool| {
@@ -257,18 +266,55 @@ fn run_engine(commands: Receiver<EngineCommand>, host: Host, epoch: Arc<AtomicU6
 
 /// Utterances go to the engine thread, which calls the host once each is transcribed.
 struct EngineSink {
-    commands: Sender<EngineCommand>,
+    commands: SyncSender<EngineCommand>,
+    host: Host,
     language: Option<String>,
     epoch: Arc<AtomicU64>,
+    dropped: usize,
+}
+
+const BEHIND_MESSAGE: &str = "Transcription is falling behind your speech; choose a faster model";
+
+impl EngineSink {
+    fn new(
+        commands: SyncSender<EngineCommand>,
+        host: Host,
+        language: Option<String>,
+        epoch: Arc<AtomicU64>,
+    ) -> Self {
+        Self {
+            commands,
+            host,
+            language,
+            epoch,
+            dropped: 0,
+        }
+    }
 }
 
 impl Sink for EngineSink {
+    /// Never blocks: the take thread has to keep draining the microphone, or
+    /// the driver starts dropping audio too. A full queue loses this utterance
+    /// instead, and the host hears about it once per take.
     fn utterance(&mut self, samples: Vec<f32>) {
-        let _ = self.commands.send(EngineCommand::Transcribe {
+        let command = EngineCommand::Transcribe {
             samples,
             language: self.language.clone(),
             epoch: self.epoch.load(Ordering::SeqCst),
-        });
+        };
+        match self.commands.try_send(command) {
+            Ok(()) | Err(TrySendError::Disconnected(_)) => {}
+            Err(TrySendError::Full(_)) => {
+                self.dropped += 1;
+                log::warn!(
+                    "engine queue full, dropped utterance {} of this take",
+                    self.dropped
+                );
+                if self.dropped == 1 {
+                    self.host.error(BEHIND_MESSAGE);
+                }
+            }
+        }
     }
 
     fn finish(&mut self) {
@@ -331,6 +377,10 @@ impl StreamGuard {
         let stream = build_stream(&device, &config, tx, levels)?;
         // cpal 0.18 doesn't auto-start streams; without this the callback never fires.
         stream.play()?;
+        log::info!(
+            "capture opened on '{device}': {rate} Hz, {channels} channel(s), {:?}",
+            config.format
+        );
 
         Ok(Self {
             _stream: stream,
@@ -414,17 +464,7 @@ fn preferred_config(device: &Device) -> Result<SelectedConfig> {
     let default = device.default_input_config()?;
     let rate = default.sample_rate();
 
-    let best = device
-        .supported_input_configs()?
-        .filter(|range| range.min_sample_rate() <= rate && rate <= range.max_sample_rate())
-        .max_by_key(|range| match range.sample_format() {
-            SampleFormat::F32 => 3,
-            SampleFormat::I16 => 2,
-            SampleFormat::I32 => 1,
-            _ => 0,
-        });
-
-    match best {
+    match choose_config(device.supported_input_configs()?, rate) {
         Some(range) => Ok(SelectedConfig {
             format: range.sample_format(),
             config: range.with_sample_rate(rate).config(),
@@ -433,6 +473,33 @@ fn preferred_config(device: &Device) -> Result<SelectedConfig> {
             format: default.sample_format(),
             config: default.config(),
         }),
+    }
+}
+
+/// Fewest channels first, then the format that costs least to convert. The
+/// pipeline mixes down to mono anyway, and ALSA plugin devices (PipeWire,
+/// PulseAudio) advertise every channel count up to 64: opening the widest one
+/// makes the sound server upmix ~12 MB/s in its realtime thread, which on a
+/// modest machine froze the desktop.
+fn choose_config(
+    ranges: impl IntoIterator<Item = SupportedStreamConfigRange>,
+    rate: u32,
+) -> Option<SupportedStreamConfigRange> {
+    ranges
+        .into_iter()
+        .filter(|range| range.min_sample_rate() <= rate && rate <= range.max_sample_rate())
+        .filter_map(|range| format_cost(range.sample_format()).map(|cost| (range, cost)))
+        .min_by_key(|(range, cost)| (range.channels(), *cost))
+        .map(|(range, _)| range)
+}
+
+/// Formats `build_stream` can open, cheapest first; `None` is unsupported.
+fn format_cost(format: SampleFormat) -> Option<u8> {
+    match format {
+        SampleFormat::F32 => Some(0),
+        SampleFormat::I16 => Some(1),
+        SampleFormat::I32 => Some(2),
+        _ => None,
     }
 }
 
@@ -533,7 +600,9 @@ fn forward(data: Vec<f32>, samples: &Sender<Vec<f32>>, levels: &Sender<f32>) {
 mod tests {
     use super::*;
     use crate::ffi::Callbacks;
+    use cpal::SupportedBufferSize;
     use std::os::raw::{c_char, c_float};
+    use std::sync::atomic::AtomicUsize;
 
     extern "C" fn text(_: *const c_char) {}
     extern "C" fn audio(_: *const i16, _: usize) {}
@@ -549,6 +618,132 @@ mod tests {
             stopped,
             error,
         }))
+    }
+
+    fn range(channels: u16, format: SampleFormat) -> SupportedStreamConfigRange {
+        SupportedStreamConfigRange::new(
+            channels,
+            8_000,
+            96_000,
+            SupportedBufferSize::Unknown,
+            format,
+        )
+    }
+
+    /// ALSA plugin devices enumerate one range per channel count, ascending.
+    fn plugin_device(format: SampleFormat) -> Vec<SupportedStreamConfigRange> {
+        (1..=64).map(|channels| range(channels, format)).collect()
+    }
+
+    #[test]
+    fn a_plugin_device_is_opened_in_mono() {
+        let mut ranges = plugin_device(SampleFormat::I16);
+        ranges.extend(plugin_device(SampleFormat::F32));
+
+        let chosen = choose_config(ranges, 48_000).expect("something matches");
+        assert_eq!(chosen.channels(), 1);
+        assert_eq!(chosen.sample_format(), SampleFormat::F32);
+    }
+
+    #[test]
+    fn a_stereo_only_device_is_opened_in_stereo() {
+        let ranges = vec![range(2, SampleFormat::I16), range(4, SampleFormat::F32)];
+
+        let chosen = choose_config(ranges, 48_000).expect("something matches");
+        assert_eq!(chosen.channels(), 2, "fewer channels beat a nicer format");
+        assert_eq!(chosen.sample_format(), SampleFormat::I16);
+    }
+
+    #[test]
+    fn the_best_format_wins_among_equal_channel_counts() {
+        let ranges = vec![
+            range(1, SampleFormat::I32),
+            range(1, SampleFormat::F32),
+            range(1, SampleFormat::I16),
+        ];
+        let chosen = choose_config(ranges, 48_000).unwrap();
+        assert_eq!(chosen.sample_format(), SampleFormat::F32);
+
+        let ranges = vec![range(1, SampleFormat::I32), range(1, SampleFormat::I16)];
+        let chosen = choose_config(ranges, 48_000).unwrap();
+        assert_eq!(chosen.sample_format(), SampleFormat::I16);
+    }
+
+    #[test]
+    fn ranges_that_cannot_be_opened_are_skipped() {
+        let out_of_rate = SupportedStreamConfigRange::new(
+            1,
+            8_000,
+            16_000,
+            SupportedBufferSize::Unknown,
+            SampleFormat::F32,
+        );
+        let ranges = vec![
+            out_of_rate,
+            range(1, SampleFormat::U8),
+            range(2, SampleFormat::F32),
+        ];
+
+        let chosen = choose_config(ranges, 48_000).unwrap();
+        assert_eq!(
+            (chosen.channels(), chosen.sample_format()),
+            (2, SampleFormat::F32)
+        );
+        assert!(choose_config(vec![range(1, SampleFormat::U8)], 48_000).is_none());
+    }
+
+    static BEHIND_REPORTS: AtomicUsize = AtomicUsize::new(0);
+
+    extern "C" fn count_behind(message: *const c_char) {
+        let message = unsafe { std::ffi::CStr::from_ptr(message) }
+            .to_str()
+            .unwrap();
+        assert_eq!(message, BEHIND_MESSAGE);
+        BEHIND_REPORTS.fetch_add(1, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn a_full_engine_queue_drops_utterances_and_reports_once() {
+        let host = Host::new(Callbacks {
+            text,
+            audio,
+            level,
+            stopped,
+            error: count_behind,
+        });
+        // Nobody drains the receiver, so this is a model that never finishes.
+        let (tx, rx) = sync_channel(2);
+        let mut sink = EngineSink::new(tx, host, None, Arc::new(AtomicU64::new(0)));
+
+        for _ in 0..5 {
+            sink.utterance(vec![0.0; 1600]);
+        }
+
+        let queued = std::iter::from_fn(|| rx.try_recv().ok()).count();
+        assert_eq!(queued, 2, "only what fits is queued");
+        assert_eq!(sink.dropped, 3);
+        assert_eq!(
+            BEHIND_REPORTS.load(Ordering::SeqCst),
+            1,
+            "the host is told once"
+        );
+    }
+
+    #[test]
+    fn a_dropped_engine_is_not_an_error() {
+        let (tx, rx) = sync_channel(1);
+        drop(rx);
+        let host = Host::new(Callbacks {
+            text,
+            audio,
+            level,
+            stopped,
+            error,
+        });
+        let mut sink = EngineSink::new(tx, host, None, Arc::new(AtomicU64::new(0)));
+        sink.utterance(vec![0.0; 16]);
+        assert_eq!(sink.dropped, 0);
+        sink.finish();
     }
 
     #[test]

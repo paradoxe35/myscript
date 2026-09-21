@@ -26,11 +26,31 @@ func TestFitsMemoryLeavesHeadroom(t *testing.T) {
 	if !(Model{SizeBytes: 1 << 30}).FitsMemory(host) {
 		t.Error("1 GB should fit in 8 GB")
 	}
+	if !(Model{SizeBytes: 2 << 30}).FitsMemory(host) {
+		t.Error("2 GB plus its buffers should still fit in 8 GB")
+	}
+	// 3 GB is under 40% of 8 GB by file size alone, but the buffers a run
+	// allocates on top would push the machine into swap.
+	if (Model{SizeBytes: 3 << 30}).FitsMemory(host) {
+		t.Error("3 GB should not be offered on an 8 GB machine once inference buffers are counted")
+	}
 	if (Model{SizeBytes: 6 << 30}).FitsMemory(host) {
 		t.Error("6 GB should not be offered on an 8 GB machine")
 	}
 	if !(Model{SizeBytes: 40 << 30}).FitsMemory(Machine{Cores: 8}) {
 		t.Error("with memory unknown the check should pass rather than exclude")
+	}
+}
+
+// A small model still needs its fixed buffers: a tiny machine cannot run even
+// a tiny model comfortably.
+func TestFitsMemoryCountsFixedOverhead(t *testing.T) {
+	tiny := Model{SizeBytes: 50 << 20}
+	if tiny.FitsMemory(Machine{Cores: 2, MemoryMB: 900}) {
+		t.Error("a 50 MB model still needs its half-gigabyte of scratch space; 900 MB is not enough")
+	}
+	if !tiny.FitsMemory(Machine{Cores: 2, MemoryMB: 2000}) {
+		t.Error("a 50 MB model should fit in 2 GB")
 	}
 }
 

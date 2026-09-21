@@ -147,6 +147,18 @@ func (a *App) DeleteSpeechModel(id string) error {
 	return a.speech.Store().Delete(model)
 }
 
+// RefreshSpeechModels rebuilds the catalogue now, regardless of the cache's
+// age, so a user who heard about a new model need not wait for the scheduler.
+func (a *App) RefreshSpeechModels() error {
+	parent := a.ctx
+	if parent == nil {
+		parent = context.Background()
+	}
+	ctx, cancel := context.WithTimeout(parent, stt.RefreshTimeout)
+	defer cancel()
+	return stt.Refresh(ctx)
+}
+
 // HasLegacyWhisperFiles reports ggml ".bin" models left by earlier releases.
 func (a *App) HasLegacyWhisperFiles() bool {
 	return len(a.speech.Store().LegacyFiles()) > 0

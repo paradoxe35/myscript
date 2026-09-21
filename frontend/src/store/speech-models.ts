@@ -8,6 +8,7 @@ import {
   GetMachine,
   GetSpeechModels,
   HasLegacyWhisperFiles,
+  RefreshSpeechModels,
   RemoveLegacyWhisperFiles,
 } from "~wails/main/App";
 import { main } from "~wails/models";
@@ -27,6 +28,7 @@ type SpeechModelsStore = {
   progress: Record<string, ModelDownloadEvent>;
 
   fetchModels: () => Promise<Array<main.SpeechModel>>;
+  refreshModels: () => Promise<void>;
   fetchMachine: () => Promise<void>;
   downloadModel: (id: string) => Promise<void>;
   cancelDownload: (id: string) => Promise<void>;
@@ -64,6 +66,12 @@ export const useSpeechModelsStore = create<SpeechModelsStore>((set, get) => ({
     const models = (await GetSpeechModels()) || [];
     set({ models });
     return models;
+  },
+
+  // Pulls the catalogue again on the Go side, then shows what it now holds.
+  refreshModels: async () => {
+    await RefreshSpeechModels();
+    await get().fetchModels();
   },
 
   fetchMachine: async () => {

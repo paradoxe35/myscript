@@ -154,6 +154,10 @@ export function RefreshGoogleAuthToken() {
   return window['go']['main']['App']['RefreshGoogleAuthToken']();
 }
 
+export function RefreshSpeechModels() {
+  return window['go']['main']['App']['RefreshSpeechModels']();
+}
+
 export function RemoveLegacyWhisperFiles() {
   return window['go']['main']['App']['RemoveLegacyWhisperFiles']();
 }

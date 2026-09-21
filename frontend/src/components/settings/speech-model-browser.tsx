@@ -1,7 +1,9 @@
-import { Cpu, Search } from "lucide-react";
+import { Cpu, Loader2, RefreshCw, Search } from "lucide-react";
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
+import { Button } from "../ui/button";
 import {
   Dialog,
   DialogContent,
@@ -112,6 +114,7 @@ function ModelList({ selectedID, onSelect }: Omit<BrowserProps, "children">) {
           </SelectContent>
         </Select>
         {machine && <MachineChip machine={machine} />}
+        <RefreshButton />
       </div>
 
       <ScrollArea className="h-[55vh] max-h-[460px] -mx-2 px-2">
@@ -189,6 +192,42 @@ function Section({
       </h4>
       <ul className="flex flex-col gap-2">{children}</ul>
     </section>
+  );
+}
+
+function RefreshButton() {
+  const refreshModels = useSpeechModelsStore((store) => store.refreshModels);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refresh = () => {
+    setRefreshing(true);
+    refreshModels()
+      .catch((err) => toast.error(`Could not refresh the models: ${err}`))
+      .finally(() => setRefreshing(false));
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="Refresh models"
+          disabled={refreshing}
+          onClick={refresh}
+        >
+          {refreshing ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent className="text-xs">
+        Check for new or updated models
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

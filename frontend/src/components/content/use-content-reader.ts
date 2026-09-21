@@ -5,29 +5,53 @@ import { useContentReadStore } from "@/store/content-read";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useDebouncedCallback } from "use-debounce";
 
 const END_OF_PAGE_TOAST = "end-of-page";
-const AUTO_STOP_DELAY = 5000;
+
+// Every save is a SQLite write that also lands in the Drive change log, so
+// matched phrases are batched and only the stop points write right away.
+const SAVE_INTERVAL = 3000;
+
+type PendingProgress = { pageId: string | number; word: number; total: number };
 
 export function useContentReader(html: string) {
-  const transcriberStore = useTranscriberStore();
-  const activePageStore = useActivePageStore();
-  const contentReadStore = useContentReadStore();
+  const state = useTranscriberStore((store) => store.state);
+  const stopRecording = useTranscriberStore((store) => store.stopRecording);
+  const onTranscribedText = useTranscriberStore(
+    (store) => store.onTranscribedText
+  );
+
+  const readMode = useActivePageStore((store) => store.readMode);
+  const pageId = useActivePageStore((store) => store.getPageId());
+
+  const resume = useContentReadStore((store) => store.resume);
+  const setPosition = useContentReadStore((store) => store.setPosition);
+  const saveProgress = useContentReadStore((store) => store.saveProgress);
+  const loadProgress = useContentReadStore((store) => store.loadProgress);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const readerRef = useRef<ScriptReader | null>(null);
   const spansRef = useRef<HTMLElement[]>([]);
   const paintedRef = useRef(0);
-  const autoStopRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
+  const pendingRef = useRef<PendingProgress | null>(null);
+
+  const listening = state === "listening";
+
+  const save = useDebouncedCallback(
+    () => {
+      const pending = pendingRef.current;
+      if (!pending) return;
+
+      pendingRef.current = null;
+      saveProgress(pending.pageId, { word: pending.word, total: pending.total });
+    },
+    SAVE_INTERVAL,
+    { maxWait: SAVE_INTERVAL }
   );
 
-  const readMode = activePageStore.readMode;
-  const listening = transcriberStore.state === "listening";
-  const pageId = activePageStore.getPageId();
-
   const paint = useCallback(
-    (save = true) => {
+    (persist = true) => {
       const reader = readerRef.current;
       if (!reader) return;
 
@@ -48,46 +72,32 @@ export function useContentReader(html: string) {
       const current = spans[position] ?? spans[position - 1];
       if (current) scrollToEyeLine(current);
 
-      contentReadStore.setPosition(position, reader.total);
-      if (save && pageId) {
-        contentReadStore.saveProgress(pageId, {
-          word: position,
-          total: reader.total,
-        });
+      setPosition(position, reader.total);
+      if (persist && pageId) {
+        pendingRef.current = { pageId, word: position, total: reader.total };
+        save();
       }
     },
-    [pageId]
+    [pageId, setPosition, save]
   );
-
-  const cancelAutoStop = useCallback(() => {
-    clearTimeout(autoStopRef.current);
-    autoStopRef.current = undefined;
-  }, []);
-
-  const scheduleAutoStop = useCallback(() => {
-    if (autoStopRef.current) return;
-
-    autoStopRef.current = setTimeout(() => {
-      autoStopRef.current = undefined;
-      toast.dismiss(END_OF_PAGE_TOAST);
-      transcriberStore.stopRecording();
-    }, AUTO_STOP_DELAY);
-
-    toast.info("Reached the end of the page", {
-      id: END_OF_PAGE_TOAST,
-      duration: AUTO_STOP_DELAY,
-      action: { label: "Keep listening", onClick: cancelAutoStop },
-    });
-  }, [cancelAutoStop]);
 
   const moveTo = useCallback(
     (index: number) => {
       readerRef.current?.moveTo(index);
-      cancelAutoStop();
       paint();
     },
-    [paint, cancelAutoStop]
+    [paint]
   );
+
+  // The last word has been read: keep the final state and end the take. A stop
+  // the user already asked for is left alone, so no second stop and no toast.
+  const finish = useCallback(() => {
+    if (useTranscriberStore.getState().stopping) return;
+
+    save.flush();
+    stopRecording();
+    toast.info("Reached the end of the page", { id: END_OF_PAGE_TOAST });
+  }, [save, stopRecording]);
 
   // Content can still arrive (Notion) while reading; keep the place when the words match.
   useEffect(() => {
@@ -105,22 +115,22 @@ export function useContentReader(html: string) {
     paint(false);
 
     return () => {
+      save.flush();
       readerRef.current = null;
       spansRef.current = [];
-      cancelAutoStop();
-      contentReadStore.setPosition(0, 0);
+      setPosition(0, 0);
     };
   }, [readMode, html]);
 
   useEffect(() => {
     if (!listening || !readMode || !pageId) return;
 
-    if (!contentReadStore.resume) {
+    if (!resume) {
       moveTo(0);
       return;
     }
 
-    contentReadStore.loadProgress(pageId).then(({ word, total }) => {
+    loadProgress(pageId).then(({ word, total }) => {
       if (readerRef.current && total === readerRef.current.total) moveTo(word);
     });
   }, [listening, readMode]);
@@ -128,21 +138,34 @@ export function useContentReader(html: string) {
   useEffect(() => {
     if (!listening) return;
 
-    return transcriberStore.onTranscribedText((text) => {
+    const clear = onTranscribedText((text) => {
       const reader = readerRef.current;
       if (!reader || !reader.feed(text)) return;
 
-      requestAnimationFrame(() => paint());
-      if (reader.done) scheduleAutoStop();
+      requestAnimationFrame(() => {
+        paint();
+        if (readerRef.current?.done) finish();
+      });
     });
-  }, [listening, paint, scheduleAutoStop]);
+
+    // The take is over, whatever is still pending has to reach the disk.
+    return () => {
+      clear();
+      save.flush();
+    };
+  }, [listening, paint, finish]);
+
+  useEffect(() => () => save.flush(), []);
 
   const onClick = useCallback(
     (event: React.MouseEvent) => {
       const index = wordIndexOf(event.target);
-      if (readMode && index !== null) moveTo(index);
+      if (!readMode || index === null) return;
+
+      moveTo(index);
+      save.flush();
     },
-    [readMode, moveTo]
+    [readMode, moveTo, save]
   );
 
   return { containerRef, onClick };

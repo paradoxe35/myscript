@@ -2,25 +2,50 @@ import { useActivePageStore } from "@/store/active-page";
 import { useTranscriberStore } from "@/store/transcriber";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 
 const STATE_TOAST = "transcriber-state";
 
 export function TranscriberInit() {
-  const transcriberStore = useTranscriberStore();
-  const activePageStore = useActivePageStore();
+  // Actions only: this component must not re-render on every mic level tick.
+  const {
+    getRecordingStatus,
+    cancelRecording,
+    setState,
+    setMicLevel,
+    onTranscriberState,
+    onMicLevel,
+    onTranscribeError,
+    onRecordingStopped,
+  } = useTranscriberStore(
+    useShallow((store) => ({
+      getRecordingStatus: store.getRecordingStatus,
+      cancelRecording: store.cancelRecording,
+      setState: store.setState,
+      setMicLevel: store.setMicLevel,
+      onTranscriberState: store.onTranscriberState,
+      onMicLevel: store.onMicLevel,
+      onTranscribeError: store.onTranscribeError,
+      onRecordingStopped: store.onRecordingStopped,
+    }))
+  );
+  const state = useTranscriberStore((store) => store.state);
+
+  const pageId = useActivePageStore((store) => store.getPageId());
+  const setReadMode = useActivePageStore((store) => store.setReadMode);
 
   useEffect(() => {
-    transcriberStore.getRecordingStatus();
+    getRecordingStatus();
   }, []);
 
   // Text still in flight belongs to the page being left.
   useEffect(() => {
-    transcriberStore.cancelRecording();
-  }, [activePageStore.getPageId()]);
+    cancelRecording();
+  }, [pageId]);
 
   useEffect(() => {
-    return transcriberStore.onTranscriberState((event) => {
-      transcriberStore.setState(event);
+    return onTranscriberState((event) => {
+      setState(event);
 
       switch (event.State) {
         case "loading":
@@ -46,20 +71,20 @@ export function TranscriberInit() {
   }, []);
 
   useEffect(() => {
-    return transcriberStore.onMicLevel(transcriberStore.setMicLevel);
+    return onMicLevel(setMicLevel);
   }, []);
 
   useEffect(() => {
-    return transcriberStore.onTranscribeError((error) => {
+    return onTranscribeError((error) => {
       console.log("Transcription error:", error);
       toast.error("Transcription error: " + error, { id: STATE_TOAST });
-      transcriberStore.getRecordingStatus();
+      getRecordingStatus();
     });
   }, []);
 
   useEffect(() => {
-    return transcriberStore.onRecordingStopped((autoStopped) => {
-      transcriberStore.getRecordingStatus();
+    return onRecordingStopped((autoStopped) => {
+      getRecordingStatus();
       console.log("Recording stopped:", autoStopped);
 
       if (autoStopped) {
@@ -70,8 +95,8 @@ export function TranscriberInit() {
 
   // Read mode outlives the take so the reader can restart or leave on their own.
   useEffect(() => {
-    if (transcriberStore.state === "listening") activePageStore.setReadMode(true);
-  }, [transcriberStore.state]);
+    if (state === "listening") setReadMode(true);
+  }, [state]);
 
   return null;
 }

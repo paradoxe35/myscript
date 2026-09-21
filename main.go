@@ -56,7 +56,7 @@ func main() {
 
 	// Speech models
 	stt.Init(filesystem.HOME_DIR)
-	stt.RefreshInBackground()
+	stt.StartRefreshing()
 
 	// Database
 	mainDB := database.NewMainDatabase(filesystem.HOME_DIR)
